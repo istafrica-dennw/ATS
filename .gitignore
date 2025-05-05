@@ -1,0 +1,111 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Build files
+target/
+build/
+dist/
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Database
+postgres_data/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Frontend (React/TypeScript)
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Testing
+frontend/coverage/
+
+# Production
+frontend/build/
+frontend/dist/
+
+# Misc
+frontend/.DS_Store
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Backend (Spring Boot)
+# Compiled class files
+backend/target/
+backend/*.class
+
+# Logs
+backend/logs/
+backend/*.log
+
+# BlueJ files
+backend/*.ctxt
+
+# Mobile Tools for Java (J2ME)
+backend/.mtj.tmp/
+
+# Package Files
+backend/*.jar
+backend/*.war
+backend/*.nar
+backend/*.ear
+backend/*.zip
+backend/*.tar.gz
+backend/*.rar
+
+# virtual machine crash logs
+backend/hs_err_pid*
+backend/replay_pid*
+
+# Maven
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+
+# Spring Boot
+backend/application-*.properties
+!backend/application.properties
+!backend/application-dev.properties
+!backend/application-prod.properties
+
+# Docker
+.env
+docker-compose.override.yml
+
+# System Files
+.DS_Store
+Thumbs.db 

@@ -25,9 +25,13 @@ export interface AuthResponse {
   };
 }
 
+export interface SignupResponse {
+  message: string;
+}
+
 export const authService = {
-  signup: async (email: string, password: string, firstName: string, lastName: string): Promise<AuthResponse> => {
-    const response = await axios.post<AuthResponse>(`${API_URL}/auth/signup`, {
+  signup: async (email: string, password: string, firstName: string, lastName: string): Promise<SignupResponse> => {
+    const response = await axios.post<SignupResponse>(`${API_URL}/auth/signup`, {
       email,
       password,
       firstName,

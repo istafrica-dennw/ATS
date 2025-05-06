@@ -4,11 +4,15 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class User extends BaseEntity {
     
     @Column(nullable = false, unique = true)
@@ -49,4 +53,13 @@ public class User extends BaseEntity {
 
     @Column(name = "is_active")
     private Boolean isActive;
+
+    @Column(name = "is_email_verified", nullable = false)
+    private Boolean isEmailVerified = false;
+    
+    @Column(name = "email_verification_token")
+    private String emailVerificationToken;
+    
+    @Column(name = "email_verification_token_expiry")
+    private LocalDateTime emailVerificationTokenExpiry;
 } 

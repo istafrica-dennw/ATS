@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { User } from '../../types/user';
+import { User, Role } from '../../types/user';
 import {
   PencilIcon,
   TrashIcon,
@@ -67,141 +67,157 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
+  const getRoleColor = (role: Role) => {
+    switch (role) {
+      case Role.ADMIN:
+        return 'bg-purple-100 text-purple-800';
+      case Role.INTERVIEWER:
+      case Role.HIRING_MANAGER:
+        return 'bg-blue-100 text-blue-800';
+      case Role.CANDIDATE:
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="bg-white shadow rounded-lg">
-      <div className="px-4 py-5 sm:px-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">User Management</h3>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="sm:flex sm:items-center">
+        <div className="sm:flex-auto">
+          <h1 className="text-xl font-semibold text-gray-900">Users</h1>
+          <p className="mt-2 text-sm text-gray-700">
+            A list of all users in your account including their name, email, role, and status.
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
           <button
             type="button"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
           >
-            <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-            Add User
+            <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            Add user
           </button>
         </div>
       </div>
 
-      <div className="px-4 py-5 sm:p-6">
-        <div className="mb-4 flex space-x-4">
-          <div className="flex-1">
-            <div className="relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+      <div className="mt-8 flex flex-col">
+        <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+          <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div className="flex-1 min-w-0">
+                  <div className="relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                    </div>
+                    <input
+                      type="text"
+                      className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                      placeholder="Search users..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <select
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                  >
+                    <option value="all">All Roles</option>
+                    <option value={Role.ADMIN}>Admin</option>
+                    <option value={Role.INTERVIEWER}>Interviewer</option>
+                    <option value={Role.HIRING_MANAGER}>Hiring Manager</option>
+                    <option value={Role.CANDIDATE}>Candidate</option>
+                  </select>
+                </div>
               </div>
-              <input
-                type="text"
-                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+
+              <table className="min-w-full divide-y divide-gray-300">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                      Name
+                    </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                      Email
+                    </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                      Role
+                    </th>
+                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                      Status
+                    </th>
+                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id}>
+                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 flex-shrink-0">
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-500 text-sm">
+                                {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <div className="font-medium text-gray-900">
+                              {user.firstName} {user.lastName}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{user.email}</td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleColor(user.role)}`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Active
+                        </span>
+                      </td>
+                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            type="button"
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            <EyeIcon className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            <PencilIcon className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className="text-red-600 hover:text-red-900"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            <TrashIcon className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-          <select
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
-          >
-            <option value="all">All Roles</option>
-            <option value="ADMIN">Admin</option>
-            <option value="RECRUITER">Recruiter</option>
-            <option value="CANDIDATE">Candidate</option>
-          </select>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 text-sm">
-                            {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {user.firstName} {user.lastName}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{user.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' :
-                      user.role === 'RECRUITER' ? 'bg-blue-100 text-blue-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      Active
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        className="text-indigo-600 hover:text-indigo-900"
-                        title="View"
-                      >
-                        <EyeIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="text-yellow-600 hover:text-yellow-900"
-                        title="Edit"
-                      >
-                        <PencilIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        className="text-red-600 hover:text-red-900"
-                        title="Delete"
-                        onClick={() => handleDeleteUser(user.id)}
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

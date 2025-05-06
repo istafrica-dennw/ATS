@@ -1,7 +1,8 @@
 export enum Role {
   ADMIN = 'ADMIN',
-  RECRUITER = 'RECRUITER',
-  CANDIDATE = 'CANDIDATE'
+  CANDIDATE = 'CANDIDATE',
+  INTERVIEWER = 'INTERVIEWER',
+  HIRING_MANAGER = 'HIRING_MANAGER'
 }
 
 export interface User {

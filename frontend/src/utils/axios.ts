@@ -25,7 +25,7 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.response?.config?.url?.includes('/login')) {
       // Clear auth data
       localStorage.removeItem('token');
       localStorage.removeItem('user');

@@ -8,15 +8,53 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
+import EmailVerificationPage from './pages/EmailVerificationPage';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// Component to handle public routes (login, signup) with redirection for authenticated users
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, token } = useAuth();
+
+  if (user && token) {
+    switch (user.role) {
+      case Role.ADMIN:
+        return <Navigate to="/admin" replace />;
+      case Role.INTERVIEWER:
+      case Role.HIRING_MANAGER:
+        return <Navigate to="/recruiter" replace />;
+      case Role.CANDIDATE:
+        return <Navigate to="/candidate" replace />;
+      default:
+        return <Navigate to="/login" replace />;
+    }
+  }
+
+  return <>{children}</>;
+};
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
+        <ToastContainer position="top-right" autoClose={5000} />
         <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          {/* Public routes with redirection for authenticated users */}
+          <Route path="/login" element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          } />
+          <Route path="/signup" element={
+            <PublicRoute>
+              <SignupPage />
+            </PublicRoute>
+          } />
+          <Route path="/verify-email" element={
+            <PublicRoute>
+              <EmailVerificationPage />
+            </PublicRoute>
+          } />
           
           {/* Admin Routes */}
           <Route
@@ -37,7 +75,7 @@ const App: React.FC = () => {
           <Route
             path="/recruiter"
             element={
-              <ProtectedRoute allowedRoles={[Role.RECRUITER]}>
+              <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER]}>
                 <Outlet />
               </ProtectedRoute>
             }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const SignupForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,18 +12,30 @@ const SignupForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { signup } = useAuth();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      setIsLoading(false);
       return;
     }
+
     try {
       await signup(email, password, firstName, lastName);
-      navigate('/admin');
+
+      console.log('Signup successful - after signup')
+      // The success message is already shown in AuthContext
+      navigate('/login');
     } catch (err: any) {
+      console.error('Signup error:', err);
       setError(err.message || 'Failed to create account');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -127,8 +140,9 @@ const SignupForm: React.FC = () => {
             <button
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={isLoading}
             >
-              Sign up
+              {isLoading ? 'Signing up...' : 'Sign up'}
             </button>
             <p className="text-center text-sm text-gray-600">
               Already have an account?{' '}

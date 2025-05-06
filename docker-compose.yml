@@ -39,6 +39,8 @@ services:
       - SPRING_SECURITY_USER_NAME=${SPRING_SECURITY_USER_NAME}
       - SPRING_SECURITY_USER_PASSWORD=${SPRING_SECURITY_USER_PASSWORD}
       - SPRING_SECURITY_USER_ROLES=${SPRING_SECURITY_USER_ROLES}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,18 +50,25 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: ats-frontend
     ports:
-      - "3001:3000"
+      - "3001:3001"
     env_file:
       - .env
     environment:
       - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - NODE_ENV=development
+      - WDS_SOCKET_PORT=0
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
     networks:
       - ats-network
+    tty: true
+    stdin_open: true
 
 networks:
   ats-network:

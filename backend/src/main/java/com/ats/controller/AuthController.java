@@ -82,7 +82,6 @@ public class AuthController {
         user.setLastName(authRequest.getLastName());
         user.setRole(Role.CANDIDATE);
         user.setIsActive(true);
-        user.setAuthenticationMethod("EMAIL_PASSWORD");
         user.setIsEmailPasswordEnabled(true);
         user.setIsEmailVerified(false);
         

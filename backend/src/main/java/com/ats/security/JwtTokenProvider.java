@@ -11,9 +11,13 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 import java.util.stream.Collectors;
+import javax.crypto.SecretKey;
+import io.jsonwebtoken.SignatureAlgorithm;
 
 @Component
 public class JwtTokenProvider {
+
+    private static final SecretKey SIGNING_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -22,7 +26,8 @@ public class JwtTokenProvider {
     private long jwtExpirationInMs;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        // Use the static key that was generated when the class was loaded
+        return SIGNING_KEY;
     }
 
     public String generateToken(Authentication authentication) {

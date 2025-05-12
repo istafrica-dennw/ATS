@@ -41,6 +41,8 @@ services:
       - SPRING_SECURITY_USER_ROLES=${SPRING_SECURITY_USER_ROLES}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
     depends_on:
       postgres:
         condition: service_healthy

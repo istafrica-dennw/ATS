@@ -42,9 +42,6 @@ public class User extends BaseEntity {
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
 
-    @Column(name = "authentication_method")
-    private String authenticationMethod;
-
     @Column(name = "is_email_password_enabled")
     private Boolean isEmailPasswordEnabled;
 

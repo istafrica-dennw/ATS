@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// Use a relative path to leverage the proxy configuration in package.json
 const API_URL = 'http://localhost:8080/api';
 
 export interface AuthRequest {

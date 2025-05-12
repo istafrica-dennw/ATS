@@ -34,17 +34,27 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                       Authentication authentication) throws IOException, ServletException {
+        System.out.println("\n\n[DEBUG] OAuth2 Authentication Success");
+        System.out.println("[DEBUG] Request URI: " + request.getRequestURI());
+        System.out.println("[DEBUG] Authentication: " + authentication);
+
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+        System.out.println("[DEBUG] OAuth2User attributes: " + oAuth2User.getAttributes());
+        
         String email = oAuth2User.getAttribute("email");
+        System.out.println("[DEBUG] User email: " + email);
         
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        System.out.println("[DEBUG] Found user: " + user.getEmail());
 
         String jwt = tokenProvider.generateToken(authentication);
-        AuthResponse authResponse = new AuthResponse(jwt, convertToDTO(user));
+        System.out.println("[DEBUG] Generated JWT token");
 
-        response.setContentType("application/json");
-        response.getWriter().write(objectMapper.writeValueAsString(authResponse));
+        // Redirect to frontend with token
+        String redirectUrl = "http://localhost:3001/oauth2/callback?token=" + jwt;
+        System.out.println("[DEBUG] Redirecting to: " + redirectUrl);
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 
     private UserDTO convertToDTO(User user) {
@@ -57,7 +67,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         dto.setDepartment(user.getDepartment());
         dto.setLinkedinProfileUrl(user.getLinkedinProfileUrl());
         dto.setProfilePictureUrl(user.getProfilePictureUrl());
-        dto.setAuthenticationMethod(user.getAuthenticationMethod());
         dto.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());
         dto.setLastLogin(user.getLastLogin());
         dto.setIsActive(user.getIsActive());

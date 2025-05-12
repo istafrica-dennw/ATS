@@ -40,9 +40,6 @@ public class UserDTO {
     @Schema(description = "User's profile picture URL", example = "https://example.com/profile.jpg")
     private String profilePictureUrl;
 
-    @Schema(description = "User's authentication method", example = "LINKEDIN")
-    private String authenticationMethod;
-
     @Schema(description = "Whether email/password authentication is enabled", example = "false")
     private Boolean isEmailPasswordEnabled;
 

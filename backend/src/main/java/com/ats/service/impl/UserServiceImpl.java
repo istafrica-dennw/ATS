@@ -107,14 +107,15 @@ public class UserServiceImpl implements UserService {
 
     private User convertToEntity(UserDTO dto) {
         User user = new User();
+        user.setId(dto.getId());
         user.setEmail(dto.getEmail());
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setRole(dto.getRole());
         user.setDepartment(dto.getDepartment());
+        user.setLinkedinId(dto.getLinkedinId());
         user.setLinkedinProfileUrl(dto.getLinkedinProfileUrl());
         user.setProfilePictureUrl(dto.getProfilePictureUrl());
-        user.setAuthenticationMethod(dto.getAuthenticationMethod());
         user.setIsEmailPasswordEnabled(dto.getIsEmailPasswordEnabled());
         user.setLastLogin(dto.getLastLogin());
         user.setIsActive(dto.getIsActive());
@@ -129,9 +130,9 @@ public class UserServiceImpl implements UserService {
         dto.setLastName(user.getLastName());
         dto.setRole(user.getRole());
         dto.setDepartment(user.getDepartment());
+        dto.setLinkedinId(user.getLinkedinId());
         dto.setLinkedinProfileUrl(user.getLinkedinProfileUrl());
         dto.setProfilePictureUrl(user.getProfilePictureUrl());
-        dto.setAuthenticationMethod(user.getAuthenticationMethod());
         dto.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());
         dto.setLastLogin(user.getLastLogin());
         dto.setIsActive(user.getIsActive());

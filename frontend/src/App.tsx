@@ -10,6 +10,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
 import DashboardPage from './pages/DashboardPage';
+import CandidateDashboardPage from './pages/candidate/CandidateDashboardPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -100,7 +101,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           >
-            <Route index element={<div>Candidate Dashboard</div>} />
+            <Route index element={<CandidateDashboardPage />} />
           </Route>
 
           {/* Default route */}

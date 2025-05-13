@@ -16,9 +16,44 @@ interface AuthContextType {
   signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  setToken: (token: string | null) => void;
+  setIsAuthenticated: (isAuthenticated: boolean) => void;
+  setUser: (user: User | null) => void;
+  validateTokenAndGetUser: (token: string) => Promise<User>;
+  manuallySetToken: (token: string) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Helper function to safely access localStorage
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.error('Error accessing localStorage:', e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): boolean => {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (e) {
+      console.error('Error setting localStorage:', e);
+      return false;
+    }
+  },
+  removeItem: (key: string): boolean => {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (e) {
+      console.error('Error removing from localStorage:', e);
+      return false;
+    }
+  }
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -26,28 +61,148 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    // Check for stored user data and token
-    const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
-    console.log('AuthContext - Initial auth check - storedUser:', storedUser);
-    console.log('AuthContext - Initial auth check - storedToken:', storedToken);
+  // Safely set authentication data with fallbacks if localStorage fails
+  const safeSetAuthData = (userData: User, tokenData: string) => {
+    console.log('AuthContext - Safely setting auth data');
+    setUser(userData);
+    setToken(tokenData);
+    setIsAuthenticated(true);
     
-    if (storedUser && storedToken) {
+    // Try to store in localStorage
+    const tokenStored = safeLocalStorage.setItem('token', tokenData);
+    const userStored = safeLocalStorage.setItem('user', JSON.stringify(userData));
+    
+    if (!tokenStored || !userStored) {
+      console.warn('AuthContext - Failed to store auth data in localStorage, using session storage as fallback');
       try {
-        const parsedUser = JSON.parse(storedUser);
-        console.log('AuthContext - Parsed user data:', parsedUser);
-        console.log('AuthContext - User role:', parsedUser.role);
-        setUser(parsedUser);
-        setToken(storedToken);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('AuthContext - Error parsing stored user:', error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        sessionStorage.setItem('token', tokenData);
+        sessionStorage.setItem('user', JSON.stringify(userData));
+      } catch (e) {
+        console.error('AuthContext - Failed to store auth data in sessionStorage:', e);
       }
     }
-    setIsLoading(false);
+  };
+
+  // Function to fetch user data from the /auth/me endpoint
+  const fetchUserData = async (authToken: string) => {
+    try {
+      console.log('AuthContext - Fetching user data with token');
+      // Set authorization header with token
+      const formattedToken = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
+      axiosInstance.defaults.headers.common['Authorization'] = formattedToken;
+      
+      // Fetch user data
+      const response = await axiosInstance.get('/auth/me');
+      const userData = response.data;
+      
+      console.log('AuthContext - User data fetched successfully:', userData);
+      
+      // Update state and storage using safe method
+      safeSetAuthData(userData, authToken);
+      
+      return userData;
+    } catch (error) {
+      console.error('AuthContext - Error fetching user data:', error);
+      // If token is invalid, clear it
+      safeLocalStorage.removeItem('token');
+      setToken(null);
+      setIsAuthenticated(false);
+      throw error;
+    }
+  };
+
+  // Function to validate token and get user - can be used externally
+  const validateTokenAndGetUser = async (authToken: string) => {
+    try {
+      console.log('AuthContext - Validating token and getting user');
+      // Set authorization header with token
+      const formattedToken = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
+      axiosInstance.defaults.headers.common['Authorization'] = formattedToken;
+      
+      // Fetch user data
+      const response = await axiosInstance.get('/auth/me');
+      const userData = response.data;
+      
+      console.log('AuthContext - Token validated, user data retrieved');
+      
+      // Update state and storage using safe method
+      safeSetAuthData(userData, authToken);
+      
+      return userData;
+    } catch (error) {
+      console.error('AuthContext - Token validation failed:', error);
+      throw error;
+    }
+  };
+
+  // Utility function to manually set a token (can be called from anywhere in the app)
+  const manuallySetToken = async (tokenValue: string) => {
+    console.log('AuthContext - Manually setting token:', tokenValue);
+    safeLocalStorage.setItem('token', tokenValue);
+    setToken(tokenValue);
+    setIsAuthenticated(true);
+    
+    // Also try session storage as a backup
+    try {
+      sessionStorage.setItem('token', tokenValue);
+    } catch (e) {
+      console.error('AuthContext - Failed to store token in sessionStorage:', e);
+    }
+    
+    // Validate and get user data
+    return validateTokenAndGetUser(tokenValue);
+  };
+
+  useEffect(() => {
+    // Check for stored user data and token
+    const storedUser = safeLocalStorage.getItem('user');
+    const storedToken = safeLocalStorage.getItem('token');
+    console.log('AuthContext - Initial auth check - storedUser:', storedUser ? 'exists' : 'missing');
+    console.log('AuthContext - Initial auth check - storedToken:', storedToken ? 'exists' : 'missing');
+    
+    // Also check URL for token (this can help with OAuth flows)
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (urlToken) {
+      console.log('AuthContext - Found token in URL');
+    }
+    
+    const initAuth = async () => {
+      // Priority: URL token > localStorage token > sessionStorage token
+      const tokenToUse = urlToken || storedToken || sessionStorage.getItem('token');
+      
+      if (tokenToUse) {
+        // We have a token
+        console.log('AuthContext - Found token, attempting validation');
+        
+        try {
+          // Always validate the token by making a /me request
+          await fetchUserData(tokenToUse);
+          console.log('AuthContext - Token validated successfully');
+          
+          // Remove token from URL if it exists
+          if (urlToken) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (error) {
+          console.error('AuthContext - Token validation failed, clearing authentication state');
+          // If validation fails, clear everything
+          safeLocalStorage.removeItem('token');
+          safeLocalStorage.removeItem('user');
+          try {
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+          } catch (e) {}
+          setToken(null);
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
+      
+      setIsLoading(false);
+    };
+    
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<AuthResponse> => {
@@ -56,30 +211,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await axiosInstance.post('/auth/login', { email, password });
       const data: AuthResponse = response.data;
       console.log('AuthContext - Login successful, received data:', data);
-      console.log('AuthContext - User role:', data.user.role);
-      console.log('AuthContext - User role type:', typeof data.user.role);
-      console.log('AuthContext - User role comparison:', data.user.role === 'ADMIN');
       
-      // Store user data and token in localStorage first
+      // Store user data and token in localStorage
       localStorage.setItem('user', JSON.stringify(data.user));
-      //localStorage.setItem('token', data.token);
       localStorage.setItem('token', data.accessToken);
 
-      
       // Update state after successful storage
       setUser(data.user);
       setToken(data.accessToken);
       setIsAuthenticated(true);
-      
-      // Verify the data was stored correctly
-      const storedUser = localStorage.getItem('user');
-      console.log('AuthContext - Stored user data:', storedUser);
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        console.log('AuthContext - Parsed stored user role:', parsedUser.role);
-        console.log('AuthContext - Parsed stored user role type:', typeof parsedUser.role);
-        console.log('AuthContext - Parsed stored user role comparison:', parsedUser.role === 'ADMIN');
-      }
       
       return data;
     } catch (error) {
@@ -128,6 +268,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signup,
     logout,
     isAuthenticated,
+    setToken,
+    setIsAuthenticated,
+    setUser,
+    validateTokenAndGetUser,
+    manuallySetToken
   };
 
   if (isLoading) {

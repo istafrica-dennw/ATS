@@ -202,6 +202,34 @@ public class AuthController {
             put("message", "Email verified successfully");
         }});
     }
+    
+    @GetMapping("/me")
+    @Operation(
+        summary = "Get current user",
+        description = "Retrieves information about the currently authenticated user"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "User information retrieved successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = UserDTO.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - not authenticated",
+            content = @Content
+        )
+    })
+    public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return ResponseEntity.ok(convertToDTO(user));
+    }
 
     private UserDTO convertToDTO(User user) {
         UserDTO userDTO = new UserDTO();

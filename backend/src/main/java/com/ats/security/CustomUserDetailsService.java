@@ -24,9 +24,16 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
+        // For users with no password hash (e.g., OAuth users), use a non-null placeholder
+        String passwordHash = user.getPasswordHash();
+        if (passwordHash == null || passwordHash.isEmpty()) {
+            passwordHash = "{noop}OAUTH_USER_NO_PASSWORD"; // {noop} tells Spring not to try to decode it
+            System.out.println("[INFO] User " + email + " has no password hash (likely OAuth user), using placeholder");
+        }
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
-                user.getPasswordHash(),
+                passwordHash,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
         );
     }

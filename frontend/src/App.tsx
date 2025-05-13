@@ -9,6 +9,7 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
+import DashboardPage from './pages/DashboardPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -54,6 +55,13 @@ const App: React.FC = () => {
             <PublicRoute>
               <EmailVerificationPage />
             </PublicRoute>
+          } />
+          
+          {/* Dashboard route - protected so only logged in users can access */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute allowedRoles={undefined}>
+              <DashboardPage />
+            </ProtectedRoute>
           } />
           
           {/* Admin Routes */}

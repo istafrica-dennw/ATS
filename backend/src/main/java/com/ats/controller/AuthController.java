@@ -205,8 +205,8 @@ public class AuthController {
     
     @GetMapping("/me")
     @Operation(
-        summary = "Get current user",
-        description = "Retrieves information about the currently authenticated user"
+        summary = "Get current user information",
+        description = "Retrieves detailed information about the currently authenticated user. Authorization header with Bearer token is required."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -214,13 +214,31 @@ public class AuthController {
             description = "User information retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = UserDTO.class)
+                schema = @Schema(implementation = UserDTO.class),
+                examples = @ExampleObject(
+                    value = "{\"id\": 1, \"email\": \"john.doe@example.com\", \"firstName\": \"John\", \"lastName\": \"Doe\", \"role\": \"CANDIDATE\", \"department\": \"Engineering\", \"linkedinProfileUrl\": \"https://linkedin.com/in/johndoe\", \"profilePictureUrl\": \"https://example.com/profile.jpg\", \"isActive\": true}"
+                )
             )
         ),
         @ApiResponse(
             responseCode = "401",
-            description = "Unauthorized - not authenticated",
-            content = @Content
+            description = "Unauthorized - Invalid or expired JWT token",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Invalid JWT token\"}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User not found",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 404, \"error\": \"Not Found\", \"message\": \"User not found\"}"
+                )
+            )
         )
     })
     public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {

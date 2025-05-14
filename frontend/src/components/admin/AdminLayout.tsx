@@ -9,13 +9,15 @@ import {
   ChartBarIcon,
   CogIcon,
   ArrowRightOnRectangleIcon,
+  EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: HomeIcon },
   { name: 'User Management', href: '/admin/users', icon: UsersIcon },
-  { name: 'Jobs', href: '/admin/jobs', icon: BriefcaseIcon },
-  { name: 'Interviews', href: '/admin/interviews', icon: CalendarIcon },
+  { name: 'Email Notifications', href: '/admin/emails', icon: EnvelopeIcon },
+  { name: 'Jobs', href: '/admin/jobs', icon: BriefcaseIcon, disabled: true },
+  { name: 'Interviews', href: '/admin/interviews', icon: CalendarIcon, disabled: true },
   { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon },
   { name: 'Settings', href: '/admin/settings', icon: CogIcon },
 ];
@@ -67,25 +69,32 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="flex-grow flex flex-col">
               <nav className="flex-1 px-2 pb-4 space-y-1">
                 {navigation.map((item) => {
-                  const isActive = location.pathname === item.href;
+                  const isCurrent = location.pathname === item.href;
+                  
                   return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                        isActive
-                          ? 'bg-indigo-100 text-indigo-600'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                    >
-                      <item.icon
-                        className={`mr-3 h-6 w-6 ${
-                          isActive ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-500'
-                        }`}
-                        aria-hidden="true"
-                      />
-                      {item.name}
-                    </Link>
+                    <li key={item.name}>
+                      {item.disabled ? (
+                        <span
+                          className="flex items-center px-2 py-2 text-sm font-medium text-gray-400 rounded-md cursor-not-allowed"
+                          title="Coming soon"
+                        >
+                          <item.icon className="mr-3 h-6 w-6" aria-hidden="true" />
+                          {item.name}
+                        </span>
+                      ) : (
+                        <Link
+                          to={item.href}
+                          className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                            isCurrent
+                              ? 'bg-indigo-800 text-white'
+                              : 'text-indigo-100 hover:bg-indigo-600'
+                          }`}
+                        >
+                          <item.icon className="mr-3 h-6 w-6" aria-hidden="true" />
+                          {item.name}
+                        </Link>
+                      )}
+                    </li>
                   );
                 })}
               </nav>
@@ -98,7 +107,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <main className="flex-1">
             <div className="py-6">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-                {children}
                 <Outlet />
               </div>
             </div>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, Role } from '../../types/user';
+import AddUserModal from '../../components/admin/AddUserModal';
+import { toast } from 'react-toastify';
 import {
   PencilIcon,
   TrashIcon,
@@ -15,9 +17,11 @@ const UserManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/users', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -38,6 +42,18 @@ const UserManagementPage: React.FC = () => {
     fetchUsers();
   }, [fetchUsers]);
 
+  const handleAddUserClick = () => {
+    setIsAddUserModalOpen(true);
+  };
+
+  const handleCloseAddUserModal = () => {
+    setIsAddUserModalOpen(false);
+  };
+
+  const handleUserAdded = () => {
+    fetchUsers();
+  };
+
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,8 +65,8 @@ const UserManagementPage: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
-  const handleDeleteUser = async (userId: number) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+  const handleDeleteUser = async (userId: number, userName: string) => {
+    if (window.confirm(`Are you sure you want to delete ${userName}?`)) {
       try {
         const response = await fetch(`/api/users/${userId}`, {
           method: 'DELETE',
@@ -59,10 +75,15 @@ const UserManagementPage: React.FC = () => {
           },
         });
         if (response.ok) {
+          toast.success(`User ${userName} deleted successfully`);
           setUsers(users.filter(u => u.id !== userId));
+        } else {
+          const errorData = await response.json();
+          toast.error(`Failed to delete user: ${errorData.message || 'Unknown error'}`);
         }
       } catch (error) {
         console.error('Error deleting user:', error);
+        toast.error('Network error when deleting user. Please try again.');
       }
     }
   };
@@ -98,6 +119,7 @@ const UserManagementPage: React.FC = () => {
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
+            onClick={handleAddUserClick}
           >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             Add user
@@ -206,7 +228,7 @@ const UserManagementPage: React.FC = () => {
                           <button
                             type="button"
                             className="text-red-600 hover:text-red-900"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
                           >
                             <TrashIcon className="h-5 w-5" aria-hidden="true" />
                           </button>
@@ -220,6 +242,14 @@ const UserManagementPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={handleCloseAddUserModal}
+        onUserAdded={handleUserAdded}
+        token={token!}
+      />
     </div>
   );
 };

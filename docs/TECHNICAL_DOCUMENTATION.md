@@ -5,8 +5,9 @@
 2. [Application Features](#application-features)
 3. [Database Schema](#database-schema)
 4. [API Documentation](#api-documentation)
-5. [Security](#security)
-6. [Deployment](#deployment)
+5. [Email Notification System](#email-notification-system)
+6. [Security](#security)
+7. [Deployment](#deployment)
 
 ## System Overview
 
@@ -176,6 +177,80 @@ The API documentation is available at:
 6. Delete User: `DELETE /api/users/{id}`
 7. Update User Status: `PATCH /api/users/{id}/status`
 8. Update User Role: `PATCH /api/users/{id}/role`
+
+## Email Notification System
+
+The ATS System includes a comprehensive email notification system that ensures reliable delivery of important system notifications to users.
+
+### Features
+1. **Email Templates**
+   - User registration verification emails
+   - Admin-created user account notifications
+   - Password reset requests
+   - Interview scheduling notifications
+   - Application status updates
+
+2. **Failure Handling**
+   - Failed emails are stored in the database
+   - Automatic retry mechanism
+   - Manual resend functionality for administrators
+   - Email status tracking (PENDING, SENT, FAILED)
+
+3. **Admin Dashboard**
+   - View all sent and failed emails
+   - Filter emails by status, recipient, and type
+   - Resend individual failed emails
+   - Batch resend all failed emails
+   - View email delivery statistics
+
+### Database Schema
+
+#### Email Notifications Table
+```sql
+CREATE TABLE email_notifications (
+    id BIGSERIAL PRIMARY KEY,
+    recipient_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    template_name VARCHAR(100) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    error_message TEXT,
+    retry_count INTEGER DEFAULT 0,
+    last_retry_at TIMESTAMP,
+    related_user_id BIGINT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Email Templates
+1. **User Registration Verification**
+   - Sent when a user self-registers
+   - Contains verification link with token
+   - Expires after 24 hours
+
+2. **Admin-Created Account Notification**
+   - Sent when an admin creates a new user account
+   - Contains verification link and temporary password
+   - Prompts user to update password on first login
+
+3. **Password Reset**
+   - Sent when a user requests a password reset
+   - Contains reset link with token
+   - Expires after 1 hour
+
+### API Endpoints
+1. `GET /api/admin/emails` - Get all email notifications (with filtering)
+2. `GET /api/admin/emails/{id}` - Get specific email notification
+3. `POST /api/admin/emails/{id}/resend` - Resend a specific email
+4. `POST /api/admin/emails/resend-all-failed` - Resend all failed emails
+
+### Email Flow
+1. Email notification is created and saved to database with PENDING status
+2. System attempts to send the email
+3. If successful, status is updated to SENT
+4. If failed, status is updated to FAILED with error message
+5. Failed emails can be manually resent by administrators
 
 ## Security
 

@@ -6,6 +6,7 @@ import SignupPage from './pages/SignupPage';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
+import EmailManagementPage from './pages/admin/EmailManagementPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
@@ -39,7 +40,18 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
-        <ToastContainer position="top-right" autoClose={5000} />
+        <ToastContainer 
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
         <Routes>
           {/* Public routes with redirection for authenticated users */}
           <Route path="/login" element={
@@ -78,6 +90,7 @@ const App: React.FC = () => {
           >
             <Route index element={<AdminDashboardPage />} />
             <Route path="users" element={<UserManagementPage />} />
+            <Route path="emails" element={<EmailManagementPage />} />
           </Route>
 
           {/* Recruiter Routes */}
@@ -104,8 +117,8 @@ const App: React.FC = () => {
             <Route index element={<CandidateDashboardPage />} />
           </Route>
 
-          {/* Default route */}
-          <Route path="/" element={<Navigate to="/login" />} />
+          {/* Default redirect */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
     </AuthProvider>

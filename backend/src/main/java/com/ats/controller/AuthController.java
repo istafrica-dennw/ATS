@@ -9,6 +9,7 @@ import com.ats.repository.UserRepository;
 import com.ats.security.JwtTokenProvider;
 import com.ats.exception.ResourceAlreadyExistsException;
 import com.ats.service.EmailService;
+import com.ats.util.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -29,7 +30,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -83,12 +83,9 @@ public class AuthController {
         user.setRole(Role.CANDIDATE);
         user.setIsActive(true);
         user.setIsEmailPasswordEnabled(true);
-        user.setIsEmailVerified(false);
         
-        // Generate verification token
-        String verificationToken = UUID.randomUUID().toString();
-        user.setEmailVerificationToken(verificationToken);
-        user.setEmailVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+        // Generate verification token using TokenUtil
+        String verificationToken = TokenUtil.generateVerificationToken(user);
 
         user = userRepository.save(user);
 

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -21,6 +22,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     public OAuth2AuthenticationSuccessHandler(
             JwtTokenProvider tokenProvider,
@@ -52,7 +56,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         System.out.println("[DEBUG] Generated JWT token");
 
         // Redirect to frontend with token
-        String redirectUrl = "http://localhost:3001/oauth2/callback?token=" + jwt;
+        String redirectUrl = frontendUrl + "/oauth2/callback?token=" + jwt;
         System.out.println("[DEBUG] Redirecting to: " + redirectUrl);
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }

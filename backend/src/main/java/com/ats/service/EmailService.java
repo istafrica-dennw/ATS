@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
@@ -15,9 +16,12 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
     public void sendVerificationEmail(String to, String token) throws MessagingException {
         Context context = new Context();
-        context.setVariable("verificationLink", "http://localhost:3001/verify-email?token=" + token);
+        context.setVariable("verificationLink", frontendUrl + "/verify-email?token=" + token);
 
         String emailContent = templateEngine.process("verification-email", context);
 

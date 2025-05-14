@@ -6,6 +6,8 @@ import com.ats.security.CustomOAuth2UserService;
 import com.ats.security.CustomAuthorizationRequestResolver;
 import com.ats.security.CustomOAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -91,6 +93,9 @@ public class SecurityConfig {
     private final DataSource dataSource;
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
+
+    @Value("${app.frontend.cors.allowed-origins}")
+    private String corsAllowedOrigins;
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
@@ -219,7 +224,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3001"));
+        
+        // Check if the configuration is a wildcard or specific origins
+        if ("*".equals(corsAllowedOrigins)) {
+            configuration.addAllowedOriginPattern("*");
+        } else {
+            String[] origins = corsAllowedOrigins.split(",");
+            for (String origin : origins) {
+                configuration.addAllowedOrigin(origin.trim());
+            }
+        }
+        
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With",
             "Access-Control-Request-Method", "Access-Control-Request-Headers"));

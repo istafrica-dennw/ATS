@@ -4,6 +4,7 @@ import com.ats.model.User;
 import com.ats.model.Role;
 import com.ats.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -22,7 +23,9 @@ import java.util.Collections;
 
 @Component
 public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-    private static final String FRONTEND_URL = "http://localhost:3001";
+    
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
     
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
@@ -66,7 +69,7 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                     System.out.println("[DEBUG] Generated JWT for LinkedIn user with proper role");
                     
                     // Redirect to frontend with token
-                    String targetUrl = FRONTEND_URL + "/dashboard?token=" + jwt;
+                    String targetUrl = frontendUrl + "/dashboard?token=" + jwt;
                     System.out.println("[DEBUG] Redirecting to frontend with proper token: " + targetUrl);
                     getRedirectStrategy().sendRedirect(request, response, targetUrl);
                     return;
@@ -79,7 +82,7 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
         System.out.println("[DEBUG] Generated JWT token using standard method: " + jwt);
         
         // Always redirect to frontend dashboard with the JWT token
-        String targetUrl = FRONTEND_URL + "/dashboard?token=" + jwt;
+        String targetUrl = frontendUrl + "/dashboard?token=" + jwt;
         System.out.println("[DEBUG] Redirecting to frontend with token: " + targetUrl);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }

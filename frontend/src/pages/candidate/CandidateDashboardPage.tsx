@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import {
   BriefcaseIcon,
   DocumentTextIcon,
@@ -7,6 +8,7 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 
 interface Job {
@@ -18,7 +20,8 @@ interface Job {
 }
 
 const CandidateDashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<Job[]>([
     {
       id: 1,
@@ -80,8 +83,40 @@ const CandidateDashboardPage: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Top Navigation Bar */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <span className="text-xl font-bold text-indigo-600">
+                  ATS System
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <span className="text-gray-700 mr-4">
+                Welcome, {user?.firstName} {user?.lastName}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
@@ -105,7 +140,6 @@ const CandidateDashboardPage: React.FC = () => {
           </div>
 
           <div className="mb-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-3">Welcome, {user?.firstName}!</h2>
             <p className="text-gray-600">
               Here's a summary of your job applications and upcoming interviews.
             </p>

@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Role } from '../../types/user';
 import LinkedInLoginButton from './LinkedInLoginButton';
+import { toast } from 'react-toastify';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -13,6 +15,28 @@ const LoginForm: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for error query parameters on component mount or URL change
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const errorParam = queryParams.get('error');
+    
+    if (errorParam) {
+      // Map error codes to user-friendly messages
+      const errorMessages: Record<string, string> = {
+        'account_deactivated': 'This account has been deactivated. Please contact an administrator.',
+        'invalid_credentials': 'Invalid email or password.',
+        'email_not_verified': 'Please verify your email before logging in.'
+      };
+      
+      const errorMessage = errorMessages[errorParam] || 'An error occurred during login.';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      
+      // Remove the error parameter from URL without reloading the page
+      navigate('/login', { replace: true });
+    }
+  }, [location, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

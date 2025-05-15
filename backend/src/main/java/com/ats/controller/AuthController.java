@@ -256,6 +256,10 @@ public class AuthController {
         userDTO.setDepartment(user.getDepartment());
         userDTO.setLinkedinProfileUrl(user.getLinkedinProfileUrl());
         userDTO.setProfilePictureUrl(user.getProfilePictureUrl());
+        userDTO.setIsActive(user.getIsActive());
+        userDTO.setIsEmailVerified(user.getIsEmailVerified());
+        userDTO.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());
+        userDTO.setLastLogin(user.getLastLogin());
         return userDTO;
     }
 } 

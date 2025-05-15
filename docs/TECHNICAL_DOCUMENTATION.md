@@ -26,9 +26,11 @@ The Applicant Tracking System (ATS) is a comprehensive solution designed to stre
 ### 1. User Management
 - User registration and authentication
 - Role-based access control (Admin, Recruiter, Interviewer, Candidate)
-- Profile management
+- Comprehensive profile management with extended user attributes
 - LinkedIn integration
 - User preferences and settings
+- Default admin account system
+- User profile deactivation/reactivation
 
 ### 2. Job Management
 - Create and manage job postings
@@ -78,7 +80,12 @@ CREATE TABLE users (
     is_active BOOLEAN DEFAULT true,
     is_email_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    birthdate DATE,
+    address TEXT,
+    phone_number VARCHAR(20),
+    bio TEXT,
+    preferred_contact_method VARCHAR(50)
 );
 ```
 
@@ -270,6 +277,25 @@ The ATS System includes a comprehensive email notification system that ensures r
 - Rate limiting
 - Session management
 
+### Default Admin Account System
+
+The ATS system implements a default admin account mechanism for system initialization and recovery:
+
+1. **Default Admin Creation**:
+   - A system administrator account (admin@ats.istafrica) is automatically created on first application startup if no admin exists
+   - Credentials are configurable via application properties
+   - This account has full administrative privileges
+
+2. **Dynamic Account Management**:
+   - When other admin accounts are created, the default admin is automatically disabled
+   - If all other admin accounts are removed, the default admin can be reactivated
+   - This prevents system lockout scenarios while maintaining security
+
+3. **Configuration Properties**:
+   - Default admin email: `app.admin.email=admin@ats.istafrica`
+   - Default admin password: `app.admin.password=admin@atsafrica`
+   - These can be overridden in the application.properties file
+
 ### Role-Based Access Control
 
 The ATS system implements role-based access control with automated redirection:
@@ -290,6 +316,38 @@ The ATS system implements role-based access control with automated redirection:
    - Access to application tracking
    - Profile management
    - Redirected to Candidate Dashboard on login
+
+## User Profile Features
+
+The ATS system provides comprehensive user profile management capabilities:
+
+1. **Extended User Attributes**:
+   - Standard fields: First name, last name, email
+   - Extended fields: Birthdate, address, phone number, biography, profile picture
+   - Contact preferences and notification settings
+
+2. **Profile Management Interface**:
+   - User profile dropdown in header navigation
+   - Dedicated profile settings page
+   - Form-based profile editing with validation
+   - Profile picture upload and preview
+
+3. **Account Management**:
+   - Account deactivation with confirmation
+   - Password change functionality
+   - Email verification status
+   - Authentication method preferences
+
+4. **Components**:
+   - UserProfileDropdown - Header navigation component
+   - ProfilePage - Public profile view
+   - ProfileSettingsPage - Private settings interface
+   - Custom form components with validation
+
+5. **Routing**:
+   - `/profile` - User's own profile view
+   - `/profile/settings` - Profile settings page
+   - `/profile/:id` - View specific user profile (with proper authorization)
 
 ## Deployment
 

@@ -222,8 +222,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(true);
       
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('AuthContext - Login error:', error);
+      // Don't transform the error - pass it as is to allow components to extract data
       throw error;
     }
   };

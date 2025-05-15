@@ -25,7 +25,7 @@ The Applicant Tracking System (ATS) is a comprehensive solution designed to stre
 
 ### 1. User Management
 - User registration and authentication
-- Role-based access control (Admin, Recruiter, Interviewer)
+- Role-based access control (Admin, Recruiter, Interviewer, Candidate)
 - Profile management
 - LinkedIn integration
 - User preferences and settings
@@ -73,10 +73,10 @@ CREATE TABLE users (
     linkedin_id VARCHAR(255) UNIQUE,
     linkedin_profile_url VARCHAR(255),
     profile_picture_url VARCHAR(255),
-    authentication_method VARCHAR(50),
     is_email_password_enabled BOOLEAN,
     last_login TIMESTAMP,
     is_active BOOLEAN DEFAULT true,
+    is_email_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -162,6 +162,24 @@ CREATE TABLE evaluations (
 );
 ```
 
+### Email Notifications Table
+```sql
+CREATE TABLE email_notifications (
+    id BIGSERIAL PRIMARY KEY,
+    recipient_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    template_name VARCHAR(100) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    error_message TEXT,
+    retry_count INTEGER DEFAULT 0,
+    last_retry_at TIMESTAMP,
+    related_user_id BIGINT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ## API Documentation
 
 The API documentation is available at:
@@ -177,6 +195,11 @@ The API documentation is available at:
 6. Delete User: `DELETE /api/users/{id}`
 7. Update User Status: `PATCH /api/users/{id}/status`
 8. Update User Role: `PATCH /api/users/{id}/role`
+
+### Authentication APIs
+1. Login: `POST /api/auth/login`
+2. LinkedIn Login: `GET /oauth2/authorization/linkedin`
+3. Get Current User: `GET /api/auth/me`
 
 ## Email Notification System
 
@@ -202,26 +225,6 @@ The ATS System includes a comprehensive email notification system that ensures r
    - Resend individual failed emails
    - Batch resend all failed emails
    - View email delivery statistics
-
-### Database Schema
-
-#### Email Notifications Table
-```sql
-CREATE TABLE email_notifications (
-    id BIGSERIAL PRIMARY KEY,
-    recipient_email VARCHAR(255) NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    body TEXT NOT NULL,
-    template_name VARCHAR(100) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-    error_message TEXT,
-    retry_count INTEGER DEFAULT 0,
-    last_retry_at TIMESTAMP,
-    related_user_id BIGINT REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
 
 ### Email Templates
 1. **User Registration Verification**
@@ -267,6 +270,27 @@ CREATE TABLE email_notifications (
 - Rate limiting
 - Session management
 
+### Role-Based Access Control
+
+The ATS system implements role-based access control with automated redirection:
+
+1. **Admin**: 
+   - Access to administration features
+   - User management
+   - System settings
+   - Redirected to Admin Dashboard on login
+
+2. **Recruiter/Hiring Manager**: 
+   - Access to recruitment functions
+   - Job management
+   - Candidate evaluation
+   - Redirected to Recruiter Dashboard on login
+
+3. **Candidate**: 
+   - Access to application tracking
+   - Profile management
+   - Redirected to Candidate Dashboard on login
+
 ## Deployment
 
 ### Docker Configuration
@@ -284,6 +308,10 @@ Required environment variables:
 - `JWT_SECRET`
 - `SPRING_SECURITY_USER_NAME`
 - `REACT_APP_API_URL`
+- `LINKEDIN_CLIENT_ID`
+- `LINKEDIN_CLIENT_SECRET`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
 
 ### Health Checks
 - Database connection health check

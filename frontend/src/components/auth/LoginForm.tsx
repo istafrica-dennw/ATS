@@ -65,9 +65,12 @@ const LoginForm: React.FC = () => {
             break;
         }
       }, 100);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
-      if (err instanceof Error) {
+      // Extract error message from response if available
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else if (err instanceof Error) {
         setError(err.message);
       } else {
         setError('An unexpected error occurred');

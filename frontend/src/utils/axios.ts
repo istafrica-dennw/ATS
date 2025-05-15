@@ -53,6 +53,7 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('Axios - Response error:', error.response?.status, error.config?.url);
+    console.error('Axios - Error data:', error.response?.data);
     
     if (error.response?.status === 401 && !error.response?.config?.url?.includes('/login')) {
       console.log('Axios - 401 Unauthorized, clearing auth data');
@@ -67,6 +68,8 @@ axiosInstance.interceptors.response.use(
       // Redirect to login
       window.location.href = '/login';
     }
+
+    // Ensure the original error is passed through with response data intact
     return Promise.reject(error);
   }
 );

@@ -56,6 +56,13 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                 User user = saveOrUpdateUser(oidcUser, oauthToken.getAuthorizedClientRegistrationId());
                 
                 if (user != null) {
+                    // Check if user account is active
+                    if (user.getIsActive() == null || !user.getIsActive()) {
+                        System.out.println("[DEBUG] User account is deactivated: " + user.getEmail());
+                        response.sendRedirect(frontendUrl + "/login?error=account_deactivated");
+                        return;
+                    }
+                    
                     // Explicitly set the proper role for the JWT token
                     String email = oidcUser.getEmail();
                     // Ensure we're using ROLE_CANDIDATE format

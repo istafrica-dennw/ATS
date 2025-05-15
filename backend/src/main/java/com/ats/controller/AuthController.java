@@ -146,6 +146,10 @@ public class AuthController {
         if (!user.getIsEmailVerified()) {
             throw new RuntimeException("Please verify your email before logging in");
         }
+        
+        if (user.getIsActive() == null || !user.getIsActive()) {
+            throw new RuntimeException("This account has been deactivated. Please contact an administrator.");
+        }
 
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())

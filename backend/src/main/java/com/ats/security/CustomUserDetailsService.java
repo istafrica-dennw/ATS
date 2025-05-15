@@ -24,6 +24,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
+        // Check if the user account is active
+        if (user.getIsActive() == null || !user.getIsActive()) {
+            throw new UsernameNotFoundException("Account is deactivated. Please contact an administrator.");
+        }
+
         // For users with no password hash (e.g., OAuth users), use a non-null placeholder
         String passwordHash = user.getPasswordHash();
         if (passwordHash == null || passwordHash.isEmpty()) {

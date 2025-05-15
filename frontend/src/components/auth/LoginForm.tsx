@@ -28,52 +28,38 @@ const LoginForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
+    setError(null);
 
     try {
       const response = await login(formData.email, formData.password);
-      console.log('Login response:', response);
       
-      if (!response.user || !response.accessToken) {
-        throw new Error('Invalid response from server');
-      }
-
-      // Normalize the role by removing 'ROLE_' prefix and converting to uppercase
-      const normalizedRole = response.user.role.replace('ROLE_', '').toUpperCase();
-      console.log('Normalized role:', normalizedRole);
-
-      // Add a small delay to ensure state updates before navigation
-      setTimeout(() => {
-        switch (normalizedRole) {
-          case Role.ADMIN:
-            console.log('Navigating to admin dashboard');
-            navigate('/admin');
-            break;
-          case Role.INTERVIEWER:
-          case Role.HIRING_MANAGER:
-            console.log('Navigating to recruiter dashboard');
-            navigate('/recruiter');
-            break;
-          case Role.CANDIDATE:
-            console.log('Navigating to candidate dashboard');
-            navigate('/candidate');
-            break;
-          default:
-            console.error('Unknown role:', normalizedRole);
-            setError('Invalid user role');
-            break;
-        }
-      }, 100);
-    } catch (err: any) {
-      console.error('Login error:', err);
-      // Extract error message from response if available
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
+      // Redirect based on role
+      if (response.user.role === Role.ADMIN) {
+        navigate('/admin/dashboard');
+      } else if (response.user.role === Role.CANDIDATE) {
+        navigate('/candidate/dashboard');
       } else {
-        setError('An unexpected error occurred');
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      if (error.response) {
+        // Handle specific error messages from the server
+        if (error.response.data?.message) {
+          if (error.response.data.message.includes('deactivated')) {
+            setError('This account has been deactivated. Please contact an administrator.');
+          } else if (error.response.data.message.includes('verify your email')) {
+            setError('Please verify your email before logging in.');
+          } else {
+            setError(error.response.data.message);
+          }
+        } else {
+          setError('Invalid email or password');
+        }
+      } else {
+        setError('Failed to login. Please try again later.');
       }
     } finally {
       setIsLoading(false);

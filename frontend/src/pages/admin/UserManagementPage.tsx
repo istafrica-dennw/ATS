@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { User, Role } from '../../types/user';
 import AddUserModal from '../../components/admin/AddUserModal';
+import UserDetailsModal from '../../components/admin/UserDetailsModal';
 import { toast } from 'react-toastify';
 import {
   PencilIcon,
@@ -18,6 +19,8 @@ const UserManagementPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isUserDetailsModalOpen, setIsUserDetailsModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -51,6 +54,20 @@ const UserManagementPage: React.FC = () => {
   };
 
   const handleUserAdded = () => {
+    fetchUsers();
+  };
+
+  const handleViewUser = (userId: number) => {
+    setSelectedUserId(userId);
+    setIsUserDetailsModalOpen(true);
+  };
+
+  const handleCloseUserDetailsModal = () => {
+    setIsUserDetailsModalOpen(false);
+    setSelectedUserId(null);
+  };
+
+  const handleUserUpdated = () => {
     fetchUsers();
   };
 
@@ -220,12 +237,14 @@ const UserManagementPage: React.FC = () => {
                           <button
                             type="button"
                             className="text-indigo-600 hover:text-indigo-900"
+                            onClick={() => handleViewUser(user.id)}
                           >
                             <EyeIcon className="h-5 w-5" aria-hidden="true" />
                           </button>
                           <button
                             type="button"
                             className="text-indigo-600 hover:text-indigo-900"
+                            onClick={() => handleViewUser(user.id)}
                           >
                             <PencilIcon className="h-5 w-5" aria-hidden="true" />
                           </button>
@@ -253,6 +272,15 @@ const UserManagementPage: React.FC = () => {
         onClose={handleCloseAddUserModal}
         onUserAdded={handleUserAdded}
         token={token!}
+      />
+
+      {/* User Details Modal */}
+      <UserDetailsModal
+        isOpen={isUserDetailsModalOpen}
+        onClose={handleCloseUserDetailsModal}
+        userId={selectedUserId}
+        token={token!}
+        onUserUpdated={handleUserUpdated}
       />
     </div>
   );

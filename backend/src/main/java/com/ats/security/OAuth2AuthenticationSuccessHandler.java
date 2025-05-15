@@ -52,6 +52,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .orElseThrow(() -> new RuntimeException("User not found"));
         System.out.println("[DEBUG] Found user: " + user.getEmail());
 
+        // Check if the user account is active
+        if (user.getIsActive() == null || !user.getIsActive()) {
+            System.out.println("[DEBUG] User account is deactivated: " + user.getEmail());
+            response.sendRedirect(frontendUrl + "/login?error=account_deactivated");
+            return;
+        }
+
         String jwt = tokenProvider.generateToken(authentication);
         System.out.println("[DEBUG] Generated JWT token");
 

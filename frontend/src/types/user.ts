@@ -29,6 +29,7 @@ export interface User {
   isEmailPasswordEnabled?: boolean;
   lastLogin?: Date;
   isActive?: boolean;
+  isEmailVerified?: boolean;
 }
 
 export interface UserFormData extends Omit<User, 'id' | 'lastLogin'> {

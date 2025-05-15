@@ -43,6 +43,8 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
       - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+    volumes:
+      - ./uploads:/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,4 +79,5 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  uploads: 

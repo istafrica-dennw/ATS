@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { User, Role, UserFormData } from '../../types/user';
 import { toast } from 'react-toastify';
 
@@ -22,6 +22,8 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserFormData | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -70,6 +72,54 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
       ...userData,
       [name]: checked
     });
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !userData) return;
+    
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    setUploadingImage(true);
+    
+    try {
+      const response = await fetch('/api/files/upload/profile-picture', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Update the user data with the new profile picture URL
+        setUserData({
+          ...userData,
+          profilePictureUrl: data.url,
+        });
+        
+        toast.success('Profile picture uploaded successfully');
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Failed to upload profile picture');
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      toast.error('Network error when uploading profile picture');
+    } finally {
+      setUploadingImage(false);
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -163,6 +213,40 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             </div>
           ) : userData ? (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Profile Picture */}
+              <div className="flex justify-center">
+                <div className="relative">
+                  {userData.profilePictureUrl ? (
+                    <img
+                      src={userData.profilePictureUrl}
+                      alt={`${userData.firstName} ${userData.lastName}`}
+                      className="h-32 w-32 rounded-full object-cover border-4 border-white shadow"
+                    />
+                  ) : (
+                    <div className="h-32 w-32 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-800 text-3xl font-medium border-4 border-white shadow">
+                      {userData.firstName?.[0]}{userData.lastName?.[0]}
+                    </div>
+                  )}
+                  <div 
+                    className="absolute bottom-0 right-0 h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center cursor-pointer"
+                    onClick={handleImageClick}
+                  >
+                    {uploadingImage ? (
+                      <div className="animate-spin h-6 w-6 border-2 border-white rounded-full border-t-transparent"></div>
+                    ) : (
+                      <CameraIcon className="h-6 w-6 text-white" />
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                 <div className="sm:col-span-3">
                   <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">

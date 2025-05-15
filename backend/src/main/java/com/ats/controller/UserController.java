@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -164,38 +165,53 @@ public class UserController {
         description = "Permanently deletes a user from the system. Admin only."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User deleted successfully"),
+        @ApiResponse(responseCode = "204", description = "User deleted successfully"),
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<Void> deleteUser(
             @Parameter(description = "User ID", example = "1")
             @PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @Operation(
+        summary = "Deactivate user account",
+        description = "Deactivates a user account with reason. Users can deactivate their own account or admins can deactivate any account."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Account deactivated successfully"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<UserDTO> deactivateAccount(
+            @Parameter(description = "User ID", example = "1")
+            @PathVariable Long id,
+            @Parameter(description = "Deactivation reason", required = true)
+            @RequestBody Map<String, String> requestBody) {
+        String reason = requestBody.get("reason");
+        if (reason == null || reason.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(userService.deactivateAccount(id, reason));
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Update user status",
-        description = "Updates the active status of a user. Admin only."
+        description = "Updates a user's active status. Admin only."
     )
     @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Status updated successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = UserDTO.class)
-            )
-        ),
+        @ApiResponse(responseCode = "200", description = "User status updated successfully"),
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<UserDTO> updateUserStatus(
             @Parameter(description = "User ID", example = "1")
             @PathVariable Long id,
-            @Parameter(description = "New status", example = "true")
-            @RequestParam boolean isActive) {
+            @Parameter(description = "Active status", example = "true")
+            @RequestParam Boolean isActive) {
         return ResponseEntity.ok(userService.updateUserStatus(id, isActive));
     }
 

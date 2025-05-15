@@ -15,4 +15,5 @@ public interface UserService {
     void deleteUser(Long id);
     UserDTO updateUserStatus(Long id, boolean isActive);
     UserDTO updateUserRole(Long id, Role role);
+    UserDTO deactivateAccount(Long id, String reason);
 } 

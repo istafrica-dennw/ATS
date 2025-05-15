@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -46,24 +47,52 @@ public class UserDTO {
     @Schema(description = "User's profile picture URL", example = "https://example.com/profile.jpg")
     private String profilePictureUrl;
 
+    @Schema(description = "User's birth date", example = "1990-01-15")
+    private LocalDate birthDate;
+    
+    @Schema(description = "User's phone number", example = "+1 (555) 123-4567")
+    private String phoneNumber;
+    
+    @Schema(description = "User's address line 1", example = "123 Main Street")
+    private String addressLine1;
+    
+    @Schema(description = "User's address line 2", example = "Apt 4B")
+    private String addressLine2;
+    
+    @Schema(description = "User's city", example = "New York")
+    private String city;
+    
+    @Schema(description = "User's state/province", example = "NY")
+    private String state;
+    
+    @Schema(description = "User's country", example = "United States")
+    private String country;
+    
+    @Schema(description = "User's postal code", example = "10001")
+    private String postalCode;
+    
+    @Schema(description = "User's biography", example = "Full-stack developer with 5 years of experience...")
+    private String bio;
+    
+    @Schema(description = "Reason for deactivating account (if applicable)", example = "Moving to a different platform")
+    private String deactivationReason;
+    
+    @Schema(description = "Date when the account was deactivated (if applicable)")
+    private LocalDateTime deactivationDate;
+
     @Schema(description = "Whether email/password authentication is enabled for this user", example = "true")
     private Boolean isEmailPasswordEnabled;
-
-    @Schema(description = "User's last login timestamp", example = "2023-05-20T15:30:45")
+    
+    @Schema(description = "User's last login date and time")
     private LocalDateTime lastLogin;
-
+    
     @Schema(description = "Whether the user account is active", example = "true")
     private Boolean isActive;
     
     @Schema(description = "Whether the user's email has been verified", example = "true")
     private Boolean isEmailVerified;
     
-    @Schema(description = "Creation timestamp of the user account", example = "2023-05-15T10:20:30")
-    private LocalDateTime createdAt;
-    
-    @Schema(description = "Last update timestamp of the user account", example = "2023-05-18T14:25:10")
-    private LocalDateTime updatedAt;
-
-    @Schema(description = "Flag to indicate if a verification email should be sent", example = "true")
+    @Schema(description = "Whether to send a verification email (write-only)", example = "true", accessMode = Schema.AccessMode.WRITE_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Boolean sendVerificationEmail;
 } 

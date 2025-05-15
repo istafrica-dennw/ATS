@@ -10,6 +10,7 @@ import {
   XCircleIcon,
   ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
+import UserProfileDropdown from '../../components/common/UserProfileDropdown';
 
 interface Job {
   id: number;
@@ -105,13 +106,7 @@ const CandidateDashboardPage: React.FC = () => {
               <span className="text-gray-700 mr-4">
                 Welcome, {user?.firstName} {user?.lastName}
               </span>
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
-                Logout
-              </button>
+              <UserProfileDropdown />
             </div>
           </div>
         </div>

@@ -11,6 +11,8 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
 import DashboardPage from './pages/DashboardPage';
+import ProfilePage from './pages/profile/ProfilePage';
+import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
 import CandidateDashboardPage from './pages/candidate/CandidateDashboardPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -77,6 +79,19 @@ const App: React.FC = () => {
             </ProtectedRoute>
           } />
           
+          {/* Profile Routes - accessible to all authenticated users */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute allowedRoles={undefined}>
+                <Outlet />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<ProfilePage />} />
+            <Route path="settings" element={<ProfileSettingsPage />} />
+          </Route>
+          
           {/* Admin Routes */}
           <Route
             path="/admin"
@@ -98,27 +113,26 @@ const App: React.FC = () => {
             path="/recruiter"
             element={
               <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER]}>
-                <Outlet />
+                <div>
+                  <h1>Recruiter Dashboard (Coming Soon)</h1>
+                </div>
               </ProtectedRoute>
             }
-          >
-            <Route index element={<div>Recruiter Dashboard</div>} />
-          </Route>
+          />
 
           {/* Candidate Routes */}
           <Route
             path="/candidate"
             element={
               <ProtectedRoute allowedRoles={[Role.CANDIDATE]}>
-                <Outlet />
+                <CandidateDashboardPage />
               </ProtectedRoute>
             }
-          >
-            <Route index element={<CandidateDashboardPage />} />
-          </Route>
+          />
 
-          {/* Default redirect */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Default route */}
+          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>
     </AuthProvider>

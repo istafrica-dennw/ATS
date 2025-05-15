@@ -12,6 +12,8 @@ import com.ats.util.TokenUtil;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -90,43 +92,52 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserDTO updateUser(Long id, UserDTO userDTO) {
-        User existingUser = userRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        if (!existingUser.getEmail().equals(userDTO.getEmail()) && 
-            userRepository.existsByEmail(userDTO.getEmail())) {
-            throw new ResourceAlreadyExistsException("Email already exists");
+        // Do not allow changing email address
+        if (!user.getEmail().equals(userDTO.getEmail())) {
+            throw new IllegalArgumentException("Email address cannot be changed");
         }
 
-        if (userDTO.getLinkedinId() != null && 
-            !userDTO.getLinkedinId().equals(existingUser.getLinkedinId()) && 
-            userRepository.existsByLinkedinId(userDTO.getLinkedinId())) {
-            throw new ResourceAlreadyExistsException("LinkedIn ID already exists");
-        }
-
-        existingUser.setEmail(userDTO.getEmail());
+        // Update basic information
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
         
+        // Update address information
+        user.setBirthDate(userDTO.getBirthDate());
+        user.setPhoneNumber(userDTO.getPhoneNumber());
+        user.setAddressLine1(userDTO.getAddressLine1());
+        user.setAddressLine2(userDTO.getAddressLine2());
+        user.setCity(userDTO.getCity());
+        user.setState(userDTO.getState());
+        user.setCountry(userDTO.getCountry());
+        user.setPostalCode(userDTO.getPostalCode());
+        user.setBio(userDTO.getBio());
+        
+        // Only allow admins to change these fields
+        if (isCurrentUserAdmin()) {
+            user.setDepartment(userDTO.getDepartment());
+            user.setRole(userDTO.getRole());
+            user.setIsActive(userDTO.getIsActive() != null ? userDTO.getIsActive() : user.getIsActive());
+        }
+
+        // Update LinkedIn information if provided
+        if (userDTO.getLinkedinProfileUrl() != null) {
+            user.setLinkedinProfileUrl(userDTO.getLinkedinProfileUrl());
+        }
+        
+        // Update profile picture if provided
+        if (userDTO.getProfilePictureUrl() != null) {
+            user.setProfilePictureUrl(userDTO.getProfilePictureUrl());
+        }
+
+        // Handle password update if provided
         if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
-            existingUser.setPasswordHash(passwordEncoder.encode(userDTO.getPassword()));
+            user.setPasswordHash(passwordEncoder.encode(userDTO.getPassword()));
         }
-        
-        existingUser.setFirstName(userDTO.getFirstName());
-        existingUser.setLastName(userDTO.getLastName());
-        
-        if (userDTO.getRole() != null) {
-            existingUser.setRole(userDTO.getRole());
-        }
-        
-        existingUser.setDepartment(userDTO.getDepartment());
-        existingUser.setLinkedinProfileUrl(userDTO.getLinkedinProfileUrl());
-        existingUser.setProfilePictureUrl(userDTO.getProfilePictureUrl());
-        
-        if (userDTO.getIsActive() != null) {
-            existingUser.setIsActive(userDTO.getIsActive());
-        }
-        
-        User updatedUser = userRepository.save(existingUser);
-        
+
+        User updatedUser = userRepository.save(user);
         return convertToDTO(updatedUser);
     }
 
@@ -183,6 +194,20 @@ public class UserServiceImpl implements UserService {
         return convertToDTO(updatedUser);
     }
 
+    @Override
+    @Transactional
+    public UserDTO deactivateAccount(Long id, String reason) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        user.setIsActive(false);
+        user.setDeactivationReason(reason);
+        user.setDeactivationDate(LocalDateTime.now());
+        
+        User deactivatedUser = userRepository.save(user);
+        return convertToDTO(deactivatedUser);
+    }
+
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
@@ -198,8 +223,30 @@ public class UserServiceImpl implements UserService {
         dto.setLastLogin(user.getLastLogin());
         dto.setIsActive(user.getIsActive());
         dto.setIsEmailVerified(user.getIsEmailVerified());
-        dto.setCreatedAt(user.getCreatedAt());
-        dto.setUpdatedAt(user.getUpdatedAt());
+        
+        // Set new profile fields
+        dto.setBirthDate(user.getBirthDate());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setAddressLine1(user.getAddressLine1());
+        dto.setAddressLine2(user.getAddressLine2());
+        dto.setCity(user.getCity());
+        dto.setState(user.getState());
+        dto.setCountry(user.getCountry());
+        dto.setPostalCode(user.getPostalCode());
+        dto.setBio(user.getBio());
+        dto.setDeactivationReason(user.getDeactivationReason());
+        dto.setDeactivationDate(user.getDeactivationDate());
+        
         return dto;
+    }
+    
+    /**
+     * Check if the current user is an admin
+     */
+    private boolean isCurrentUserAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && 
+               authentication.getAuthorities().stream()
+                   .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 } 

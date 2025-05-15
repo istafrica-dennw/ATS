@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
@@ -41,6 +42,39 @@ public class User extends BaseEntity {
 
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
+
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+    
+    @Column(name = "phone_number")
+    private String phoneNumber;
+    
+    @Column(name = "address_line1")
+    private String addressLine1;
+    
+    @Column(name = "address_line2")
+    private String addressLine2;
+    
+    @Column(name = "city")
+    private String city;
+    
+    @Column(name = "state")
+    private String state;
+    
+    @Column(name = "country")
+    private String country;
+    
+    @Column(name = "postal_code")
+    private String postalCode;
+    
+    @Column(name = "bio", columnDefinition = "TEXT")
+    private String bio;
+    
+    @Column(name = "deactivation_reason", columnDefinition = "TEXT")
+    private String deactivationReason;
+    
+    @Column(name = "deactivation_date")
+    private LocalDateTime deactivationDate;
 
     @Column(name = "is_email_password_enabled")
     private Boolean isEmailPasswordEnabled;

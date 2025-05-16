@@ -542,7 +542,8 @@ public class AuthController {
     @PostMapping("/forgot-password")
     @Operation(
         summary = "Request password reset",
-        description = "Initiates a password reset for the provided email address. If the email exists in the system, a password reset link will be sent to that address."
+        description = "Initiates a password reset for the provided email address. If the email exists in the system, a password reset link will be sent to that address. This endpoint can be used by both email/password users and social login users. For social login users, this will enable email/password authentication.",
+        tags = {"Authentication & Profile", "Security"}
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -550,6 +551,10 @@ public class AuthController {
             description = "Request processed successfully",
             content = @Content(
                 mediaType = "application/json",
+                schema = @Schema(
+                    type = "object",
+                    example = "{\"message\": \"If the email exists in our system, a password reset link has been sent.\"}"
+                ),
                 examples = @ExampleObject(
                     value = "{\"message\": \"If the email exists in our system, a password reset link has been sent.\"}"
                 )
@@ -557,7 +562,7 @@ public class AuthController {
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "Invalid request",
+            description = "Invalid request - Email format is invalid",
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(
@@ -578,7 +583,8 @@ public class AuthController {
     @PostMapping("/reset-password")
     @Operation(
         summary = "Reset password",
-        description = "Resets a user's password using a valid reset token. The token must be valid and not expired."
+        description = "Resets a user's password using a valid reset token. The token must be valid, not expired, and not previously used. The password must meet complexity requirements. This endpoint requires no authentication as it's used in the password reset flow.",
+        tags = {"Authentication & Profile", "Security"}
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -586,6 +592,10 @@ public class AuthController {
             description = "Password reset successful",
             content = @Content(
                 mediaType = "application/json",
+                schema = @Schema(
+                    type = "object",
+                    example = "{\"message\": \"Password has been reset successfully. You can now log in with your new password.\"}"
+                ),
                 examples = @ExampleObject(
                     value = "{\"message\": \"Password has been reset successfully. You can now log in with your new password.\"}"
                 )
@@ -596,13 +606,29 @@ public class AuthController {
             description = "Invalid request or token",
             content = @Content(
                 mediaType = "application/json",
+                schema = @Schema(
+                    type = "object",
+                    example = "{\"message\": \"Invalid or expired token. Please request a new password reset link.\"}"
+                ),
                 examples = @ExampleObject(
-                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"message\": \"Invalid or expired token\", \"status\": 400, \"error\": \"Bad Request\"}"
+                    value = "{\"message\": \"Invalid or expired token. Please request a new password reset link.\"}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "422",
+            description = "Validation error - Password does not meet requirements",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 422, \"error\": \"Unprocessable Entity\", \"message\": \"Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character\"}"
                 )
             )
         )
     })
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<?> resetPassword(
+        @Schema(description = "Reset password request containing the token and new password", required = true)
+        @Valid @RequestBody ResetPasswordRequest request) {
         boolean success = passwordResetService.resetPassword(request);
         
         if (success) {

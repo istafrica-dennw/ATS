@@ -15,14 +15,17 @@ const ProfileSettingsPage: React.FC = () => {
   const [deactivationReason, setDeactivationReason] = useState('');
   const [deactivating, setDeactivating] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/users/${user?.id}`, {
+        console.log('Fetching user profile data');
+        
+        const response = await fetch(`/api/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           }
@@ -30,7 +33,18 @@ const ProfileSettingsPage: React.FC = () => {
         
         if (response.ok) {
           const data = await response.json();
+          console.log('Profile data received:', data);
+          console.log('Profile picture URL from backend:', data.profilePictureUrl);
           setProfileData(data);
+          
+          // If there's a profile picture URL, pre-fetch it to check availability
+          if (data.profilePictureUrl) {
+            console.log('Attempting to pre-fetch profile picture:', data.profilePictureUrl);
+            const img = new Image();
+            img.onload = () => console.log('Profile picture pre-fetch successful');
+            img.onerror = (e) => console.error('Profile picture pre-fetch failed:', e);
+            img.src = data.profilePictureUrl;
+          }
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -40,12 +54,12 @@ const ProfileSettingsPage: React.FC = () => {
       }
     };
 
-    if (user?.id) {
+    if (token) {
       fetchUserProfile();
     } else {
       setLoading(false);
     }
-  }, [user?.id, token]);
+  }, [token]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -67,8 +81,12 @@ const ProfileSettingsPage: React.FC = () => {
     formData.append('file', file);
     
     setUploadingImage(true);
+    setImageLoading(true);  // Reset image loading state
+    setImageError(false);   // Clear any previous errors
     
     try {
+      // Step 1: Upload the image file
+      console.log('Uploading profile picture...');
       const response = await fetch('/api/files/upload/profile-picture', {
         method: 'POST',
         headers: {
@@ -81,17 +99,20 @@ const ProfileSettingsPage: React.FC = () => {
         const data = await response.json();
         console.log('Profile picture upload response:', data);
         
-        // Update the profile data with the new profile picture URL
+        // Step 2: Update the profile data with the new profile picture URL
+        const imageUrl = data.url;
+        console.log('Setting profile picture URL to:', imageUrl);
+        
         const updatedProfileData = {
           ...profileData,
-          profilePictureUrl: data.url,
+          profilePictureUrl: imageUrl,
         };
         
-        console.log('Setting profile picture URL to:', data.url);
         setProfileData(updatedProfileData);
         
-        // Also update the user data on the server to persist the change
-        const updateResponse = await fetch(`/api/users/${user?.id}`, {
+        // Step 3: Update the user profile via correct endpoint for self-updates
+        console.log('Saving updated profile with new picture URL to backend...');
+        const updateResponse = await fetch(`/api/auth/me`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -101,32 +122,25 @@ const ProfileSettingsPage: React.FC = () => {
         });
         
         if (updateResponse.ok) {
-          // Force reload user data to ensure Auth Context has updated user info
-          const userResponse = await fetch(`/api/users/${user?.id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            }
-          });
-          
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            // Update the user in the AuthContext
-            if (user) {
-              console.log('Updating user in AuthContext with profile picture URL:', data.url);
-              // Update auth context with new user data including the profile picture
-              setUser({
-                ...user,
-                profilePictureUrl: data.url
-              });
-            }
+          // Step 4: Update the user in the auth context
+          if (user) {
+            console.log('Updating user in AuthContext with profile picture URL:', imageUrl);
+            setUser({
+              ...user,
+              profilePictureUrl: imageUrl
+            });
           }
           
           toast.success('Profile picture uploaded and saved successfully');
         } else {
+          console.error('Failed to update profile with new picture, status:', updateResponse.status);
+          const errorData = await updateResponse.json();
+          console.error('Error response:', errorData);
           toast.warning('Profile picture uploaded but not saved to profile');
         }
       } else {
         const error = await response.json();
+        console.error('Failed to upload profile picture:', error);
         toast.error(error.message || 'Failed to upload profile picture');
       }
     } catch (error) {
@@ -146,7 +160,8 @@ const ProfileSettingsPage: React.FC = () => {
     setSaving(true);
 
     try {
-      const response = await fetch(`/api/users/${user?.id}`, {
+      console.log('Updating profile with data:', profileData);
+      const response = await fetch(`/api/auth/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -156,10 +171,19 @@ const ProfileSettingsPage: React.FC = () => {
       });
 
       if (response.ok) {
+        const updatedUserData = await response.json();
+        console.log('Updated user data received from backend:', updatedUserData);
+        
+        // Update the user in the auth context with the response data
+        if (setUser) {
+          setUser(updatedUserData);
+        }
+        
         toast.success('Profile updated successfully!');
-        setEditMode(false); // Switch back to view mode after successful update
+        navigate('/profile'); // Navigate back to profile page after successful update
       } else {
         const errorData = await response.json();
+        console.error('Failed to update profile:', errorData);
         toast.error(errorData.message || 'Failed to update profile.');
       }
     } catch (error) {
@@ -179,7 +203,8 @@ const ProfileSettingsPage: React.FC = () => {
     setDeactivating(true);
     try {
       const request: DeactivationRequest = { reason: deactivationReason };
-      const response = await fetch(`/api/users/${user?.id}/deactivate`, {
+      // Use the auth/deactivate endpoint for deactivating own account
+      const response = await fetch(`/api/auth/deactivate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -197,6 +222,7 @@ const ProfileSettingsPage: React.FC = () => {
         }, 1500);
       } else {
         const errorData = await response.json();
+        console.error('Error deactivating account:', errorData);
         toast.error(errorData.message || 'Failed to deactivate account.');
       }
     } catch (error) {
@@ -216,178 +242,7 @@ const ProfileSettingsPage: React.FC = () => {
     );
   }
 
-  // View mode content
-  if (!editMode) {
-    return (
-      <div className="bg-gray-50 min-h-screen py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow sm:rounded-lg">
-            <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
-              <div>
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Profile Information</h3>
-                <p className="mt-1 max-w-2xl text-sm text-gray-500">Personal details and contact information.</p>
-              </div>
-              <button
-                onClick={() => setEditMode(true)}
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Edit Profile
-              </button>
-            </div>
-            
-            <div className="border-t border-gray-200">
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <div className="flex items-center">
-                  {profileData.profilePictureUrl ? (
-                    <>
-                      <img 
-                        src={profileData.profilePictureUrl} 
-                        alt={`${profileData.firstName} ${profileData.lastName}`}
-                        className="h-24 w-24 rounded-full object-cover"
-                        onLoad={() => console.log('Profile image loaded successfully')}
-                        onError={(e) => {
-                          console.error('Error loading profile image:', profileData.profilePictureUrl);
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null; // Prevent infinite fallback loop
-                          // You can set a fallback image here if needed
-                        }}
-                      />
-                      <div className="ml-2 text-xs text-gray-500">
-                        <p>URL: {profileData.profilePictureUrl}</p>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-800 text-xl font-medium">
-                      {profileData.firstName?.[0]}{profileData.lastName?.[0]}
-                    </div>
-                  )}
-                </div>
-                <div className="mt-4 sm:mt-0 sm:col-span-2">
-                  <h2 className="text-2xl font-bold text-gray-900">{profileData.firstName} {profileData.lastName}</h2>
-                  <p className="mt-1 text-gray-500">Email: {profileData.email}</p>
-                  {profileData.bio && (
-                    <p className="mt-2 text-gray-600">{profileData.bio}</p>
-                  )}
-                </div>
-              </div>
-              
-              <dl className="divide-y divide-gray-200">
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Phone Number</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{profileData.phoneNumber || 'Not provided'}</dd>
-                </div>
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Birth Date</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{profileData.birthDate || 'Not provided'}</dd>
-                </div>
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">LinkedIn</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {profileData.linkedinProfileUrl ? (
-                      <a href={profileData.linkedinProfileUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-900">
-                        {profileData.linkedinProfileUrl}
-                      </a>
-                    ) : 'Not provided'}
-                  </dd>
-                </div>
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500">Address</dt>
-                  <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                    {profileData.addressLine1 ? (
-                      <>
-                        {profileData.addressLine1}<br />
-                        {profileData.addressLine2 && <>{profileData.addressLine2}<br /></>}
-                        {profileData.city && profileData.state && `${profileData.city}, ${profileData.state} `}
-                        {profileData.postalCode}<br />
-                        {profileData.country}
-                      </>
-                    ) : 'Not provided'}
-                  </dd>
-                </div>
-              </dl>
-              
-              <div className="px-4 py-5 sm:px-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  onClick={() => setShowDeactivateModal(true)}
-                >
-                  Deactivate Account
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Deactivation Modal */}
-        {showDeactivateModal && (
-          <div className="fixed z-10 inset-0 overflow-y-auto">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-              </div>
-
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-              <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                <div>
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div className="mt-3 text-center sm:mt-5">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Deactivate Account
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">
-                        Are you sure you want to deactivate your account? This action cannot be undone. All of your data will be inaccessible until an administrator reactivates your account.
-                      </p>
-                      <div className="mt-4">
-                        <label htmlFor="deactivationReason" className="block text-sm font-medium text-gray-700 text-left">
-                          Please tell us why you're leaving:
-                        </label>
-                        <textarea
-                          id="deactivationReason"
-                          name="deactivationReason"
-                          rows={3}
-                          required
-                          value={deactivationReason}
-                          onChange={(e) => setDeactivationReason(e.target.value)}
-                          className="mt-1 shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                          placeholder="Your feedback helps us improve our service"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                  <button
-                    type="button"
-                    disabled={deactivating}
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
-                    onClick={handleDeactivateAccount}
-                  >
-                    {deactivating ? 'Deactivating...' : 'Deactivate'}
-                  </button>
-                  <button
-                    type="button"
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-                    onClick={() => setShowDeactivateModal(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Edit mode content
+  // Edit mode content (now the main content)
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -398,7 +253,7 @@ const ProfileSettingsPage: React.FC = () => {
               <p className="mt-1 max-w-2xl text-sm text-gray-500">Update your personal information.</p>
             </div>
             <button
-              onClick={() => setEditMode(false)}
+              onClick={() => navigate('/profile')}
               className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Cancel
@@ -413,19 +268,39 @@ const ProfileSettingsPage: React.FC = () => {
                 <div className="relative">
                   {profileData.profilePictureUrl ? (
                     <>
-                      <img 
-                        src={profileData.profilePictureUrl} 
-                        alt={`${profileData.firstName} ${profileData.lastName}`}
-                        className="h-32 w-32 rounded-full object-cover border-4 border-white shadow"
-                        onLoad={() => console.log('Edit mode: Profile image loaded successfully')}
-                        onError={(e) => {
-                          console.error('Edit mode: Error loading profile image:', profileData.profilePictureUrl);
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null; // Prevent infinite fallback loop
-                        }}
-                      />
-                      <div className="text-xs text-gray-500 mt-2 text-center w-32">
-                        <p>URL: {profileData.profilePictureUrl}</p>
+                      <div className="relative h-32 w-32">
+                        {imageLoading && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-full border-4 border-white shadow">
+                            <div className="animate-spin h-8 w-8 border-b-2 border-indigo-500"></div>
+                          </div>
+                        )}
+                        <img 
+                          src={profileData.profilePictureUrl} 
+                          alt={`${profileData.firstName} ${profileData.lastName}`}
+                          className={`h-32 w-32 rounded-full object-cover border-4 border-white shadow ${imageError ? 'hidden' : ''}`}
+                          onLoad={() => {
+                            console.log('Profile image loaded successfully');
+                            setImageLoading(false);
+                            setImageError(false);
+                          }}
+                          onError={(e) => {
+                            console.error('Error loading profile image:', profileData.profilePictureUrl);
+                            setImageLoading(false);
+                            setImageError(true);
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null; // Prevent infinite fallback loop
+                          }}
+                        />
+                        {imageError && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-red-100 rounded-full border-4 border-white shadow">
+                            <span className="text-red-500 text-sm text-center px-2">Image could not be loaded</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2 text-center w-32 break-words">
+                        {imageError && (
+                          <p className="text-red-500 mt-1">Error loading image. Please upload a new one.</p>
+                        )}
                       </div>
                     </>
                   ) : (

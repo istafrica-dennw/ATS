@@ -9,19 +9,22 @@ import {
   CalendarIcon,
   IdentificationIcon,
 } from '@heroicons/react/24/outline';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
+import { getFullProfilePictureUrl } from '../../utils/imageUtils';
 
 const ProfilePage: React.FC = () => {
   const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(user);
+  const location = useLocation();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/users/${user?.id}`, {
+        console.log('Fetching user profile data from /api/auth/me');
+        const response = await fetch(`/api/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           }
@@ -29,7 +32,10 @@ const ProfilePage: React.FC = () => {
         
         if (response.ok) {
           const data = await response.json();
+          console.log('Profile data received successfully:', data);
           setUserData(data);
+        } else {
+          console.error('Failed to fetch profile data, status:', response.status);
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -38,12 +44,12 @@ const ProfilePage: React.FC = () => {
       }
     };
 
-    if (user?.id) {
+    if (token) {
       fetchUserProfile();
     } else {
       setLoading(false);
     }
-  }, [user?.id, token]);
+  }, [token, location.pathname]);
 
   if (loading) {
     return (
@@ -97,7 +103,7 @@ const ProfilePage: React.FC = () => {
               <div className="flex items-center">
                 {userData.profilePictureUrl ? (
                   <img 
-                    src={userData.profilePictureUrl} 
+                    src={getFullProfilePictureUrl(userData.profilePictureUrl)} 
                     alt={`${userData.firstName} ${userData.lastName}`}
                     className="h-24 w-24 rounded-full object-cover"
                   />

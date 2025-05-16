@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -249,6 +250,99 @@ public class AuthController {
         
         return ResponseEntity.ok(convertToDTO(user));
     }
+    
+    @PutMapping("/me")
+    @Operation(
+        summary = "Update current user profile",
+        description = "Updates information for the currently authenticated user"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Profile updated successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = UserDTO.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Invalid or expired JWT token"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User not found"
+        )
+    })
+    public ResponseEntity<UserDTO> updateCurrentUser(
+            Authentication authentication,
+            @Valid @RequestBody UserDTO userDTO) {
+        String email = authentication.getName();
+        System.out.println("Updating profile for user: " + email);
+        System.out.println("Received update data: " + userDTO);
+        
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Update user information (set fields regardless of null status to allow clearing fields)
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setDepartment(userDTO.getDepartment());
+        user.setLinkedinProfileUrl(userDTO.getLinkedinProfileUrl());
+        user.setProfilePictureUrl(userDTO.getProfilePictureUrl());
+        
+        // Update profile fields
+        user.setBirthDate(userDTO.getBirthDate());
+        user.setPhoneNumber(userDTO.getPhoneNumber());
+        user.setAddressLine1(userDTO.getAddressLine1());
+        user.setAddressLine2(userDTO.getAddressLine2());
+        user.setCity(userDTO.getCity());
+        user.setState(userDTO.getState());
+        user.setCountry(userDTO.getCountry());
+        user.setPostalCode(userDTO.getPostalCode());
+        user.setBio(userDTO.getBio());
+        
+        // Don't update sensitive fields like email, role, active status, etc.
+        
+        // Save the updated user
+        user = userRepository.save(user);
+        System.out.println("Profile updated successfully for user: " + email);
+        
+        UserDTO updatedUserDTO = convertToDTO(user);
+        System.out.println("Returning updated user data: " + updatedUserDTO);
+        return ResponseEntity.ok(updatedUserDTO);
+    }
+    
+    @PostMapping("/deactivate")
+    @Operation(
+        summary = "Deactivate current user account",
+        description = "Deactivates the currently authenticated user's account"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Account deactivated successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or expired JWT token"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<UserDTO> deactivateCurrentUser(
+            Authentication authentication,
+            @RequestBody Map<String, String> request) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        String reason = request.get("reason");
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Deactivation reason is required");
+        }
+        
+        user.setIsActive(false);
+        user.setDeactivationReason(reason);
+        user.setDeactivationDate(LocalDateTime.now());
+        
+        user = userRepository.save(user);
+        
+        return ResponseEntity.ok(convertToDTO(user));
+    }
 
     private UserDTO convertToDTO(User user) {
         UserDTO userDTO = new UserDTO();
@@ -258,12 +352,27 @@ public class AuthController {
         userDTO.setLastName(user.getLastName());
         userDTO.setRole(user.getRole());
         userDTO.setDepartment(user.getDepartment());
+        userDTO.setLinkedinId(user.getLinkedinId());
         userDTO.setLinkedinProfileUrl(user.getLinkedinProfileUrl());
         userDTO.setProfilePictureUrl(user.getProfilePictureUrl());
         userDTO.setIsActive(user.getIsActive());
         userDTO.setIsEmailVerified(user.getIsEmailVerified());
         userDTO.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());
         userDTO.setLastLogin(user.getLastLogin());
+        
+        // Include additional profile fields
+        userDTO.setBirthDate(user.getBirthDate());
+        userDTO.setPhoneNumber(user.getPhoneNumber());
+        userDTO.setAddressLine1(user.getAddressLine1());
+        userDTO.setAddressLine2(user.getAddressLine2());
+        userDTO.setCity(user.getCity());
+        userDTO.setState(user.getState());
+        userDTO.setCountry(user.getCountry());
+        userDTO.setPostalCode(user.getPostalCode());
+        userDTO.setBio(user.getBio());
+        userDTO.setDeactivationReason(user.getDeactivationReason());
+        userDTO.setDeactivationDate(user.getDeactivationDate());
+        
         return userDTO;
     }
 } 

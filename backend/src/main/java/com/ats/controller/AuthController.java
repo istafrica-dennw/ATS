@@ -34,7 +34,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Authentication", description = "APIs for user authentication and registration")
+@Tag(name = "Authentication & Profile", description = "APIs for user authentication, registration, and profile management")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -207,18 +207,39 @@ public class AuthController {
     
     @GetMapping("/me")
     @Operation(
-        summary = "Get current user information",
-        description = "Retrieves detailed information about the currently authenticated user. Authorization header with Bearer token is required."
+        summary = "Get current user profile",
+        description = "Retrieves detailed information about the currently authenticated user's profile. This endpoint returns all profile information including personal details, contact information, and account status. Authorization header with Bearer token is required."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
-            description = "User information retrieved successfully",
+            description = "User profile retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = UserDTO.class),
                 examples = @ExampleObject(
-                    value = "{\"id\": 1, \"email\": \"john.doe@example.com\", \"firstName\": \"John\", \"lastName\": \"Doe\", \"role\": \"CANDIDATE\", \"department\": \"Engineering\", \"linkedinProfileUrl\": \"https://linkedin.com/in/johndoe\", \"profilePictureUrl\": \"https://example.com/profile.jpg\", \"isActive\": true}"
+                    value = "{\n" +
+                           "  \"id\": 1,\n" +
+                           "  \"email\": \"john.doe@example.com\",\n" +
+                           "  \"firstName\": \"John\",\n" +
+                           "  \"lastName\": \"Doe\",\n" +
+                           "  \"role\": \"CANDIDATE\",\n" +
+                           "  \"department\": \"Engineering\",\n" +
+                           "  \"linkedinProfileUrl\": \"https://linkedin.com/in/johndoe\",\n" +
+                           "  \"profilePictureUrl\": \"/api/files/profile-pictures/1bb1d8f6-649f-490d-85b5-621b16b5d2f7.jpg\",\n" +
+                           "  \"birthDate\": \"1990-01-15\",\n" +
+                           "  \"phoneNumber\": \"+1 (555) 123-4567\",\n" +
+                           "  \"addressLine1\": \"123 Main Street\",\n" +
+                           "  \"addressLine2\": \"Apt 4B\",\n" +
+                           "  \"city\": \"New York\",\n" +
+                           "  \"state\": \"NY\",\n" +
+                           "  \"country\": \"United States\",\n" +
+                           "  \"postalCode\": \"10001\",\n" +
+                           "  \"bio\": \"Full-stack developer with 5 years of experience...\",\n" +
+                           "  \"isActive\": true,\n" +
+                           "  \"isEmailVerified\": true,\n" +
+                           "  \"isEmailPasswordEnabled\": true\n" +
+                           "}"
                 )
             )
         ),
@@ -254,7 +275,7 @@ public class AuthController {
     @PutMapping("/me")
     @Operation(
         summary = "Update current user profile",
-        description = "Updates information for the currently authenticated user"
+        description = "Updates information for the currently authenticated user. This endpoint allows users to update their profile information including personal details, contact information, and profile picture. Authorization header with Bearer token is required. Null values will clear the corresponding fields in the database."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -262,16 +283,62 @@ public class AuthController {
             description = "Profile updated successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = UserDTO.class)
+                schema = @Schema(implementation = UserDTO.class),
+                examples = @ExampleObject(
+                    value = "{\n" +
+                           "  \"id\": 1,\n" +
+                           "  \"email\": \"john.doe@example.com\",\n" +
+                           "  \"firstName\": \"John\",\n" +
+                           "  \"lastName\": \"Smith\",\n" +
+                           "  \"role\": \"CANDIDATE\",\n" +
+                           "  \"department\": \"Product\",\n" +
+                           "  \"linkedinProfileUrl\": \"https://linkedin.com/in/johnsmith\",\n" +
+                           "  \"profilePictureUrl\": \"/api/files/profile-pictures/1bb1d8f6-649f-490d-85b5-621b16b5d2f7.jpg\",\n" +
+                           "  \"birthDate\": \"1990-01-15\",\n" +
+                           "  \"phoneNumber\": \"+1 (555) 123-4567\",\n" +
+                           "  \"addressLine1\": \"456 Park Avenue\",\n" +
+                           "  \"addressLine2\": null,\n" +
+                           "  \"city\": \"New York\",\n" +
+                           "  \"state\": \"NY\",\n" +
+                           "  \"country\": \"United States\",\n" +
+                           "  \"postalCode\": \"10022\",\n" +
+                           "  \"bio\": \"Senior developer with expertise in React and Spring Boot\",\n" +
+                           "  \"isActive\": true,\n" +
+                           "  \"isEmailVerified\": true,\n" +
+                           "  \"isEmailPasswordEnabled\": true\n" +
+                           "}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 400, \"error\": \"Bad Request\", \"message\": \"Invalid request body\"}"
+                )
             )
         ),
         @ApiResponse(
             responseCode = "401",
-            description = "Unauthorized - Invalid or expired JWT token"
+            description = "Unauthorized - Invalid or expired JWT token",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Invalid JWT token\"}"
+                )
+            )
         ),
         @ApiResponse(
             responseCode = "404",
-            description = "User not found"
+            description = "User not found",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 404, \"error\": \"Not Found\", \"message\": \"User not found\"}"
+                )
+            )
         )
     })
     public ResponseEntity<UserDTO> updateCurrentUser(
@@ -316,15 +383,63 @@ public class AuthController {
     @PostMapping("/deactivate")
     @Operation(
         summary = "Deactivate current user account",
-        description = "Deactivates the currently authenticated user's account"
+        description = "Deactivates the currently authenticated user's account. Requires a reason for deactivation. The account will be marked as inactive but data will be preserved for future reactivation by an administrator."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Account deactivated successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or expired JWT token"),
-        @ApiResponse(responseCode = "404", description = "User not found")
+        @ApiResponse(
+            responseCode = "200", 
+            description = "Account deactivated successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = UserDTO.class),
+                examples = @ExampleObject(
+                    value = "{\n" +
+                           "  \"id\": 1,\n" +
+                           "  \"email\": \"john.doe@example.com\",\n" +
+                           "  \"firstName\": \"John\",\n" +
+                           "  \"lastName\": \"Doe\",\n" +
+                           "  \"role\": \"CANDIDATE\",\n" +
+                           "  \"isActive\": false,\n" +
+                           "  \"deactivationReason\": \"Moving to a different platform\",\n" +
+                           "  \"deactivationDate\": \"2024-05-20T10:00:00\"\n" +
+                           "}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400", 
+            description = "Invalid request - Missing deactivation reason",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 400, \"error\": \"Bad Request\", \"message\": \"Deactivation reason is required\"}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401", 
+            description = "Unauthorized - Invalid or expired JWT token",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Invalid JWT token\"}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "404", 
+            description = "User not found",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"status\": 404, \"error\": \"Not Found\", \"message\": \"User not found\"}"
+                )
+            )
+        )
     })
     public ResponseEntity<UserDTO> deactivateCurrentUser(
             Authentication authentication,
+            @Schema(description = "Deactivation request with reason", required = true, example = "{\"reason\": \"Moving to a different platform\"}")
             @RequestBody Map<String, String> request) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)

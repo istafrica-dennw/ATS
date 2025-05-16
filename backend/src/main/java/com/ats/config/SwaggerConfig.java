@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.tags.Tag;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,7 +21,7 @@ public class SwaggerConfig {
         return new OpenAPI()
             .info(new Info()
                 .title("ATS System API")
-                .description("API documentation for the Applicant Tracking System")
+                .description("API documentation for the Applicant Tracking System. Includes endpoints for user authentication, profile management, job applications, interviews, and administrative features.")
                 .version("1.0.0")
                 .license(new License()
                     .name("Apache 2.0")
@@ -36,6 +37,11 @@ public class SwaggerConfig {
                         .scheme("bearer")
                         .bearerFormat("JWT")
                         .description("Enter the JWT token obtained from the login API. The value should be: Bearer <JWT Token>")))
-            .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
+            .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+            .tags(Arrays.asList(
+                new Tag().name("Authentication & Profile").description("Authentication, registration, and self-profile management"),
+                new Tag().name("User Management").description("Admin operations for managing users"),
+                new Tag().name("Files").description("File upload and management operations")
+            ));
     }
 } 

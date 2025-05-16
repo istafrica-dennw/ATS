@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Role } from '../../types/user';
 import LinkedInLoginButton from './LinkedInLoginButton';
+import ForgotPasswordModal from './ForgotPasswordModal';
 import { toast } from 'react-toastify';
 
 const LoginForm: React.FC = () => {
@@ -15,6 +16,7 @@ const LoginForm: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
   // Check for error query parameters on component mount or URL change
   useEffect(() => {
@@ -134,6 +136,18 @@ const LoginForm: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex items-center justify-end">
+            <div className="text-sm">
+              <button
+                type="button"
+                onClick={() => setShowForgotPasswordModal(true)}
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          </div>
+
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="flex">
@@ -181,6 +195,12 @@ const LoginForm: React.FC = () => {
           </p>
         </div>
       </div>
+      
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        isOpen={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
     </div>
   );
 };

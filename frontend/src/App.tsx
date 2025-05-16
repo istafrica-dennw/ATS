@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -11,6 +11,7 @@ import EmailManagementPage from './pages/admin/EmailManagementPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
@@ -18,10 +19,24 @@ import CandidateDashboardPage from './pages/candidate/CandidateDashboardPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// List of paths that should always be accessible, even when authenticated
+const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email'];
+
 // Component to handle public routes (login, signup) with redirection for authenticated users
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, token } = useAuth();
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
+  // Check if the current path should always be accessible
+  const isAlwaysAccessible = ALWAYS_ACCESSIBLE_PATHS.some(path => currentPath.startsWith(path));
+  
+  // If path should always be accessible, render children regardless of auth state
+  if (isAlwaysAccessible) {
+    return <>{children}</>;
+  }
 
+  // Otherwise, apply normal redirection logic for authenticated users
   if (user && token) {
     switch (user.role) {
       case Role.ADMIN:
@@ -70,6 +85,11 @@ const App: React.FC = () => {
           <Route path="/verify-email" element={
             <PublicRoute>
               <EmailVerificationPage />
+            </PublicRoute>
+          } />
+          <Route path="/reset-password" element={
+            <PublicRoute>
+              <ResetPasswordPage />
             </PublicRoute>
           } />
           

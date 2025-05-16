@@ -55,6 +55,9 @@ const safeLocalStorage = {
   }
 };
 
+// Public paths that shouldn't try to validate tokens
+const PUBLIC_PATHS = ['/reset-password', '/verify-email'];
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -167,9 +170,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('AuthContext - Found token in URL');
     }
     
+    // Check if current path is in the public paths list that shouldn't validate tokens
+    const currentPath = window.location.pathname;
+    const isPublicPath = PUBLIC_PATHS.some(path => currentPath.startsWith(path));
+    
     const initAuth = async () => {
       // Priority: URL token > localStorage token > sessionStorage token
       const tokenToUse = urlToken || storedToken || sessionStorage.getItem('token');
+      
+      // If we're on a public path like reset-password, don't try to validate tokens
+      if (isPublicPath) {
+        console.log('AuthContext - On public path, skipping token validation');
+        setIsLoading(false);
+        return;
+      }
       
       if (tokenToUse) {
         // We have a token
@@ -276,10 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     manuallySetToken
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
+  // Return children regardless of loading state
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 

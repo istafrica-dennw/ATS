@@ -1,6 +1,7 @@
 package com.ats.util;
 
 import com.ats.model.User;
+import com.ats.model.PasswordResetToken;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -20,5 +21,22 @@ public class TokenUtil {
         user.setEmailVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
         user.setIsEmailVerified(false);
         return verificationToken;
+    }
+    
+    /**
+     * Create a password reset token for a user
+     * @param user The user to create the token for
+     * @return The PasswordResetToken entity (not yet persisted)
+     */
+    public static PasswordResetToken createPasswordResetToken(User user) {
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiryDate = LocalDateTime.now().plusHours(24);
+        
+        return PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(expiryDate)
+                .isUsed(false)
+                .build();
     }
 } 

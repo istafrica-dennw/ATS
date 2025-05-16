@@ -4,12 +4,15 @@ import com.ats.dto.AuthRequest;
 import com.ats.dto.AuthResponse;
 import com.ats.dto.UserDTO;
 import com.ats.dto.ChangePasswordRequest;
+import com.ats.dto.ForgotPasswordRequest;
+import com.ats.dto.ResetPasswordRequest;
 import com.ats.model.User;
 import com.ats.model.Role;
 import com.ats.repository.UserRepository;
 import com.ats.security.JwtTokenProvider;
 import com.ats.exception.ResourceAlreadyExistsException;
 import com.ats.service.EmailService;
+import com.ats.service.PasswordResetService;
 import com.ats.util.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -46,6 +49,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final EmailService emailService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/signup")
     @Operation(
@@ -533,6 +537,83 @@ public class AuthController {
         userRepository.save(user);
         
         return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(
+        summary = "Request password reset",
+        description = "Initiates a password reset for the provided email address. If the email exists in the system, a password reset link will be sent to that address."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Request processed successfully",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"message\": \"If the email exists in our system, a password reset link has been sent.\"}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"message\": \"Email is required\", \"status\": 400, \"error\": \"Bad Request\"}"
+                )
+            )
+        )
+    })
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.processForgotPasswordRequest(request);
+        
+        // Always return success to prevent email enumeration attacks
+        return ResponseEntity.ok(Map.of(
+            "message", "If the email exists in our system, a password reset link has been sent."
+        ));
+    }
+    
+    @PostMapping("/reset-password")
+    @Operation(
+        summary = "Reset password",
+        description = "Resets a user's password using a valid reset token. The token must be valid and not expired."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Password reset successful",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"message\": \"Password has been reset successfully. You can now log in with your new password.\"}"
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request or token",
+            content = @Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    value = "{\"timestamp\": \"2024-05-20T10:00:00\", \"message\": \"Invalid or expired token\", \"status\": 400, \"error\": \"Bad Request\"}"
+                )
+            )
+        )
+    })
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        boolean success = passwordResetService.resetPassword(request);
+        
+        if (success) {
+            return ResponseEntity.ok(Map.of(
+                "message", "Password has been reset successfully. You can now log in with your new password."
+            ));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of(
+                "message", "Invalid or expired token. Please request a new password reset link."
+            ));
+        }
     }
 
     private UserDTO convertToDTO(User user) {

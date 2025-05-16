@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AdminLayout from './components/admin/AdminLayout';
+import MainLayout from './layouts/MainLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import EmailManagementPage from './pages/admin/EmailManagementPage';
@@ -72,24 +73,37 @@ const App: React.FC = () => {
             </PublicRoute>
           } />
           
-          {/* Dashboard route - protected so only logged in users can access */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={undefined}>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
-          
-          {/* Profile Routes - accessible to all authenticated users */}
+          {/* Main authenticated routes using MainLayout */}
           <Route
-            path="/profile"
             element={
               <ProtectedRoute allowedRoles={undefined}>
-                <Outlet />
+                <MainLayout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<ProfilePage />} />
-            <Route path="settings" element={<ProfileSettingsPage />} />
+            {/* Dashboard routes */}
+            <Route path="/dashboard" element={<DashboardPage />} />
+            
+            {/* Profile Routes - accessible to all authenticated users */}
+            <Route path="/profile">
+              <Route index element={<ProfilePage />} />
+              <Route path="settings" element={<ProfileSettingsPage />} />
+            </Route>
+
+            {/* Candidate Routes */}
+            <Route path="/candidate" element={<CandidateDashboardPage />} />
+
+            {/* Recruiter Routes */}
+            <Route
+              path="/recruiter"
+              element={
+                <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER]}>
+                  <div>
+                    <h1>Recruiter Dashboard (Coming Soon)</h1>
+                  </div>
+                </ProtectedRoute>
+              }
+            />
           </Route>
           
           {/* Admin Routes */}
@@ -107,28 +121,6 @@ const App: React.FC = () => {
             <Route path="users" element={<UserManagementPage />} />
             <Route path="emails" element={<EmailManagementPage />} />
           </Route>
-
-          {/* Recruiter Routes */}
-          <Route
-            path="/recruiter"
-            element={
-              <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER]}>
-                <div>
-                  <h1>Recruiter Dashboard (Coming Soon)</h1>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Candidate Routes */}
-          <Route
-            path="/candidate"
-            element={
-              <ProtectedRoute allowedRoles={[Role.CANDIDATE]}>
-                <CandidateDashboardPage />
-              </ProtectedRoute>
-            }
-          />
 
           {/* Default route */}
           <Route path="/" element={<Navigate to="/login" />} />

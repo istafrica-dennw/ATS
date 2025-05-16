@@ -28,6 +28,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import com.ats.annotation.RequiresAuthentication;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -209,7 +211,8 @@ public class AuthController {
     @GetMapping("/me")
     @Operation(
         summary = "Get current user profile",
-        description = "Retrieves detailed information about the currently authenticated user's profile. This endpoint returns all profile information including personal details, contact information, and account status. Authorization header with Bearer token is required."
+        description = "Retrieves detailed information about the currently authenticated user's profile. This endpoint returns all profile information including personal details, contact information, and account status. Authorization header with Bearer token is required.",
+        tags = {"Authentication & Profile"}
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -265,7 +268,8 @@ public class AuthController {
             )
         )
     })
-    public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
+    @RequiresAuthentication
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("User not found"));
@@ -276,7 +280,8 @@ public class AuthController {
     @PutMapping("/me")
     @Operation(
         summary = "Update current user profile",
-        description = "Updates information for the currently authenticated user. This endpoint allows users to update their profile information including personal details, contact information, and profile picture. Authorization header with Bearer token is required. Null values will clear the corresponding fields in the database."
+        description = "Updates information for the currently authenticated user. This endpoint allows users to update their profile information including personal details, contact information, and profile picture. Authorization header with Bearer token is required. Null values will clear the corresponding fields in the database.",
+        tags = {"Authentication & Profile"}
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -342,7 +347,8 @@ public class AuthController {
             )
         )
     })
-    public ResponseEntity<UserDTO> updateCurrentUser(
+    @RequiresAuthentication
+    public ResponseEntity<?> updateCurrentUser(
             Authentication authentication,
             @Valid @RequestBody UserDTO userDTO) {
         String email = authentication.getName();
@@ -439,7 +445,8 @@ public class AuthController {
             )
         )
     })
-    public ResponseEntity<UserDTO> deactivateCurrentUser(
+    @RequiresAuthentication(message = "Authentication required to deactivate your account")
+    public ResponseEntity<?> deactivateCurrentUser(
             Authentication authentication,
             @Schema(description = "Deactivation request with reason", required = true, example = "{\"reason\": \"Moving to a different platform\"}")
             @RequestBody Map<String, String> request) {
@@ -499,12 +506,12 @@ public class AuthController {
             )
         )
     })
+    @RequiresAuthentication(message = "Authentication required to change your password")
     public ResponseEntity<?> changePassword(
             Authentication authentication,
             @Schema(description = "Password change request with current and new password", required = true,
                     example = "{\"currentPassword\": \"oldPassword123\", \"newPassword\": \"newPassword456\", \"confirmPassword\": \"newPassword456\"}")
             @Valid @RequestBody ChangePasswordRequest request) {
-        
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("User not found"));

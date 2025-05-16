@@ -77,6 +77,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import com.ats.repository.UserRepository;
 import com.ats.security.CustomUserDetailsService;
 import com.ats.security.JwtTokenProvider;
+import com.ats.security.JwtAuthenticationEntryPoint;
 
 @Configuration
 @EnableWebSecurity
@@ -93,6 +94,7 @@ public class SecurityConfig {
     private final DataSource dataSource;
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Value("${app.frontend.cors.allowed-origins}")
     private String corsAllowedOrigins;
@@ -109,6 +111,9 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .exceptionHandling(exc -> exc
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**", "/error",
                     "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**",

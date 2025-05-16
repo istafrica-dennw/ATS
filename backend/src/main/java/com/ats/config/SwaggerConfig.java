@@ -21,7 +21,7 @@ public class SwaggerConfig {
         return new OpenAPI()
             .info(new Info()
                 .title("ATS System API")
-                .description("API documentation for the Applicant Tracking System. Includes endpoints for user authentication, profile management, job applications, interviews, and administrative features.")
+                .description("API documentation for the Applicant Tracking System. Includes endpoints for user authentication, profile management, password management, job applications, interviews, and administrative features.")
                 .version("1.0.0")
                 .license(new License()
                     .name("Apache 2.0")
@@ -39,9 +39,10 @@ public class SwaggerConfig {
                         .description("Enter the JWT token obtained from the login API. The value should be: Bearer <JWT Token>")))
             .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
             .tags(Arrays.asList(
-                new Tag().name("Authentication & Profile").description("Authentication, registration, and self-profile management"),
+                new Tag().name("Authentication & Profile").description("Authentication, registration, profile management, and password management operations"),
                 new Tag().name("User Management").description("Admin operations for managing users"),
-                new Tag().name("Files").description("File upload and management operations")
+                new Tag().name("Files").description("File upload and management operations"),
+                new Tag().name("Security").description("Security operations including password changes and account deactivation")
             ));
     }
 } 

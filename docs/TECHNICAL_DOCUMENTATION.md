@@ -6,8 +6,9 @@
 3. [Database Schema](#database-schema)
 4. [API Documentation](#api-documentation)
 5. [Email Notification System](#email-notification-system)
-6. [Security](#security)
-7. [Deployment](#deployment)
+6. [Authentication & Security](#authentication--security)
+7. [Password Management](#password-management)
+8. [Deployment](#deployment)
 
 ## System Overview
 
@@ -31,6 +32,8 @@ The Applicant Tracking System (ATS) is a comprehensive solution designed to stre
 - User preferences and settings
 - Default admin account system
 - User profile deactivation/reactivation
+- Password reset and recovery
+- Email verification
 
 ### 2. Job Management
 - Create and manage job postings
@@ -79,13 +82,35 @@ CREATE TABLE users (
     last_login TIMESTAMP,
     is_active BOOLEAN DEFAULT true,
     is_email_verified BOOLEAN DEFAULT false,
+    email_verification_token VARCHAR(255),
+    email_verification_token_expiry TIMESTAMP,
+    birth_date DATE,
+    phone_number VARCHAR(20),
+    address_line1 VARCHAR(255),
+    address_line2 VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    country VARCHAR(100),
+    postal_code VARCHAR(20),
+    bio TEXT,
+    deactivation_reason TEXT,
+    deactivation_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Password Reset Tokens Table
+```sql
+CREATE TABLE password_reset_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL,
+    expiry_date TIMESTAMP NOT NULL,
+    is_used BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    birthdate DATE,
-    address TEXT,
-    phone_number VARCHAR(20),
-    bio TEXT,
-    preferred_contact_method VARCHAR(50)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
@@ -205,8 +230,16 @@ The API documentation is available at:
 
 ### Authentication APIs
 1. Login: `POST /api/auth/login`
-2. LinkedIn Login: `GET /oauth2/authorization/linkedin`
-3. Get Current User: `GET /api/auth/me`
+2. Signup: `POST /api/auth/signup`
+3. Logout: `POST /api/auth/logout`
+4. Get Current User: `GET /api/auth/me`
+5. Update Current User: `PUT /api/auth/me`
+6. Verify Email: `GET /api/auth/verify-email?token={token}`
+7. Forgot Password: `POST /api/auth/forgot-password`
+8. Reset Password: `POST /api/auth/reset-password`
+9. Change Password: `POST /api/auth/change-password`
+10. Deactivate Account: `POST /api/auth/deactivate`
+11. LinkedIn Login: `GET /oauth2/authorization/linkedin`
 
 ## Email Notification System
 
@@ -247,7 +280,8 @@ The ATS System includes a comprehensive email notification system that ensures r
 3. **Password Reset**
    - Sent when a user requests a password reset
    - Contains reset link with token
-   - Expires after 1 hour
+   - Expires after 24 hours
+   - Single-use token (invalidated after use)
 
 ### API Endpoints
 1. `GET /api/admin/emails` - Get all email notifications (with filtering)
@@ -262,13 +296,21 @@ The ATS System includes a comprehensive email notification system that ensures r
 4. If failed, status is updated to FAILED with error message
 5. Failed emails can be manually resent by administrators
 
-## Security
+## Authentication & Security
 
 ### Authentication
 - JWT-based authentication
 - Role-based authorization
 - Password hashing using BCrypt
 - LinkedIn OAuth integration
+- Email verification system
+- Session-based security context
+
+### Token Management
+- JWT tokens with customizable expiration
+- Token validation on protected endpoints
+- Token invalidation on logout
+- Refresh token mechanism
 
 ### Security Features
 - CSRF protection
@@ -276,6 +318,8 @@ The ATS System includes a comprehensive email notification system that ensures r
 - SQL injection prevention
 - Rate limiting
 - Session management
+- Aspect-oriented security annotations
+- Custom authentication exception handling
 
 ### Default Admin Account System
 
@@ -317,6 +361,95 @@ The ATS system implements role-based access control with automated redirection:
    - Profile management
    - Redirected to Candidate Dashboard on login
 
+## Password Management
+
+The ATS system implements comprehensive password management features that prioritize security and user convenience:
+
+### 1. Password Change Feature
+   - **Authenticated Users**:
+     - Change password while logged in
+     - Requires current password verification
+     - Password complexity enforcement
+     - Supports both email/password and social login users
+   - **API Endpoint**: `POST /api/auth/change-password`
+   - **Implementation**:
+     - Controller method with @RequiresAuthentication annotation
+     - Password complexity validation (8+ chars, mixed case, numbers, special chars)
+     - Secure verification of current password
+     - Password encryption using BCrypt
+     - Failure handling with descriptive error messages
+   - **UI Components**:
+     - Modal interface accessible from profile settings
+     - Form validation with password strength indicator
+     - Success/failure feedback with toast notifications
+
+### 2. Forgot Password Feature
+   - **Password Reset Request**:
+     - Public endpoint (no authentication required)
+     - Email-based recovery flow
+     - Security measures to prevent email enumeration
+     - Support for both email/password users and social login users
+     - API Endpoint: `POST /api/auth/forgot-password`
+   - **Password Reset Confirmation**:
+     - Token-based verification
+     - 24-hour expiration window
+     - Single-use tokens (invalidated after use)
+     - Password complexity enforcement
+     - API Endpoint: `POST /api/auth/reset-password`
+   - **Token Management**:
+     - Secure token generation using UUID
+     - Database tracking of token status
+     - Automatic token expiration
+     - Token usage tracking to prevent reuse
+   - **Email Notifications**:
+     - HTML email template with branded styling
+     - Direct password reset link with embedded token
+     - Clear instructions for user
+     - Fallback text link for email clients that block buttons
+   - **Implementation**:
+     - PasswordResetToken entity for secure token tracking
+     - TokenUtil helper class for token generation
+     - PasswordResetService for business logic
+     - Repository for data access
+     - Email integration with templates
+   - **UI Components**:
+     - "Forgot Password" link on login page
+     - Email input modal with validation
+     - Reset password page with token validation
+     - Password strength requirements display
+     - Validation feedback for all user actions
+
+### 3. Password Security Features
+   - **Password Complexity Requirements**:
+     - Minimum 8 characters
+     - At least one uppercase letter
+     - At least one lowercase letter
+     - At least one number
+     - At least one special character
+   - **Storage Security**:
+     - One-way hashing using BCrypt
+     - No plaintext or recoverable storage
+     - Secure comparison for validation
+   - **Rate Limiting**:
+     - Protection against brute force attacks
+     - Temporary lockouts after failed attempts
+   - **Behavioral Analysis**:
+     - Logging of password change attempts
+     - Unusual activity detection
+   - **Audit Trail**:
+     - All password-related actions are logged
+     - Administrator visibility into password change/reset events
+
+### 4. Social Login Integration
+   - **LinkedIn Authentication**:
+     - OAuth 2.0 integration
+     - Profile data synchronization
+     - Automatic account creation
+   - **Hybrid Authentication**:
+     - Users can use both social login and password authentication
+     - Password can be set for LinkedIn users via forgot password flow
+     - Seamless account linking
+
 ## User Profile Features
 
 The ATS system provides comprehensive user profile management capabilities:
@@ -348,6 +481,33 @@ The ATS system provides comprehensive user profile management capabilities:
    - `/profile` - User's own profile view
    - `/profile/settings` - Profile settings page
    - `/profile/:id` - View specific user profile (with proper authorization)
+
+## Layout Structure
+
+The application implements a consistent user experience through structured layouts:
+
+1. **Main Layout**:
+   - Top navigation bar with user profile dropdown
+   - Sidebar navigation (context-sensitive based on user role)
+   - Content area with responsive design
+   - Consistent header and footer
+
+2. **Admin Layout**:
+   - Extends main layout
+   - Admin-specific navigation items
+   - Quick action buttons
+   - Advanced filter options
+
+3. **Authentication Layouts**:
+   - Clean, minimal design for login, signup, and password reset
+   - Responsive for mobile and desktop use
+   - Clear validation messaging
+   - Social login options
+
+4. **Component Organization**:
+   - Reusable UI components in `/components` directory
+   - Layouts in `/layouts` directory
+   - Page components in `/pages` directory
 
 ## Deployment
 

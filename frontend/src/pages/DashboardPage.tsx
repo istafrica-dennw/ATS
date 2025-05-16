@@ -39,6 +39,7 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
+      console.log('\n\n\n DashboardPage - User found\n\n\n\n:', user);
       // If user is already loaded, redirect based on role
       redirectBasedOnRole(user.role);
     } else {
@@ -48,6 +49,7 @@ const DashboardPage: React.FC = () => {
       const token = params.get('token');
       
       if (token) {
+        console.log('DashboardPage - Token found from url:', token);
         // Set token in context and localStorage
         localStorage.setItem('token', token);
         setToken(token);

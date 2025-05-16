@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -20,7 +20,38 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // List of paths that should always be accessible, even when authenticated
-const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email'];
+const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email', '/dashboard'];
+
+// URL Token Handler - This component processes tokens in the URL
+// Separate from PublicRoute to ensure it runs on every route
+const URLTokenHandler = () => {
+  const location = useLocation();
+  const { manuallySetToken } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    
+    if (token) {
+      console.log('URLTokenHandler - Processing token from URL');
+      
+      // Process the token
+      manuallySetToken(token)
+        .then(() => {
+          console.log('URLTokenHandler - Token processed successfully');
+          
+          // Clean URL by removing token
+          window.history.replaceState({}, document.title, location.pathname);
+        })
+        .catch(error => {
+          console.error('URLTokenHandler - Failed to process token:', error);
+        });
+    }
+  }, [location.search, manuallySetToken, navigate]);
+
+  return null; // This component doesn't render anything
+};
 
 // Component to handle public routes (login, signup) with redirection for authenticated users
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -58,6 +89,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
+        <URLTokenHandler />
         <ToastContainer 
           position="top-right"
           autoClose={5000}
@@ -93,6 +125,9 @@ const App: React.FC = () => {
             </PublicRoute>
           } />
           
+          {/* Dashboard route - needs to be accessible with token in URL */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+          
           {/* Main authenticated routes using MainLayout */}
           <Route
             element={
@@ -101,9 +136,6 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           >
-            {/* Dashboard routes */}
-            <Route path="/dashboard" element={<DashboardPage />} />
-            
             {/* Profile Routes - accessible to all authenticated users */}
             <Route path="/profile">
               <Route index element={<ProfilePage />} />

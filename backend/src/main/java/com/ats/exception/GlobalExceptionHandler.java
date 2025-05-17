@@ -1,8 +1,11 @@
 package com.ats.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -15,6 +18,8 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     public ResponseEntity<?> handleResourceAlreadyExists(ResourceAlreadyExistsException ex) {
@@ -42,11 +47,47 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(MfaRequiredException.class)
+    public ResponseEntity<Object> handleMfaRequiredException(MfaRequiredException ex, WebRequest request) {
+        logger.warn("MFA required exception occurred: {}", ex.getMessage());
+        
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.FORBIDDEN.value());
+        body.put("error", "MFA Required");
+        body.put("message", ex.getMessage());
+        body.put("requiresMfa", true);
+        body.put("path", request.getDescription(false).replace("uri=", ""));
+        
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
+    }
+    
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+        logger.warn("Access denied exception occurred: {}", ex.getMessage());
+        
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.FORBIDDEN.value());
+        body.put("error", "Access Denied");
+        body.put("message", "You do not have permission to access this resource");
+        body.put("path", request.getDescription(false).replace("uri=", ""));
+        
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGeneral(Exception ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "An unexpected error occurred");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    public ResponseEntity<Object> handleAllUncaughtExceptions(Exception ex, WebRequest request) {
+        logger.error("Uncaught exception occurred:", ex);
+        
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        body.put("error", "Internal Server Error");
+        body.put("message", "An unexpected error occurred");
+        body.put("path", request.getDescription(false).replace("uri=", ""));
+        
+        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

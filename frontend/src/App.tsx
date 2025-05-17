@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SecurityProvider } from './contexts/SecurityContext';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AdminLayout from './components/admin/AdminLayout';
@@ -89,98 +90,100 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <URLTokenHandler />
-        <ToastContainer 
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-        />
-        <Routes>
-          {/* Public routes with redirection for authenticated users */}
-          <Route path="/login" element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          } />
-          <Route path="/signup" element={
-            <PublicRoute>
-              <SignupPage />
-            </PublicRoute>
-          } />
-          <Route path="/verify-email" element={
-            <PublicRoute>
-              <EmailVerificationPage />
-            </PublicRoute>
-          } />
-          <Route path="/reset-password" element={
-            <PublicRoute>
-              <ResetPasswordPage />
-            </PublicRoute>
-          } />
-          
-          {/* Dashboard route - needs to be accessible with token in URL */}
-          <Route path="/dashboard" element={<DashboardPage />} />
-          
-          {/* Main authenticated routes using MainLayout */}
-          <Route
-            element={
-              <ProtectedRoute allowedRoles={undefined}>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            {/* Profile Routes - accessible to all authenticated users */}
-            <Route path="/profile">
-              <Route index element={<ProfilePage />} />
-              <Route path="settings" element={<ProfileSettingsPage />} />
-              <Route path="security" element={<SecuritySettingsPage />} />
-            </Route>
-
-            {/* Candidate Routes */}
-            <Route path="/candidate" element={<CandidateDashboardPage />} />
-
-            {/* Recruiter Routes */}
+      <SecurityProvider>
+        <Router>
+          <URLTokenHandler />
+          <ToastContainer 
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="colored"
+          />
+          <Routes>
+            {/* Public routes with redirection for authenticated users */}
+            <Route path="/login" element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            } />
+            <Route path="/signup" element={
+              <PublicRoute>
+                <SignupPage />
+              </PublicRoute>
+            } />
+            <Route path="/verify-email" element={
+              <PublicRoute>
+                <EmailVerificationPage />
+              </PublicRoute>
+            } />
+            <Route path="/reset-password" element={
+              <PublicRoute>
+                <ResetPasswordPage />
+              </PublicRoute>
+            } />
+            
+            {/* Dashboard route - needs to be accessible with token in URL */}
+            <Route path="/dashboard" element={<DashboardPage />} />
+            
+            {/* Main authenticated routes using MainLayout */}
             <Route
-              path="/recruiter"
               element={
-                <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER]}>
-                  <div>
-                    <h1>Recruiter Dashboard (Coming Soon)</h1>
-                  </div>
+                <ProtectedRoute allowedRoles={undefined}>
+                  <MainLayout />
                 </ProtectedRoute>
               }
-            />
-          </Route>
-          
-          {/* Admin Routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={[Role.ADMIN]}>
-                <AdminLayout>
-                  <Outlet />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminDashboardPage />} />
-            <Route path="users" element={<UserManagementPage />} />
-            <Route path="emails" element={<EmailManagementPage />} />
-          </Route>
+            >
+              {/* Profile Routes - accessible to all authenticated users */}
+              <Route path="/profile">
+                <Route index element={<ProfilePage />} />
+                <Route path="settings" element={<ProfileSettingsPage />} />
+                <Route path="security" element={<SecuritySettingsPage />} />
+              </Route>
 
-          {/* Default route */}
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </Router>
+              {/* Candidate Routes */}
+              <Route path="/candidate" element={<CandidateDashboardPage />} />
+
+              {/* Recruiter Routes */}
+              <Route
+                path="/recruiter"
+                element={
+                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER]}>
+                    <div>
+                      <h1>Recruiter Dashboard (Coming Soon)</h1>
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            
+            {/* Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={[Role.ADMIN]}>
+                  <AdminLayout>
+                    <Outlet />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="users" element={<UserManagementPage />} />
+              <Route path="emails" element={<EmailManagementPage />} />
+            </Route>
+
+            {/* Default route */}
+            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="*" element={<Navigate to="/login" />} />
+          </Routes>
+        </Router>
+      </SecurityProvider>
     </AuthProvider>
   );
 };

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const axiosInstance = axios.create({
   baseURL: '/api',
@@ -55,18 +56,37 @@ axiosInstance.interceptors.response.use(
     console.error('Axios - Response error:', error.response?.status, error.config?.url);
     console.error('Axios - Error data:', error.response?.data);
     
+    // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !error.response?.config?.url?.includes('/login')) {
       console.log('Axios - 401 Unauthorized, clearing auth data');
       // Clear auth data
       try {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('mfaVerified');
       } catch (e) {
         console.error('Axios - Error clearing localStorage:', e);
       }
       
       // Redirect to login
       window.location.href = '/login';
+    }
+    
+    // Handle MFA Required errors (403 with requiresMfa flag)
+    if (error.response?.status === 403 && error.response?.data?.requiresMfa === true) {
+      console.log('Axios - MFA required for this operation');
+      
+      // Show a toast message informing the user
+      toast.error('Two-factor authentication is required for this operation. Please set up 2FA in your security settings.', {
+        autoClose: 7000,  // Keep the message visible longer
+        onClose: () => {
+          // Redirect to security settings page
+          window.location.href = '/profile/security';
+        }
+      });
+      
+      // Prevent further navigation while the toast is visible
+      return new Promise(() => {});  // Never resolves, effectively blocking the request
     }
 
     // Ensure the original error is passed through with response data intact

@@ -1,5 +1,6 @@
 package com.ats.controller;
 
+import com.ats.annotation.Require2FA;
 import com.ats.model.User;
 import com.ats.repository.UserRepository;
 import com.ats.security.JwtTokenProvider;
@@ -16,6 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
+@Require2FA(roles = "ADMIN")
 public class AdminController {
 
     @Autowired

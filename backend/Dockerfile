@@ -23,6 +23,9 @@ COPY --from=build /app/target/*.jar app.jar
 ENV TZ=UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# Create uploads directory with proper permissions
+RUN mkdir -p /uploads/profile-pictures && chmod -R 777 /uploads
+
 # For development, mount the source code as a volume
 # and use spring-boot-devtools for hot reloading
 ENV SPRING_DEVTOOLS_REMOTE_DEBUG=true

@@ -200,4 +200,7 @@ public class UserDTO {
     )
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Boolean sendVerificationEmail;
+
+    @Schema(description = "Whether 2FA is enabled for this user", example = "true")
+    private Boolean mfaEnabled;
 } 

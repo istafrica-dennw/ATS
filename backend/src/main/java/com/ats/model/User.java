@@ -93,4 +93,13 @@ public class User extends BaseEntity {
     
     @Column(name = "email_verification_token_expiry")
     private LocalDateTime emailVerificationTokenExpiry;
+    
+    @Column(name = "mfa_enabled")
+    private Boolean mfaEnabled = false;
+    
+    @Column(name = "mfa_secret")
+    private String mfaSecret;
+    
+    @Column(name = "mfa_recovery_codes", columnDefinition = "TEXT[]")
+    private String[] mfaRecoveryCodes;
 } 

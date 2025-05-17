@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ats.dto.MfaSetupResponse;
+import com.ats.service.TotpService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,12 +30,14 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final TotpService totpService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, TotpService totpService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.totpService = totpService;
     }
 
     @Override
@@ -199,13 +203,108 @@ public class UserServiceImpl implements UserService {
     public UserDTO deactivateAccount(Long id, String reason) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        
         user.setIsActive(false);
         user.setDeactivationReason(reason);
         user.setDeactivationDate(LocalDateTime.now());
+        User updatedUser = userRepository.save(user);
+        return convertToDTO(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public MfaSetupResponse setupMfa(String email, String currentPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                
+        // Verify the user's password
+        if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new RuntimeException("Invalid password");
+        }
         
-        User deactivatedUser = userRepository.save(user);
-        return convertToDTO(deactivatedUser);
+        // Generate MFA secret and QR code
+        String secret = totpService.generateSecret();
+        String qrCodeImageUrl = totpService.generateQrCodeImageUrl(email, secret);
+        String[] recoveryCodes = totpService.generateRecoveryCodes();
+        
+        // Return the setup information without saving to DB yet
+        // Will be saved only after user confirms by verifying a code
+        return new MfaSetupResponse(secret, qrCodeImageUrl, recoveryCodes);
+    }
+    
+    @Override
+    @Transactional
+    public boolean verifyAndEnableMfa(String email, String code, String secret) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                
+        // Verify the provided code is valid
+        if (!totpService.validateCode(code, secret)) {
+            return false;
+        }
+        
+        // Generate recovery codes
+        String[] recoveryCodes = totpService.generateRecoveryCodes();
+        
+        // Save MFA settings to user
+        user.setMfaEnabled(true);
+        user.setMfaSecret(secret);
+        user.setMfaRecoveryCodes(recoveryCodes);
+        userRepository.save(user);
+        
+        return true;
+    }
+    
+    @Override
+    @Transactional
+    public boolean disableMfa(String email, String currentPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                
+        // Verify the user's password
+        if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new RuntimeException("Invalid password");
+        }
+        
+        // Disable MFA
+        user.setMfaEnabled(false);
+        user.setMfaSecret(null);
+        user.setMfaRecoveryCodes(null);
+        userRepository.save(user);
+        
+        return true;
+    }
+    
+    @Override
+    public boolean validateMfaCode(String email, String code) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                
+        if (!user.getMfaEnabled() || user.getMfaSecret() == null) {
+            throw new RuntimeException("MFA is not enabled for this user");
+        }
+        
+        return totpService.validateCode(code, user.getMfaSecret());
+    }
+    
+    @Override
+    @Transactional
+    public boolean validateMfaRecoveryCode(String email, String recoveryCode) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                
+        if (!user.getMfaEnabled() || user.getMfaRecoveryCodes() == null) {
+            throw new RuntimeException("MFA is not enabled for this user");
+        }
+        
+        String[] updatedCodes = totpService.validateAndRemoveRecoveryCode(recoveryCode, user.getMfaRecoveryCodes());
+        
+        if (updatedCodes != null) {
+            user.setMfaRecoveryCodes(updatedCodes);
+            userRepository.save(user);
+            return true;
+        }
+        
+        return false;
     }
 
     private UserDTO convertToDTO(User user) {
@@ -219,12 +318,6 @@ public class UserServiceImpl implements UserService {
         dto.setLinkedinId(user.getLinkedinId());
         dto.setLinkedinProfileUrl(user.getLinkedinProfileUrl());
         dto.setProfilePictureUrl(user.getProfilePictureUrl());
-        dto.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());
-        dto.setLastLogin(user.getLastLogin());
-        dto.setIsActive(user.getIsActive());
-        dto.setIsEmailVerified(user.getIsEmailVerified());
-        
-        // Set new profile fields
         dto.setBirthDate(user.getBirthDate());
         dto.setPhoneNumber(user.getPhoneNumber());
         dto.setAddressLine1(user.getAddressLine1());
@@ -236,7 +329,11 @@ public class UserServiceImpl implements UserService {
         dto.setBio(user.getBio());
         dto.setDeactivationReason(user.getDeactivationReason());
         dto.setDeactivationDate(user.getDeactivationDate());
-        
+        dto.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());
+        dto.setLastLogin(user.getLastLogin());
+        dto.setIsActive(user.getIsActive());
+        dto.setIsEmailVerified(user.getIsEmailVerified());
+        dto.setMfaEnabled(user.getMfaEnabled());
         return dto;
     }
     

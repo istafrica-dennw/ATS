@@ -15,6 +15,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
+import SecuritySettingsPage from './pages/profile/SecuritySettingsPage';
 import CandidateDashboardPage from './pages/candidate/CandidateDashboardPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -140,6 +141,7 @@ const App: React.FC = () => {
             <Route path="/profile">
               <Route index element={<ProfilePage />} />
               <Route path="settings" element={<ProfileSettingsPage />} />
+              <Route path="security" element={<SecuritySettingsPage />} />
             </Route>
 
             {/* Candidate Routes */}

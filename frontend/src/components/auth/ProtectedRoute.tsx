@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user, manuallySetToken } = useAuth();
+  const { isAuthenticated, user, manuallySetToken, mfaVerified } = useAuth();
   const location = useLocation();
   const [isValidating, setIsValidating] = useState(false);
   const [validationAttempted, setValidationAttempted] = useState(false);
@@ -19,6 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   console.log('ProtectedRoute - isAuthenticated:', isAuthenticated);
   console.log('ProtectedRoute - user:', user);
   console.log('ProtectedRoute - allowedRoles:', allowedRoles);
+  console.log('ProtectedRoute - mfaVerified:', mfaVerified);
 
   useEffect(() => {
     const checkAndValidateToken = async () => {
@@ -89,6 +90,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   if (!isAuthenticated) {
     console.log('ProtectedRoute - Not authenticated after validation, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  // Check if user has MFA enabled but hasn't completed verification for this session
+  if (user?.mfaEnabled && !mfaVerified) {
+    console.log('ProtectedRoute - User has MFA enabled but not verified for this session');
+    console.log('ProtectedRoute - Current MFA state:', { 
+      userMfa: user.mfaEnabled, 
+      mfaVerifiedState: mfaVerified,
+      storageMfaVerified: localStorage.getItem('mfaVerified')
+    });
+    
+    // Try one more time to check storage directly in case state isn't updated
+    const directStorageCheck = localStorage.getItem('mfaVerified') === 'true';
+    
+    if (directStorageCheck) {
+      console.log('ProtectedRoute - MFA verified according to localStorage, proceeding');
+      return <>{children}</>;
+    }
+    
+    console.log('ProtectedRoute - Redirecting to login for MFA verification');
+    return <Navigate to="/login" state={{ from: location, requireMfa: true }} replace />;
   }
 
   // If roles are specified and user's role is not allowed, redirect to appropriate dashboard

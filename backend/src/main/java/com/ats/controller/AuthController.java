@@ -6,6 +6,10 @@ import com.ats.dto.UserDTO;
 import com.ats.dto.ChangePasswordRequest;
 import com.ats.dto.ForgotPasswordRequest;
 import com.ats.dto.ResetPasswordRequest;
+import com.ats.dto.MfaSetupRequest;
+import com.ats.dto.MfaSetupResponse;
+import com.ats.dto.MfaVerifyRequest;
+import com.ats.dto.MfaLoginRequest;
 import com.ats.model.User;
 import com.ats.model.Role;
 import com.ats.repository.UserRepository;
@@ -13,6 +17,7 @@ import com.ats.security.JwtTokenProvider;
 import com.ats.exception.ResourceAlreadyExistsException;
 import com.ats.service.EmailService;
 import com.ats.service.PasswordResetService;
+import com.ats.service.UserService;
 import com.ats.util.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,9 +38,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import com.ats.annotation.RequiresAuthentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -50,6 +57,7 @@ public class AuthController {
     private final JwtTokenProvider tokenProvider;
     private final EmailService emailService;
     private final PasswordResetService passwordResetService;
+    private final UserService userService;
 
     @PostMapping("/signup")
     @Operation(
@@ -121,33 +129,34 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(
-        summary = "Authenticate user",
-        description = "Authenticates a user with email and password, returns a JWT token"
+        summary = "Login user",
+        description = "Authenticates a user with email and password"
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
-            description = "User authenticated successfully",
+            description = "Authentication successful",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = AuthResponse.class),
-                examples = @ExampleObject(
-                    value = "{\"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\", \"user\": {\"id\": 1, \"email\": \"john.doe@example.com\", \"firstName\": \"John\", \"lastName\": \"Doe\", \"role\": \"RECRUITER\"}}"
-                )
+                schema = @Schema(implementation = AuthResponse.class)
             )
         ),
         @ApiResponse(
-            responseCode = "400",
-            description = "Invalid credentials",
+            responseCode = "401",
+            description = "Authentication failed, invalid credentials or email not verified"
+        ),
+        @ApiResponse(
+            responseCode = "202",
+            description = "2FA required",
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(
-                    value = "{\"timestamp\": \"2024-02-20T10:00:00\", \"message\": \"Invalid email or password\", \"status\": 400, \"error\": \"Bad Request\"}"
+                    value = "{\"message\": \"2FA verification required\", \"email\": \"user@example.com\", \"requires2FA\": true}"
                 )
             )
         )
     })
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest authRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
         User user = userRepository.findByEmail(authRequest.getEmail())
             .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
@@ -159,12 +168,29 @@ public class AuthController {
             throw new RuntimeException("This account has been deactivated. Please contact an administrator.");
         }
 
+        // Authenticate with password
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
         );
 
+        // Check if user has 2FA enabled
+        if (user.getMfaEnabled() != null && user.getMfaEnabled()) {
+            // Return a response indicating 2FA is required
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(Map.of(
+                    "message", "2FA verification required",
+                    "email", user.getEmail(),
+                    "requires2FA", true
+                ));
+        }
+
+        // If 2FA is not enabled, proceed with normal login
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = tokenProvider.generateToken(authentication);
+        
+        // Update last login time
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
 
         return ResponseEntity.ok(new AuthResponse(jwt, convertToDTO(user)));
     }
@@ -640,6 +666,161 @@ public class AuthController {
                 "message", "Invalid or expired token. Please request a new password reset link."
             ));
         }
+    }
+
+    @PostMapping("/mfa/setup")
+    @Operation(
+        summary = "Set up MFA",
+        description = "Initiates the setup of Multi-Factor Authentication for a user"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "MFA setup initiated successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = MfaSetupResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - invalid password"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User not found"
+        )
+    })
+    @RequiresAuthentication(message = "You must be logged in to set up MFA")
+    public ResponseEntity<?> setupMfa(@Valid @RequestBody MfaSetupRequest request, Authentication authentication) {
+        String email = authentication.getName();
+        MfaSetupResponse response = userService.setupMfa(email, request.getCurrentPassword());
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/mfa/verify")
+    @Operation(
+        summary = "Verify and enable MFA",
+        description = "Verify a MFA code and enable MFA for the user"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "MFA enabled successfully"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid verification code"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User not found"
+        )
+    })
+    @RequiresAuthentication(message = "You must be logged in to verify MFA")
+    public ResponseEntity<?> verifyAndEnableMfa(@Valid @RequestBody MfaVerifyRequest request, Authentication authentication) {
+        String email = authentication.getName();
+        boolean success = userService.verifyAndEnableMfa(email, request.getCode(), request.getSecret());
+        
+        if (success) {
+            return ResponseEntity.ok().body(Map.of("message", "MFA enabled successfully"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid verification code"));
+        }
+    }
+    
+    @PostMapping("/mfa/disable")
+    @Operation(
+        summary = "Disable MFA",
+        description = "Disable Multi-Factor Authentication for a user"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "MFA disabled successfully"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - invalid password"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User not found"
+        )
+    })
+    @RequiresAuthentication(message = "You must be logged in to disable MFA")
+    public ResponseEntity<?> disableMfa(@Valid @RequestBody MfaSetupRequest request, Authentication authentication) {
+        String email = authentication.getName();
+        boolean success = userService.disableMfa(email, request.getCurrentPassword());
+        
+        if (success) {
+            return ResponseEntity.ok().body(Map.of("message", "MFA disabled successfully"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to disable MFA"));
+        }
+    }
+    
+    @PostMapping("/mfa/login")
+    @Operation(
+        summary = "Login with MFA",
+        description = "Complete the login process by providing a MFA code"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Login successful",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid MFA code"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User not found"
+        )
+    })
+    public ResponseEntity<?> loginWithMfa(@Valid @RequestBody MfaLoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+                
+        boolean isValid = false;
+        
+        // Try verification code first
+        if (request.getCode() != null && !request.getCode().isEmpty()) {
+            isValid = userService.validateMfaCode(request.getEmail(), request.getCode());
+        }
+        
+        // If verification code is invalid, try recovery code
+        if (!isValid && request.getRecoveryCode() != null && !request.getRecoveryCode().isEmpty()) {
+            isValid = userService.validateMfaRecoveryCode(request.getEmail(), request.getRecoveryCode());
+        }
+        
+        if (!isValid) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid verification code or recovery code"));
+        }
+        
+        // Setup authentication
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user.getEmail(),
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
+        );
+        
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        
+        // Generate JWT
+        String jwt = tokenProvider.generateToken(authentication);
+        
+        // Update last login
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+        
+        return ResponseEntity.ok(new AuthResponse(jwt, convertToDTO(user)));
     }
 
     private UserDTO convertToDTO(User user) {

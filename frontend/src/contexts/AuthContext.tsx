@@ -2,17 +2,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosInstance from '../utils/axios';
 import { User, Role } from '../types/user';
 import { toast } from 'react-toastify';
-
-interface AuthResponse {
-  user: User;
-  accessToken: string;
-}
+import { authService, AuthResponse, MfaRequiredResponse, MfaLoginRequest } from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<AuthResponse>;
+  login: (email: string, password: string) => Promise<AuthResponse | MfaRequiredResponse>;
+  loginWithMfa: (data: MfaLoginRequest) => Promise<AuthResponse>;
+  setupMfa: (currentPassword: string) => Promise<any>;
+  verifyAndEnableMfa: (code: string, secret: string) => Promise<any>;
+  disableMfa: (currentPassword: string) => Promise<any>;
   signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -21,6 +21,8 @@ interface AuthContextType {
   setUser: (user: User | null) => void;
   validateTokenAndGetUser: (token: string) => Promise<User>;
   manuallySetToken: (token: string) => Promise<User>;
+  mfaVerified: boolean;
+  setMfaVerified: (verified: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,26 +65,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [mfaVerified, setMfaVerified] = useState(false);
 
   // Safely set authentication data with fallbacks if localStorage fails
-  const safeSetAuthData = (userData: User, tokenData: string) => {
+  const safeSetAuthData = (userData: any, tokenData: string) => {
     console.log('AuthContext - Safely setting auth data');
-    setUser(userData);
+    // Convert string role to Role enum and handle date conversion
+    const userWithCorrectTypes = {
+      ...userData,
+      role: userData.role as Role,
+      lastLogin: userData.lastLogin ? new Date(userData.lastLogin) : undefined
+    } as User;
+    
+    setUser(userWithCorrectTypes);
     setToken(tokenData);
     setIsAuthenticated(true);
     
-    // Try to store in localStorage
-    const tokenStored = safeLocalStorage.setItem('token', tokenData);
-    const userStored = safeLocalStorage.setItem('user', JSON.stringify(userData));
-    
-    if (!tokenStored || !userStored) {
-      console.warn('AuthContext - Failed to store auth data in localStorage, using session storage as fallback');
-      try {
-        sessionStorage.setItem('token', tokenData);
-        sessionStorage.setItem('user', JSON.stringify(userData));
-      } catch (e) {
-        console.error('AuthContext - Failed to store auth data in sessionStorage:', e);
-      }
+    // Only store in localStorage
+    try {
+      localStorage.setItem('token', tokenData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      console.log('AuthContext - Auth data stored in localStorage');
+    } catch (e) {
+      console.error('AuthContext - Failed to store auth data in localStorage:', e);
     }
   };
 
@@ -131,6 +136,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update state and storage using safe method
       safeSetAuthData(userData, authToken);
       
+      // Check if user has MFA enabled but MFA hasn't been verified for this session
+      if (userData.mfaEnabled && !mfaVerified) {
+        console.log('AuthContext - User has MFA enabled but not verified for this session');
+        // We need to redirect to login to verify MFA
+        // Clear authentication to force login with MFA verification
+        return userData;
+      }
+      
       return userData;
     } catch (error) {
       console.error('AuthContext - Token validation failed:', error);
@@ -141,16 +154,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Utility function to manually set a token (can be called from anywhere in the app)
   const manuallySetToken = async (tokenValue: string) => {
     console.log('AuthContext - Manually setting token:', tokenValue);
-    safeLocalStorage.setItem('token', tokenValue);
+    
+    // Set in localStorage only
+    try {
+      localStorage.setItem('token', tokenValue);
+      console.log('AuthContext - Token stored in localStorage');
+    } catch (e) {
+      console.error('AuthContext - Failed to store token in localStorage:', e);
+    }
+    
     setToken(tokenValue);
     setIsAuthenticated(true);
-    
-    // Also try session storage as a backup
-    try {
-      sessionStorage.setItem('token', tokenValue);
-    } catch (e) {
-      console.error('AuthContext - Failed to store token in sessionStorage:', e);
-    }
     
     // Validate and get user data
     return validateTokenAndGetUser(tokenValue);
@@ -160,8 +174,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for stored user data and token
     const storedUser = safeLocalStorage.getItem('user');
     const storedToken = safeLocalStorage.getItem('token');
+    const storedMfaVerified = safeLocalStorage.getItem('mfaVerified') === 'true';
+    
     console.log('AuthContext - Initial auth check - storedUser:', storedUser ? 'exists' : 'missing');
     console.log('AuthContext - Initial auth check - storedToken:', storedToken ? 'exists' : 'missing');
+    console.log('AuthContext - Initial auth check - storedMfaVerified:', storedMfaVerified);
+    
+    // Initialize mfaVerified from local storage
+    setMfaVerified(storedMfaVerified);
     
     // Also check URL for token (this can help with OAuth flows)
     const params = new URLSearchParams(window.location.search);
@@ -175,8 +195,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isPublicPath = PUBLIC_PATHS.some(path => currentPath.startsWith(path));
     
     const initAuth = async () => {
-      // Priority: URL token > localStorage token > sessionStorage token
-      const tokenToUse = urlToken || storedToken || sessionStorage.getItem('token');
+      // Only use localStorage token or URL token
+      const tokenToUse = urlToken || storedToken;
       
       // If we're on a public path like reset-password, don't try to validate tokens
       if (isPublicPath) {
@@ -191,8 +211,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         try {
           // Always validate the token by making a /me request
-          await fetchUserData(tokenToUse);
+          const userData = await fetchUserData(tokenToUse);
           console.log('AuthContext - Token validated successfully');
+          
+          // If user has MFA enabled but we haven't verified MFA for this session,
+          // and we're not already on the login page, redirect to login
+          if (userData.mfaEnabled && !storedMfaVerified && currentPath !== '/login') {
+            console.log('AuthContext - Redirecting to login for MFA verification');
+            safeLocalStorage.removeItem('token');
+            safeLocalStorage.removeItem('user');
+            safeLocalStorage.removeItem('mfaVerified');
+            
+            setToken(null);
+            setUser(null);
+            setIsAuthenticated(false);
+            setMfaVerified(false);
+            
+            // Redirect to login
+            window.location.href = '/login';
+            return;
+          }
           
           // Remove token from URL if it exists
           if (urlToken) {
@@ -203,13 +241,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // If validation fails, clear everything
           safeLocalStorage.removeItem('token');
           safeLocalStorage.removeItem('user');
-          try {
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
-          } catch (e) {}
+          safeLocalStorage.removeItem('mfaVerified');
+          
           setToken(null);
           setUser(null);
           setIsAuthenticated(false);
+          setMfaVerified(false);
         }
       }
       
@@ -219,26 +256,145 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<AuthResponse> => {
+  const login = async (email: string, password: string): Promise<AuthResponse | MfaRequiredResponse> => {
     try {
       console.log('AuthContext - Attempting login...');
-      const response = await axiosInstance.post('/auth/login', { email, password });
-      const data: AuthResponse = response.data;
-      console.log('AuthContext - Login successful, received data:', data);
+      const response = await authService.login({ email, password });
       
-      // Store user data and token in localStorage
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('token', data.accessToken);
+      // Check if 2FA verification is required
+      if ('requires2FA' in response && response.requires2FA) {
+        console.log('AuthContext - 2FA required for login');
+        return response as MfaRequiredResponse;
+      }
+      
+      // Normal login successful
+      const authResponse = response as AuthResponse;
+      console.log('AuthContext - Login successful, received data:', authResponse);
+      
+      // For standard login (no MFA), we need to store auth data with proper MFA status
+      try {
+        // Store user data and token only in localStorage
+        localStorage.setItem('user', JSON.stringify(authResponse.user));
+        localStorage.setItem('token', authResponse.accessToken);
+        
+        // If user has MFA enabled, we should NOT set mfaVerified to true here
+        // because they haven't gone through MFA verification yet
+        if (authResponse.user.mfaEnabled) {
+          localStorage.removeItem('mfaVerified');
+          setMfaVerified(false);
+          console.log('AuthContext - User has MFA enabled, setting mfaVerified to false');
+        } else {
+          // For users without MFA, we can consider them verified
+          localStorage.setItem('mfaVerified', 'true');
+          setMfaVerified(true);
+          console.log('AuthContext - User has no MFA, setting mfaVerified to true');
+        }
+      } catch (e) {
+        console.error('AuthContext - Error storing auth data during login:', e);
+      }
 
       // Update state after successful storage
-      setUser(data.user);
-      setToken(data.accessToken);
+      setUser({
+        ...authResponse.user, 
+        role: authResponse.user.role as Role,
+        lastLogin: authResponse.user.lastLogin ? new Date(authResponse.user.lastLogin) : undefined
+      } as User);
+      setToken(authResponse.accessToken);
       setIsAuthenticated(true);
       
-      return data;
+      return authResponse;
     } catch (error: any) {
       console.error('AuthContext - Login error:', error);
       // Don't transform the error - pass it as is to allow components to extract data
+      throw error;
+    }
+  };
+  
+  const loginWithMfa = async (data: MfaLoginRequest): Promise<AuthResponse> => {
+    try {
+      console.log('AuthContext - Attempting MFA login...');
+      const response = await authService.loginWithMfa(data);
+      console.log('AuthContext - MFA Login successful, response:', response);
+      
+      // Store user data and token only in localStorage
+      localStorage.setItem('user', JSON.stringify(response.user));
+      localStorage.setItem('token', response.accessToken);
+      localStorage.setItem('mfaVerified', 'true');
+      
+      console.log('AuthContext - MFA verification state stored, mfaVerified set to true');
+
+      // Convert string role to Role enum
+      const userRole = response.user.role as Role;
+      console.log('AuthContext - User role:', userRole);
+      
+      // Update state after successful storage
+      setUser({
+        ...response.user, 
+        role: userRole,
+        lastLogin: response.user.lastLogin ? new Date(response.user.lastLogin) : undefined
+      } as User);
+      setToken(response.accessToken);
+      setIsAuthenticated(true);
+      setMfaVerified(true);
+      
+      // Set the auth header for future requests
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.accessToken}`;
+      console.log('AuthContext - Authentication header set for future requests');
+      
+      return response;
+    } catch (error: any) {
+      console.error('AuthContext - MFA Login error:', error);
+      throw error;
+    }
+  };
+  
+  const setupMfa = async (currentPassword: string) => {
+    try {
+      return await authService.setupMfa(currentPassword);
+    } catch (error) {
+      console.error('AuthContext - Setup MFA error:', error);
+      throw error;
+    }
+  };
+  
+  const verifyAndEnableMfa = async (code: string, secret: string) => {
+    try {
+      const response = await authService.verifyAndEnableMfa(code, secret);
+      
+      // Update the user object to reflect MFA is now enabled
+      if (user) {
+        const updatedUser = { 
+          ...user, 
+          mfaEnabled: true 
+        } as User;
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('AuthContext - Verify MFA error:', error);
+      throw error;
+    }
+  };
+  
+  const disableMfa = async (currentPassword: string) => {
+    try {
+      const response = await authService.disableMfa(currentPassword);
+      
+      // Update the user object to reflect MFA is now disabled
+      if (user) {
+        const updatedUser = { 
+          ...user, 
+          mfaEnabled: false 
+        } as User;
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('AuthContext - Disable MFA error:', error);
       throw error;
     }
   };
@@ -259,19 +415,105 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Comprehensive function to clear all auth data from everywhere
+  const clearAllAuthData = () => {
+    console.log('AuthContext - Clearing all auth data');
+    
+    // Clear state
+    setUser(null);
+    setToken(null);
+    setIsAuthenticated(false);
+    setMfaVerified(false);
+    
+    // Clear ALL possible auth data from localStorage
+    try {
+      // Clear standard auth items
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('mfaVerified');
+      
+      // Clear any other potentially auth-related items
+      localStorage.removeItem('refreshToken'); // In case refresh tokens are stored
+      localStorage.removeItem('authExpires');  // In case expiration is stored
+      localStorage.removeItem('loginTime');    // In case login time is stored
+      
+      // ALSO clear everything from sessionStorage to be thorough
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('mfaVerified');
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('authExpires');
+      sessionStorage.removeItem('loginTime');
+      
+      // For debugging purposes
+      console.log('AuthContext - Storage after clearing:');
+      console.log('- localStorage token:', localStorage.getItem('token'));
+      console.log('- sessionStorage token:', sessionStorage.getItem('token'));
+      
+      console.log('AuthContext - Successfully cleared all storage auth data');
+    } catch (e) {
+      console.error('AuthContext - Error clearing storage:', e);
+    }
+    
+    // Clear auth header from axios instance
+    delete axiosInstance.defaults.headers.common['Authorization'];
+    
+    console.log('AuthContext - All auth data cleared');
+  };
+
   const logout = () => {
     console.log('AuthContext - Attempting logout...');
+    
+    // First clear all local auth data regardless of server response
+    clearAllAuthData();
+    
+    // Then notify the server (but don't wait for it)
     axiosInstance.post('/auth/logout')
       .then(() => {
-        console.log('AuthContext - Logout successful');
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        setIsAuthenticated(false);
+        console.log('AuthContext - Server notified of logout');
       })
       .catch((error) => {
-        console.error('AuthContext - Logout error:', error);
+        console.error('AuthContext - Error notifying server of logout:', error);
+      })
+      .finally(() => {
+        // Additional check to make sure data is cleared
+        if (localStorage.getItem('token')) {
+          console.warn('AuthContext - Token still exists after logout, forcing removal');
+          localStorage.removeItem('token');
+        }
+        
+        if (sessionStorage.getItem('token')) {
+          console.warn('AuthContext - Token still exists in sessionStorage after logout, forcing removal');
+          sessionStorage.removeItem('token');
+        }
+        
+        // Clear ALL storage as a last resort
+        try {
+          // Try a more direct approach to ensure token is removed from both storage types
+          window.localStorage.removeItem('token');
+          window.sessionStorage.removeItem('token');
+          
+          // Brute force removal of all potentially sensitive data
+          for (let key in localStorage) {
+            if (key.includes('token') || key.includes('auth') || key.includes('user') || key.includes('mfa')) {
+              console.log('AuthContext - Removing localStorage item:', key);
+              localStorage.removeItem(key);
+            }
+          }
+          
+          for (let key in sessionStorage) {
+            if (key.includes('token') || key.includes('auth') || key.includes('user') || key.includes('mfa')) {
+              console.log('AuthContext - Removing sessionStorage item:', key);
+              sessionStorage.removeItem(key);
+            }
+          }
+        } catch (e) {
+          console.error('AuthContext - Error during final storage cleanup:', e);
+        }
+        
+        // Force redirect to login page
+        console.log('AuthContext - Redirecting to login page');
+        window.location.href = '/login';
       });
   };
 
@@ -280,6 +522,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     token,
     isLoading,
     login,
+    loginWithMfa,
+    setupMfa,
+    verifyAndEnableMfa,
+    disableMfa,
     signup,
     logout,
     isAuthenticated,
@@ -287,7 +533,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticated,
     setUser,
     validateTokenAndGetUser,
-    manuallySetToken
+    manuallySetToken,
+    mfaVerified,
+    setMfaVerified
   };
 
   // Return children regardless of loading state

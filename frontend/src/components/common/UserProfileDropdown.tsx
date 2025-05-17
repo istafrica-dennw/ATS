@@ -2,7 +2,7 @@ import React, { Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { UserCircleIcon, ArrowRightOnRectangleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, ArrowRightOnRectangleIcon, Cog6ToothIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -74,6 +74,21 @@ const UserProfileDropdown: React.FC = () => {
               >
                 <Cog6ToothIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
                 Settings
+              </Link>
+            )}
+          </Menu.Item>
+          
+          <Menu.Item>
+            {({ active }) => (
+              <Link
+                to="/profile/security"
+                className={classNames(
+                  active ? 'bg-gray-100' : '',
+                  'flex px-4 py-2 text-sm text-gray-700 w-full items-center'
+                )}
+              >
+                <ShieldCheckIcon className="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
+                Security
               </Link>
             )}
           </Menu.Item>

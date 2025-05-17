@@ -1,71 +1,83 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../utils/axios';
 import { Role } from '../types/user';
 
 const DashboardPage: React.FC = () => {
-    console.log('DashboardPage - Rendering');
-  const { user, setUser, setToken, setIsAuthenticated } = useAuth();
+  console.log('DashboardPage - Rendering');
+  const { user, setUser, setToken, setIsAuthenticated, token } = useAuth();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Function to redirect based on role
   const redirectBasedOnRole = (userRole: string) => {
     console.log('DashboardPage - Redirecting based on role:', userRole);
     
-    // Normalize role by removing ROLE_ prefix if present
-    const role = userRole.replace('ROLE_', '');
+    // If role is empty or undefined, show error
+    if (!userRole) {
+      console.error('DashboardPage - Role is empty or undefined');
+      setError('Unable to determine user role. Please log out and log in again.');
+      setIsLoading(false);
+      return;
+    }
     
-    switch (role) {
-      case Role.ADMIN:
-        console.log('DashboardPage - Redirecting to admin dashboard');
-        navigate('/admin');
-        break;
-      case Role.INTERVIEWER:
-      case Role.HIRING_MANAGER:
-        console.log('DashboardPage - Redirecting to recruiter dashboard');
-        navigate('/recruiter');
-        break;
-      case Role.CANDIDATE:
-        console.log('DashboardPage - Redirecting to candidate dashboard');
-        navigate('/candidate');
-        break;
-      default:
-        console.log('DashboardPage - Unknown role, staying on generic dashboard');
-        // Stay on the current dashboard for unknown roles
-        break;
+    // Normalize role by removing ROLE_ prefix if present
+    const normalizedRole = userRole.replace('ROLE_', '').toUpperCase();
+    console.log('DashboardPage - Normalized role:', normalizedRole);
+    
+    // Map the normalized role to an actual Role enum value if possible
+    let roleEnum: Role | null = null;
+    
+    // Check each possible role value
+    if (normalizedRole === 'ADMIN' || normalizedRole === Role.ADMIN) {
+      roleEnum = Role.ADMIN;
+    } else if (normalizedRole === 'INTERVIEWER' || normalizedRole === Role.INTERVIEWER) {
+      roleEnum = Role.INTERVIEWER;
+    } else if (normalizedRole === 'HIRING_MANAGER' || normalizedRole === Role.HIRING_MANAGER) {
+      roleEnum = Role.HIRING_MANAGER;
+    } else if (normalizedRole === 'CANDIDATE' || normalizedRole === Role.CANDIDATE) {
+      roleEnum = Role.CANDIDATE;
+    }
+    
+    console.log('DashboardPage - Mapped to enum:', roleEnum);
+    
+    // Redirect based on mapped role
+    if (roleEnum === Role.ADMIN) {
+      console.log('DashboardPage - Redirecting to admin dashboard');
+      navigate('/admin');
+    } else if (roleEnum === Role.INTERVIEWER || roleEnum === Role.HIRING_MANAGER) {
+      console.log('DashboardPage - Redirecting to recruiter dashboard');
+      navigate('/recruiter');
+    } else if (roleEnum === Role.CANDIDATE) {
+      console.log('DashboardPage - Redirecting to candidate dashboard');
+      navigate('/candidate');
+    } else {
+      console.log('DashboardPage - Unknown role, staying on generic dashboard');
+      setError(`Unknown role: ${userRole}. Please contact support.`);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user) {
-      console.log('\n\n\n DashboardPage - User found\n\n\n\n:', user);
-      // If user is already loaded, redirect based on role
-      redirectBasedOnRole(user.role);
-    } else {
-      console.log('DashboardPage - No user found, fetching from URL');
-      // Get token from URL parameters
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
-      
-      if (token) {
-        console.log('DashboardPage - Token found from url:', token);
-        // Set token in context and localStorage
-        localStorage.setItem('token', token);
-        setToken(token);
-        setIsAuthenticated(true);
-        
-        // Remove token from URL
-        window.history.replaceState({}, document.title, '/dashboard');
-        
-        // Fetch user data with token
-        const fetchUserData = async () => {
+    const checkUserAndRedirect = async () => {
+      try {
+        if (user) {
+          console.log('DashboardPage - User found:', user);
+          console.log('DashboardPage - User role:', user.role);
+          // If user is already loaded, redirect based on role
+          redirectBasedOnRole(user.role);
+        } else if (token) {
+          console.log('DashboardPage - No user but token found, fetching user data');
+          // We have a token but no user, fetch user data
           try {
             const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
             axiosInstance.defaults.headers.common['Authorization'] = formattedToken;
             
             const response = await axiosInstance.get('/auth/me');
             const userData = response.data;
+            console.log('DashboardPage - Fetched user data:', userData);
             
             localStorage.setItem('user', JSON.stringify(userData));
             setUser(userData);
@@ -73,15 +85,40 @@ const DashboardPage: React.FC = () => {
             // Redirect based on role after fetching user data
             redirectBasedOnRole(userData.role);
           } catch (error) {
-            console.error('Failed to fetch user data:', error);
-            navigate('/login');
+            console.error('DashboardPage - Failed to fetch user data:', error);
+            setError('Failed to fetch user data. Please try logging in again.');
+            setIsLoading(false);
           }
-        };
-        
-        fetchUserData();
+        } else {
+          console.log('DashboardPage - No user or token found, redirecting to login');
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('DashboardPage - Error during user check:', error);
+        setError('An error occurred. Please try logging in again.');
+        setIsLoading(false);
       }
-    }
-  }, [user, setToken, setUser, setIsAuthenticated, navigate]);
+    };
+    
+    checkUserAndRedirect();
+  }, [user, token, setToken, setUser, setIsAuthenticated, navigate]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold text-center mb-6">Dashboard Error</h2>
+          <div className="text-center text-red-600 mb-4">{error}</div>
+          <button 
+            onClick={() => navigate('/login')}
+            className="w-full bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700"
+          >
+            Return to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

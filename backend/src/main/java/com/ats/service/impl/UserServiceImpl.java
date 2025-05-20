@@ -9,7 +9,6 @@ import com.ats.repository.UserRepository;
 import com.ats.service.EmailService;
 import com.ats.service.UserService;
 import com.ats.util.TokenUtil;
-import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.Authentication;
@@ -21,7 +20,6 @@ import com.ats.service.TotpService;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service

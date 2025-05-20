@@ -57,24 +57,20 @@ CREATE TABLE user_preferences (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Jobs table
+-- Create jobs table
 CREATE TABLE jobs (
     id BIGSERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    department VARCHAR(100) NOT NULL,
-    location VARCHAR(100),
-    job_type VARCHAR(50),
-    experience_level VARCHAR(50),
     description TEXT,
-    requirements TEXT,
-    responsibilities TEXT,
-    salary_range JSONB,
-    hiring_manager_id BIGINT REFERENCES users(id),
-    status VARCHAR(50) DEFAULT 'DRAFT',
-    application_deadline TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGINT REFERENCES users(id)
+    status VARCHAR(50) NOT NULL,
+    work_setting VARCHAR(50) NOT NULL,
+    department VARCHAR(255),
+    posted_date DATE,
+    salary_range VARCHAR(255),
+    employment_type VARCHAR(255),
+    skills TEXT[],
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Job custom fields
@@ -87,6 +83,13 @@ CREATE TABLE job_custom_fields (
     is_visible BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create indexes for commonly queried fields
+CREATE INDEX idx_jobs_title ON jobs(title);
+CREATE INDEX idx_jobs_status ON jobs(status);
+CREATE INDEX idx_jobs_department ON jobs(department);
+CREATE INDEX idx_jobs_work_setting ON jobs(work_setting);
+
 
 -- Applications table
 CREATE TABLE applications (
@@ -205,7 +208,6 @@ CREATE TABLE testmessages (
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_linkedin_id ON users(linkedin_id);
-CREATE INDEX idx_jobs_status ON jobs(status);
 CREATE INDEX idx_applications_status ON applications(status);
 CREATE INDEX idx_interviews_status ON interviews(status);
 CREATE INDEX idx_evaluations_interview_id ON evaluations(interview_id);

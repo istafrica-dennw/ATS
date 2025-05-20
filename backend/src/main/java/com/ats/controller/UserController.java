@@ -39,7 +39,7 @@ public class UserController {
     )
     @ApiResponses(value = {
         @ApiResponse(
-            responseCode = "200",
+            responseCode = "201",
             description = "User created successfully",
             content = @Content(
                 mediaType = "application/json",

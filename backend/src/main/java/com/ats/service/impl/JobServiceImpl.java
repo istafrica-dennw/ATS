@@ -1,8 +1,10 @@
 package com.ats.service.impl;
 
+import org.hibernate.annotations.NotFoundAction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ats.dto.JobDTO;
+import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.Job;
 import com.ats.model.JobStatus;
 import com.ats.model.WorkSetting;
@@ -39,7 +41,7 @@ public class JobServiceImpl implements JobService {
     public JobDTO getJobById(Long id) {
         Optional<Job> job = jobRepository.findById(id);
         return job.map(j -> modelMapper.map(j, JobDTO.class))
-                 .orElseThrow(() -> new RuntimeException("Job not found with id: " + id));
+                 .orElseThrow(() -> new NotFoundException("Job not found with id: " + id));
     }
 
     @Override

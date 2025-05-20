@@ -44,9 +44,11 @@ public class JobServiceImpl implements JobService {
                  .orElseThrow(() -> new NotFoundException("Job not found with id: " + id));
     }
 
+
+
     @Override
-    public JobDTO updateJob(JobDTO jobDTO) {
-        Optional<Job> existingJob = jobRepository.findById(jobDTO.getId());
+    public JobDTO updateJob(JobDTO jobDTO, Long id) {
+        Optional<Job> existingJob = jobRepository.findById(id);
         
         if (existingJob.isPresent()) {
             Job updatedJob = existingJob.get();
@@ -61,7 +63,7 @@ public class JobServiceImpl implements JobService {
             Job savedJob = jobRepository.save(updatedJob);
             return modelMapper.map(savedJob, JobDTO.class);
         } else {
-            throw new RuntimeException("Job not found with id: " + jobDTO.getId());
+            throw new NotFoundException("Job not found with id: " + id);
         }
     }
 

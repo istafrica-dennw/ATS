@@ -14,7 +14,7 @@ public interface JobService {
     public JobDTO createJob(JobDTO jobDTO);
 
     public JobDTO getJobById(Long id);
-    public JobDTO updateJob(JobDTO jobDTO);
+    public JobDTO updateJob(JobDTO jobDTO, Long id);
     public boolean deleteJob(Long id);
     public List<JobDTO> getAllJobs();
     public List<JobDTO> getActiveJobs();

@@ -26,6 +26,7 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -37,7 +38,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class JobsController {
     private JobService jobService;
 
-    @Autowired
     public JobsController(JobService jobService){
         this.jobService =  jobService;
     }
@@ -49,9 +49,6 @@ public class JobsController {
             description = "Job successfully created",
             content = @Content(
                 mediaType = "application/json",
-                // examples = @ExampleObject(
-                //     value = "{\"timestamp\": \"2024-02-20T10:00:00\", \"message\": \"Email is already in use\", \"status\": 400, \"error\": \"Bad Request\"}"
-                // ),
                 examples = @ExampleObject(
                     value = "{\"id\": \"1\", \"title\":\"Software Engineer\", \"description\":\"Job description goes here\"   }"
                                     
@@ -70,9 +67,6 @@ public class JobsController {
         
         return ResponseEntity.ok(jobService.createJob(jobDTO));
     }
-
-
-
     
     @GetMapping
     @Operation(
@@ -103,5 +97,16 @@ public class JobsController {
     public ResponseEntity<JobDTO> getJobById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(jobService.getJobById(id));
     }
+
+    @PutMapping("/{id}")
+    @Operation(
+        summary = "Update job by ID",
+        description = "Update a specific job by an its id "
+    )
+    public ResponseEntity<JobDTO> updatedJob( @Valid @RequestBody JobDTO jobDTO, @PathVariable Long id){
+        return ResponseEntity.ok(jobService.updateJob(jobDTO, id));
+
+    }
     
 }
+

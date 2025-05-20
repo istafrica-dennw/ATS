@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ats.dto.JobDTO;
 import com.ats.dto.UserDTO;
+import com.ats.model.JobStatus;
+import com.ats.model.WorkSetting;
 import com.ats.service.JobService;
 import com.beust.jcommander.Parameter;
 
@@ -70,12 +72,19 @@ public class JobsController {
     
     @GetMapping
     @Operation(
-        summary = "Get all jobs",
+        summary = "Get all jobs with filters",
         description = "get all jobs unpaginated"
     )
-    public ResponseEntity<List<JobDTO>> getAllJobs() {
-        return ResponseEntity.ok(jobService.getAllJobs());
+    public ResponseEntity<List<JobDTO>> getAllJobs(
+        @RequestParam(required = false) List<JobStatus> jobStatuses,
+        @RequestParam(required = false) List<WorkSetting> workSetting,
+        @RequestParam(required = false) String description
+    ) {
+        
+        return ResponseEntity.ok(jobService.getAllJobs(jobStatuses,workSetting,description));
     }
+
+
 
     @GetMapping("/{id}")
     @Operation(

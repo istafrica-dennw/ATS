@@ -9,6 +9,7 @@ import MainLayout from './layouts/MainLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import EmailManagementPage from './pages/admin/EmailManagementPage';
+import JobManagementPage from './pages/admin/JobManagementPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
@@ -18,6 +19,8 @@ import ProfilePage from './pages/profile/ProfilePage';
 import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
 import SecuritySettingsPage from './pages/profile/SecuritySettingsPage';
 import CandidateDashboardPage from './pages/candidate/CandidateDashboardPage';
+import LandingPage from './pages/LandingPage';
+import JobsPage from './pages/JobsPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -176,11 +179,17 @@ const App: React.FC = () => {
               <Route index element={<AdminDashboardPage />} />
               <Route path="users" element={<UserManagementPage />} />
               <Route path="emails" element={<EmailManagementPage />} />
+              <Route path="jobs" element={<JobManagementPage />} />
             </Route>
+            
+            {/* Direct routes removed to prevent infinite redirects */}
 
-            {/* Default route */}
-            <Route path="/" element={<Navigate to="/login" />} />
-            <Route path="*" element={<Navigate to="/login" />} />
+            {/* Public routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/jobs" element={<JobsPage />} />
+            
+            {/* Catch-all route */}
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>
       </SecurityProvider>

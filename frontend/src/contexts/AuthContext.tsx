@@ -217,42 +217,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // If user has MFA enabled but we haven't verified MFA for this session,
           // and we're not already on the login page, redirect to login
           if (userData.mfaEnabled && !storedMfaVerified && currentPath !== '/login') {
-            console.log('AuthContext - Redirecting to login for MFA verification');
-            safeLocalStorage.removeItem('token');
-            safeLocalStorage.removeItem('user');
-            safeLocalStorage.removeItem('mfaVerified');
-            
-            setToken(null);
-            setUser(null);
-            setIsAuthenticated(false);
-            setMfaVerified(false);
-            
-            // Redirect to login
-            window.location.href = '/login';
-            return;
-          }
-          
-          // Remove token from URL if it exists
-          if (urlToken) {
-            window.history.replaceState({}, document.title, window.location.pathname);
           }
         } catch (error) {
-          console.error('AuthContext - Token validation failed, clearing authentication state');
-          // If validation fails, clear everything
+          console.error('AuthContext - Error validating stored token:', error);
           safeLocalStorage.removeItem('token');
-          safeLocalStorage.removeItem('user');
           safeLocalStorage.removeItem('mfaVerified');
-          
-          setToken(null);
-          setUser(null);
           setIsAuthenticated(false);
+          setUser(null);
+          setToken(null);
           setMfaVerified(false);
         }
       }
       
       setIsLoading(false);
     };
-    
+
     initAuth();
   }, []);
 

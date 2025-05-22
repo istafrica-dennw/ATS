@@ -16,7 +16,7 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: HomeIcon },
   { name: 'User Management', href: '/admin/users', icon: UsersIcon },
   { name: 'Email Notifications', href: '/admin/emails', icon: EnvelopeIcon },
-  { name: 'Jobs', href: '/admin/jobs', icon: BriefcaseIcon, disabled: true },
+  { name: 'Jobs', href: '/admin/jobs', icon: BriefcaseIcon },
   { name: 'Interviews', href: '/admin/interviews', icon: CalendarIcon, disabled: true },
   { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon },
   { name: 'Settings', href: '/admin/settings', icon: CogIcon },
@@ -24,8 +24,27 @@ const navigation = [
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   console.log('AdminLayout: Current location:', location.pathname);
+  
+  // Handle page refresh - ensure we stay on the correct admin page
+  React.useEffect(() => {
+    // Store the current path in session storage to handle page refreshes
+    if (location.pathname.startsWith('/admin/')) {
+      sessionStorage.setItem('lastAdminRoute', location.pathname);
+      console.log('AdminLayout - Stored current admin route:', location.pathname);
+    }
+    
+    // If we're at the root admin path, check if we should redirect to a previously visited admin page
+    if (location.pathname === '/admin') {
+      const lastRoute = sessionStorage.getItem('lastAdminRoute');
+      if (lastRoute && lastRoute !== '/admin') {
+        console.log('AdminLayout - Redirecting to last admin route:', lastRoute);
+        navigate(lastRoute);
+      }
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-100">

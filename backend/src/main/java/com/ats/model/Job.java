@@ -23,6 +23,9 @@ public class Job extends BaseEntity {
     @NotNull (message="Title can't be Null")
     private String title;
 
+    @NotNull (message="Location can't be Null")
+    private String Location;
+
     @Column(name = "description")
     private String description;
 

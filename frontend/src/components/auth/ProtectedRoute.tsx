@@ -89,6 +89,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   // If not authenticated after validation, redirect to login
   if (!isAuthenticated) {
     console.log('ProtectedRoute - Not authenticated after validation, redirecting to login');
+    // Store the current path if it's an admin path to restore after login
+    if (location.pathname.startsWith('/admin/')) {
+      sessionStorage.setItem('lastAdminRoute', location.pathname);
+      console.log('ProtectedRoute - Stored admin route before login redirect:', location.pathname);
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   

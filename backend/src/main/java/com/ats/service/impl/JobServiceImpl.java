@@ -54,6 +54,8 @@ public class JobServiceImpl implements JobService {
             Job updatedJob = existingJob.get();
             updatedJob.setTitle(jobDTO.getTitle());
             updatedJob.setDescription(jobDTO.getDescription());
+            updatedJob.setLocation(jobDTO.getLocation());
+
             updatedJob.setDepartment(jobDTO.getDepartment());
             updatedJob.setSalaryRange(jobDTO.getSalaryRange());
             updatedJob.setEmploymentType(jobDTO.getEmploymentType());
@@ -135,5 +137,20 @@ public class JobServiceImpl implements JobService {
                 .stream()
                 .map(job -> modelMapper.map(job, JobDTO.class))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public JobDTO updateJobStatus(JobStatus jobStatus, Long id) {
+
+        Optional<Job> existingJob = jobRepository.findById(id);
+        
+        if (existingJob.isPresent()) {
+            Job updatedJob = existingJob.get();
+            updatedJob.setJobStatus(jobStatus);
+            Job savedJob = jobRepository.save(updatedJob);
+            return modelMapper.map(savedJob, JobDTO.class);
+        } else {
+            throw new NotFoundException("Job not found with id: " + id);
+        }
     }
 }

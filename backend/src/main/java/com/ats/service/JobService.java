@@ -22,4 +22,5 @@ public interface JobService {
     public List<JobDTO> getActiveJobs();
     public List<JobDTO> getPastJobs();
     public List<JobDTO> searchJobs(String keyword, String filter);
+    public JobDTO updateJobStatus(JobStatus jobStatus, Long id);
 }

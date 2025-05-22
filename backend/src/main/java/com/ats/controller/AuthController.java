@@ -5,6 +5,7 @@ import com.ats.dto.AuthResponse;
 import com.ats.dto.UserDTO;
 import com.ats.dto.ChangePasswordRequest;
 import com.ats.dto.ForgotPasswordRequest;
+import com.ats.dto.LoginRequest;
 import com.ats.dto.ResetPasswordRequest;
 import com.ats.dto.MfaSetupRequest;
 import com.ats.dto.MfaSetupResponse;
@@ -156,7 +157,7 @@ public class AuthController {
             )
         )
     })
-    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest authRequest) {
         User user = userRepository.findByEmail(authRequest.getEmail())
             .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 

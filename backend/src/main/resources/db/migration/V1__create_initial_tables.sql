@@ -73,16 +73,6 @@ CREATE TABLE jobs (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Job custom fields
-CREATE TABLE job_custom_fields (
-    id BIGSERIAL PRIMARY KEY,
-    job_id BIGINT REFERENCES jobs(id),
-    field_name VARCHAR(100) NOT NULL,
-    field_value TEXT,
-    field_type VARCHAR(50) NOT NULL,
-    is_visible BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
 
 -- Create indexes for commonly queried fields
 CREATE INDEX idx_jobs_title ON jobs(title);
@@ -90,23 +80,59 @@ CREATE INDEX idx_jobs_status ON jobs(status);
 CREATE INDEX idx_jobs_department ON jobs(department);
 CREATE INDEX idx_jobs_work_setting ON jobs(work_setting);
 
+---- End jobs Table -----
+
+
+
+DROP TABLE IF EXISTS job_custom_fields;
+
+-- Job custom fields
+-- CREATE TABLE job_custom_fields (
+--     id BIGSERIAL PRIMARY KEY,
+--     job_id BIGINT REFERENCES jobs(id),
+--     field_name VARCHAR(100) NOT NULL,
+--     field_value TEXT,
+--     field_type VARCHAR(50) NOT NULL,
+--     is_visible BOOLEAN DEFAULT true,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- );
+
+-- Create job_custom_questions table (replacing job_custom_fields)
+CREATE TABLE job_custom_questions (
+    id BIGSERIAL PRIMARY KEY,
+    job_id BIGINT REFERENCES jobs(id) ON DELETE CASCADE,
+    question_text TEXT NOT NULL,
+    question_type VARCHAR(50) NOT NULL, -- e.g., "text", "multiple_choice", "boolean"
+    is_required BOOLEAN DEFAULT true,
+    is_visible BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_job_custom_questions_job_id ON job_custom_questions(job_id);
 
 -- Applications table
+DROP TABLE IF EXISTS applications;
 CREATE TABLE applications (
     id BIGSERIAL PRIMARY KEY,
-    job_id BIGINT REFERENCES jobs(id),
-    candidate_id BIGINT REFERENCES users(id),
-    status VARCHAR(50) DEFAULT 'APPLIED',
+    job_id BIGINT REFERENCES jobs(id) ON DELETE CASCADE,
+    candidate_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    
+    status VARCHAR(50) DEFAULT 'APPLIED', -- e.g., 'APPLIED', 'REVIEWED', 'SHORTLISTED', 'REJECTED'
+    
     resume_url VARCHAR(255),
     cover_letter_url VARCHAR(255),
     portfolio_url VARCHAR(255),
-    experience_years DECIMAL(4,1),
+    
+    experience_years DECIMAL(4,1), -- e.g., 5.5 years
     current_company VARCHAR(255),
     current_position VARCHAR(255),
     expected_salary DECIMAL(10,2),
+    
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_applications_job_id ON applications(job_id);
+
 
 -- Application answers
 CREATE TABLE application_answers (
@@ -116,6 +142,16 @@ CREATE TABLE application_answers (
     answer TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_application_answers_application_id ON application_answers(application_id);
+
+
+-- Create indexes for improved query performance
+-- CREATE INDEX idx_job_custom_questions_job_id ON job_custom_questions(job_id);
+-- CREATE INDEX idx_applications_job_id ON applications(job_id);
+-- CREATE INDEX idx_application_answers_application_id ON application_answers(application_id);
+
+
 
 -- Interviews table
 CREATE TABLE interviews (

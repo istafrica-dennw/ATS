@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import {
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon,
@@ -12,8 +13,24 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
-// Mock job data
-const MOCK_JOBS = [
+interface Job {
+  id: number;
+  title: string;
+  department: string;
+  location: string;
+  workSetting: string;
+  employmentType: string;
+  salaryRange: string;
+  postedDate: string;
+  description: string;
+  requirements: string[];
+  responsibilities: string[];
+  benefits: string[];
+  jobStatus: string;
+}
+
+// Filter options
+const DEPARTMENTS = [
   {
     id: 1,
     title: 'Senior Software Engineer',
@@ -185,7 +202,9 @@ const SALARY_RANGES = [
 ];
 
 const JobsPage: React.FC = () => {
-  // State for search and filters
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [selectedType, setSelectedType] = useState('All Types');
@@ -193,31 +212,66 @@ const JobsPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJob, setSelectedJob] = useState<number | null>(null);
 
-  // Filter jobs based on search term and filters
-  const filteredJobs = MOCK_JOBS.filter(job => {
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('/api/jobs');
+        const publishedJobs = response.data.filter((job: Job) => {
+          const status = job.jobStatus?.toUpperCase();
+          return status === 'PUBLISHED' || status === 'REOPENED';
+        });
+        setJobs(publishedJobs);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load jobs. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  // Filter jobs based on search and filter criteria
+  const filteredJobs = jobs.filter(job => {
     // Search term filter
     const matchesSearch = searchTerm === '' || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchTerm.toLowerCase());
+      job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     
     // Location filter
-    const matchesLocation = selectedLocation === 'All Locations' || 
-      job.location === selectedLocation;
-    
-    // Job type filter
-    const matchesType = selectedType === 'All Types' || 
-      job.type === selectedType;
-    
-    // Salary filter (simplified for demo)
-    const matchesSalary = selectedSalary === 'All Salaries' || 
-      (selectedSalary === '$130K+' && job.salary.includes('$130K')) ||
-      (selectedSalary === '$100K - $130K' && 
-        (job.salary.includes('$110K') || job.salary.includes('$120K'))) ||
-      (selectedSalary === '$80K - $100K' && job.salary.includes('$80K')) ||
-      (selectedSalary === '$50K - $80K' && job.salary.includes('$70K')) ||
-      (selectedSalary === 'Under $50K' && parseInt(job.salary) < 50);
-    
+    const matchesLocation = selectedLocation === 'All Locations' || job.location === selectedLocation;
+    const matchesType = selectedType === 'All Types' || job.employmentType === selectedType;
+    // Helper function to extract numeric value from salary string
+    const extractSalaryValue = (salary: string): number => {
+      const match = salary.match(/\d+/g);
+      return match ? Math.max(...match.map(Number)) : 0;
+    };
+
+    // Helper function to match salary ranges
+    const matchesSalaryRange = (jobSalary: string, filterRange: string): boolean => {
+      const jobValue = extractSalaryValue(jobSalary);
+      
+      switch (filterRange) {
+        case 'Under $50K':
+          return jobValue < 50;
+        case '$50K - $80K':
+          return jobValue >= 50 && jobValue <= 80;
+        case '$80K - $100K':
+          return jobValue >= 80 && jobValue <= 100;
+        case '$100K - $130K':
+          return jobValue >= 100 && jobValue <= 130;
+        case '$130K+':
+          return jobValue >= 130;
+        default:
+          return true;
+      }
+    };
+
+    const matchesSalary = selectedSalary === 'All Salaries' || matchesSalaryRange(job.salaryRange, selectedSalary);
+
     return matchesSearch && matchesLocation && matchesType && matchesSalary;
   });
 
@@ -365,8 +419,18 @@ const JobsPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">
-            {filteredJobs.length > 0 ? (
-              filteredJobs.map((job) => (
+            {loading ? (
+              <li className="px-4 py-12 text-center">
+                <div className="animate-pulse flex flex-col items-center">
+                  <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                  <div className="mt-4 h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="mt-2 h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </li>
+            ) : error ? (
+              <li className="px-4 py-12 text-center text-red-600">{error}</li>
+            ) : filteredJobs.length > 0 ? (
+              filteredJobs.map(job => (
                 <li key={job.id}>
                   <div className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
@@ -376,12 +440,12 @@ const JobsPage: React.FC = () => {
                         </div>
                         <div className="ml-4">
                           <h3 className="text-lg font-medium text-indigo-600">{job.title}</h3>
-                          <p className="text-sm font-medium text-gray-900">{job.company}</p>
+                          <p className="text-sm font-medium text-gray-900">{job.department}</p>
                         </div>
                       </div>
                       <div className="flex items-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {job.type}
+                          {job.employmentType}
                         </span>
                         <button
                           type="button"
@@ -401,12 +465,12 @@ const JobsPage: React.FC = () => {
                         </div>
                         <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
                           <CurrencyDollarIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-                          {job.salary}
+                          {job.salaryRange}
                         </div>
                       </div>
                       <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                         <ClockIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-                        <p>Posted {job.posted}</p>
+                        <p>Posted {new Date(job.postedDate).toLocaleDateString()}</p>
                       </div>
                     </div>
                     
@@ -418,22 +482,40 @@ const JobsPage: React.FC = () => {
                           <p className="mt-1 text-sm text-gray-600">{job.description}</p>
                         </div>
                         
-                        <div>
+                        <div className="mb-4">
                           <h4 className="text-sm font-medium text-gray-900">Requirements</h4>
                           <ul className="mt-1 list-disc list-inside text-sm text-gray-600">
-                            {job.requirements.map((req, index) => (
+                            {job.requirements?.map((req, index) => (
                               <li key={index}>{req}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="mb-4">
+                          <h4 className="text-sm font-medium text-gray-900">Responsibilities</h4>
+                          <ul className="mt-1 list-disc list-inside text-sm text-gray-600">
+                            {job.responsibilities?.map((resp, index) => (
+                              <li key={index}>{resp}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="mb-4">
+                          <h4 className="text-sm font-medium text-gray-900">Benefits</h4>
+                          <ul className="mt-1 list-disc list-inside text-sm text-gray-600">
+                            {job.benefits?.map((benefit, index) => (
+                              <li key={index}>{benefit}</li>
                             ))}
                           </ul>
                         </div>
                         
                         <div className="mt-6">
-                          <button
-                            type="button"
+                          <Link
+                            to={`/jobs/${job.id}`}
                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                           >
-                            Apply for this position
-                          </button>
+                            View Full Details →
+                          </Link>
                         </div>
                       </div>
                     )}

@@ -81,8 +81,11 @@ const LandingPage: React.FC = () => {
                 >
                   Get Started Free
                 </Link>
+
+
                 <Link
                   to="/contact"
+                  style={{ display: 'none' }}
                   className="rounded-md border border-gray-300 bg-white px-8 py-3 text-center text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50"
                 >
                   Request a Demo
@@ -321,7 +324,7 @@ const LandingPage: React.FC = () => {
                   to="/signup"
                   className="inline-block rounded-md bg-indigo-600 px-10 py-3 text-center text-base font-medium text-white shadow-md hover:bg-indigo-700"
                 >
-                  Start Free Trial
+                  Start Here
                 </Link>
               </div>
             </div>

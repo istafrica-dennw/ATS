@@ -54,7 +54,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <Link to="/admin" className="text-xl font-bold text-indigo-600">
+                <Link to="/" className="text-xl font-bold text-indigo-600">
                   ATS System
                 </Link>
               </div>

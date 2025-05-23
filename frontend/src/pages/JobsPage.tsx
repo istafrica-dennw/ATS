@@ -169,46 +169,14 @@ const DEPARTMENTS = [
   }
 ];
 
-// Location options for filter
-const LOCATIONS = [
-  'All Locations',
-  'San Francisco, CA',
-  'New York, NY',
-  'Remote',
-  'Chicago, IL',
-  'Boston, MA',
-  'Austin, TX',
-  'Seattle, WA',
-  'Denver, CO'
-];
-
-// Job type options for filter
-const JOB_TYPES = [
-  'All Types',
-  'Full-time',
-  'Part-time',
-  'Contract',
-  'Internship'
-];
-
-// Salary range options for filter
-const SALARY_RANGES = [
-  'All Salaries',
-  'Under $50K',
-  '$50K - $80K',
-  '$80K - $100K',
-  '$100K - $130K',
-  '$130K+'
-];
+const WORK_SETTINGS = ['ALL', 'HYBRID', 'ONSITE', 'REMOTE'];
 
 const JobsPage: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
-  const [selectedType, setSelectedType] = useState('All Types');
-  const [selectedSalary, setSelectedSalary] = useState('All Salaries');
+  const [selectedWorkSetting, setSelectedWorkSetting] = useState('ALL');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedJob, setSelectedJob] = useState<number | null>(null);
 
@@ -241,38 +209,10 @@ const JobsPage: React.FC = () => {
       job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     
-    // Location filter
-    const matchesLocation = selectedLocation === 'All Locations' || job.location === selectedLocation;
-    const matchesType = selectedType === 'All Types' || job.employmentType === selectedType;
-    // Helper function to extract numeric value from salary string
-    const extractSalaryValue = (salary: string): number => {
-      const match = salary.match(/\d+/g);
-      return match ? Math.max(...match.map(Number)) : 0;
-    };
+    // Work Setting filter
+    const matchesWorkSetting = selectedWorkSetting === 'ALL' || job.workSetting === selectedWorkSetting;
 
-    // Helper function to match salary ranges
-    const matchesSalaryRange = (jobSalary: string, filterRange: string): boolean => {
-      const jobValue = extractSalaryValue(jobSalary);
-      
-      switch (filterRange) {
-        case 'Under $50K':
-          return jobValue < 50;
-        case '$50K - $80K':
-          return jobValue >= 50 && jobValue <= 80;
-        case '$80K - $100K':
-          return jobValue >= 80 && jobValue <= 100;
-        case '$100K - $130K':
-          return jobValue >= 100 && jobValue <= 130;
-        case '$130K+':
-          return jobValue >= 130;
-        default:
-          return true;
-      }
-    };
-
-    const matchesSalary = selectedSalary === 'All Salaries' || matchesSalaryRange(job.salaryRange, selectedSalary);
-
-    return matchesSearch && matchesLocation && matchesType && matchesSalary;
+    return matchesSearch && matchesWorkSetting;
   });
 
   // Toggle job details
@@ -287,9 +227,7 @@ const JobsPage: React.FC = () => {
   // Reset all filters
   const resetFilters = () => {
     setSearchTerm('');
-    setSelectedLocation('All Locations');
-    setSelectedType('All Types');
-    setSelectedSalary('All Salaries');
+    setSelectedWorkSetting('ALL');
   };
 
   return (
@@ -331,7 +269,7 @@ const JobsPage: React.FC = () => {
                 <ChevronDownIcon className={`ml-1 h-4 w-4 transition-transform ${showFilters ? 'transform rotate-180' : ''}`} />
               </button>
               
-              {(selectedLocation !== 'All Locations' || selectedType !== 'All Types' || selectedSalary !== 'All Salaries') && (
+              {selectedWorkSetting !== 'ALL' && (
                 <button
                   type="button"
                   className="ml-3 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -349,62 +287,22 @@ const JobsPage: React.FC = () => {
             
             {/* Filter options */}
             {showFilters && (
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                {/* Location filter */}
+              <div className="mt-4 grid grid-cols-1 gap-4">
+                {/* Work Setting filter */}
                 <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                    Location
+                  <label htmlFor="work-setting" className="block text-sm font-medium text-gray-700">
+                    Work Setting
                   </label>
                   <select
-                    id="location"
-                    name="location"
+                    id="work-setting"
+                    name="work-setting"
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
+                    value={selectedWorkSetting}
+                    onChange={(e) => setSelectedWorkSetting(e.target.value)}
                   >
-                    {LOCATIONS.map((location) => (
-                      <option key={location} value={location}>
-                        {location}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Job type filter */}
-                <div>
-                  <label htmlFor="job-type" className="block text-sm font-medium text-gray-700">
-                    Job Type
-                  </label>
-                  <select
-                    id="job-type"
-                    name="job-type"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                  >
-                    {JOB_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Salary range filter */}
-                <div>
-                  <label htmlFor="salary" className="block text-sm font-medium text-gray-700">
-                    Salary Range
-                  </label>
-                  <select
-                    id="salary"
-                    name="salary"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={selectedSalary}
-                    onChange={(e) => setSelectedSalary(e.target.value)}
-                  >
-                    {SALARY_RANGES.map((range) => (
-                      <option key={range} value={range}>
-                        {range}
+                    {WORK_SETTINGS.map((setting) => (
+                      <option key={setting} value={setting}>
+                        {setting === 'ALL' ? 'All Settings' : setting}
                       </option>
                     ))}
                   </select>

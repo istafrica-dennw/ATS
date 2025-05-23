@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MainLayout from '../layouts/MainLayout';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
   BriefcaseIcon,
@@ -13,8 +14,52 @@ import {
   PlayIcon
 } from '@heroicons/react/24/outline';
 
+interface Job {
+  id: number;
+  title: string;
+  department: string;
+  location: string;
+  employmentType: string;
+  postedDate: string;
+  salaryRange: string;
+  workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
+}
+
 const LandingPage: React.FC = () => {
   const { user } = useAuth();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await axios.get('/api/jobs');
+        console.log('API Response:', response.data);
+        console.log('All job statuses:', response.data.map((job: any) => job.jobStatus));
+        // Sort jobs by posted date (most recent first) and take only published jobs
+        const publishedJobs = response.data.filter((job: Job & { jobStatus: string }) => {
+          console.log(`Job ${job.id} - Title: ${job.title}, Status: ${job.jobStatus}`);
+          // Include both PUBLISHED and REOPENED jobs
+          const status = job.jobStatus?.toUpperCase();
+          return status === 'PUBLISHED' || status === 'REOPENED';
+        });
+        console.log('Published jobs:', publishedJobs);
+        
+        const sortedJobs = publishedJobs
+          .sort((a: Job, b: Job) => 
+            new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+          )
+          .slice(0, 3); // Take only the 3 most recent jobs
+        setJobs(sortedJobs);
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
 
   const content = (
     <div className="bg-white">
@@ -71,73 +116,47 @@ const LandingPage: React.FC = () => {
       {/* Featured Jobs */}
       <div className="bg-gray-50 py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-center text-2xl font-bold text-gray-900 mb-8">
-            Featured Jobs
+          <h2 className="text-center font-bold text-gray-900 mb-8 sm:text-4xl">
+            Job Board
           </h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                title: 'Senior Software Engineer',
-                company: 'Tech Innovations',
-                location: 'San Francisco, CA',
-                type: 'Full-time',
-                salary: '$120K - $150K'
-              },
-              {
-                title: 'Product Manager',
-                company: 'Growth Startup',
-                location: 'New York, NY',
-                type: 'Full-time',
-                salary: '$110K - $130K'
-              },
-              {
-                title: 'UX/UI Designer',
-                company: 'Creative Solutions',
-                location: 'Remote',
-                type: 'Contract',
-                salary: '$80K - $100K'
-              },
-              {
-                title: 'Marketing Specialist',
-                company: 'Global Brand',
-                location: 'Chicago, IL',
-                type: 'Full-time',
-                salary: '$70K - $90K'
-              },
-              {
-                title: 'Data Scientist',
-                company: 'Analytics Pro',
-                location: 'Boston, MA',
-                type: 'Full-time',
-                salary: '$130K - $160K'
-              },
-              {
-                title: 'Customer Success Manager',
-                company: 'SaaS Platform',
-                location: 'Austin, TX',
-                type: 'Full-time',
-                salary: '$75K - $95K'
-              }
-            ].map((job, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-300">
+          <div className="flex flex-wrap justify-center gap-6 max-w-7xl mx-auto px-4">
+            {loading ? (
+              <div className="w-full text-center py-8">
+                <div className="animate-pulse flex flex-col items-center space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </div>
+            ) : jobs.length === 0 ? (
+              <div className="w-full text-center py-8 text-gray-500">
+                No jobs available at the moment
+              </div>
+            ) : jobs.map((job) => (
+              <div key={job.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200 w-full max-w-sm flex-1 basis-80">
                 <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-                <p className="text-indigo-600 font-medium mt-1">{job.company}</p>
-                <div className="mt-4 flex items-center text-sm text-gray-500">
-                  <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
-                  <span>{job.location}</span>
+                <div className="mt-2 space-y-1">
+                  <p className="text-sm text-gray-600">{job.department}</p>
+                  <p className="text-sm text-gray-600">{job.location}</p>
+                  <p className="text-sm text-gray-600">{job.workSetting.toLocaleLowerCase()}</p>
+                  <p className="text-sm text-gray-600">{job.salaryRange}</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Posted {new Date(job.postedDate).toLocaleDateString()}
+                  </p>
                 </div>
                 <div className="mt-2 flex justify-between">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {job.type}
+                    {job.employmentType}
                   </span>
-                  <span className="text-sm font-medium text-gray-700">{job.salary}</span>
+                  <span className="text-sm font-medium text-gray-700">{job.salaryRange}</span>
                 </div>
                 <div className="mt-4">
-                  <button className="w-full inline-flex justify-center items-center px-4 py-2 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Apply Now
-                  </button>
+                  <Link
+                    to={`/jobs/${job.id}`}
+                    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                  >
+                    View Details →
+                  </Link>
                 </div>
               </div>
             ))}

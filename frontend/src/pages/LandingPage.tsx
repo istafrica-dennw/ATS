@@ -1,4 +1,6 @@
 import React from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import MainLayout from '../layouts/MainLayout';
 import { Link } from 'react-router-dom';
 import {
   BriefcaseIcon,
@@ -12,7 +14,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 const LandingPage: React.FC = () => {
-  return (
+  const { user } = useAuth();
+
+  const content = (
     <div className="bg-white">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-indigo-50 to-blue-50">
@@ -426,6 +430,12 @@ const LandingPage: React.FC = () => {
       </footer>
     </div>
   );
+
+  return user ? (
+    <MainLayout>
+      {content}
+    </MainLayout>
+  ) : content;
 };
 
 export default LandingPage;

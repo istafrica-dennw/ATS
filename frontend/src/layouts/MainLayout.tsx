@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import UserProfileDropdown from '../components/common/UserProfileDropdown';
 
-const MainLayout: React.FC = () => {
+const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const { user } = useAuth();
 
@@ -69,7 +69,7 @@ const MainLayout: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <Outlet />
+        {children || <Outlet />}
       </div>
     </div>
   );

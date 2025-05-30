@@ -82,35 +82,23 @@ CREATE INDEX idx_jobs_work_setting ON jobs(work_setting);
 
 ---- End jobs Table -----
 
-
-
-DROP TABLE IF EXISTS job_custom_fields;
-
--- Job custom fields
--- CREATE TABLE job_custom_fields (
---     id BIGSERIAL PRIMARY KEY,
---     job_id BIGINT REFERENCES jobs(id),
---     field_name VARCHAR(100) NOT NULL,
---     field_value TEXT,
---     field_type VARCHAR(50) NOT NULL,
---     is_visible BOOLEAN DEFAULT true,
---     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
--- );
-
+DROP TABLE IF EXISTS job_custom_questions;
 -- Create job_custom_questions table (replacing job_custom_fields)
 CREATE TABLE job_custom_questions (
     id BIGSERIAL PRIMARY KEY,
     job_id BIGINT REFERENCES jobs(id) ON DELETE CASCADE,
     question_text TEXT NOT NULL,
     question_type VARCHAR(50) NOT NULL, -- e.g., "text", "multiple_choice", "boolean"
+    options TEXT[],
     is_required BOOLEAN DEFAULT true,
     is_visible BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
 );
 CREATE INDEX idx_job_custom_questions_job_id ON job_custom_questions(job_id);
 
 -- Applications table
-DROP TABLE IF EXISTS applications;
 CREATE TABLE applications (
     id BIGSERIAL PRIMARY KEY,
     job_id BIGINT REFERENCES jobs(id) ON DELETE CASCADE,

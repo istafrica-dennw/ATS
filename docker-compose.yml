@@ -44,7 +44,7 @@ services:
       - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
       - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
     volumes:
-      - profile_uploads:/uploads
+      - profile_uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,4 +80,6 @@ networks:
 
 volumes:
   postgres_data:
-  profile_uploads: 
+    name: ats-system_postgres_data
+  profile_uploads:
+    name: ats-system_ats_uploads 

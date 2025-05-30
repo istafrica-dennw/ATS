@@ -2,7 +2,6 @@ package com.ats.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -123,6 +122,12 @@ public class JobDTO {
         example = "200,000 - 500,000"
     )
     private String salaryRange;
+    
+    @Schema(
+        description = "List of custom questions for this job",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private List<JobCustomQuestionDTO> customQuestions;
 
     // Getters and Setters (or use Lombok @Data if preferred)
     

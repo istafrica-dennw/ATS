@@ -4,9 +4,13 @@ import org.hibernate.annotations.NotFoundAction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ats.dto.JobCustomQuestionDTO;
 import com.ats.dto.JobDTO;
 import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.Job;
+import com.ats.service.JobCustomQuestionService;
 import com.ats.model.JobStatus;
 import com.ats.model.WorkSetting;
 import com.ats.repository.JobRepository;
@@ -22,6 +26,9 @@ public class JobServiceImpl implements JobService {
 
     @Autowired
     private JobRepository jobRepository;
+    
+    @Autowired
+    private JobCustomQuestionService jobCustomQuestionService;
 
     @Autowired
     private ModelMapperUtil modelMapper;
@@ -38,10 +45,21 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public JobDTO getJobById(Long id) {
-        Optional<Job> job = jobRepository.findById(id);
-        return job.map(j -> modelMapper.map(j, JobDTO.class))
-                 .orElseThrow(() -> new NotFoundException("Job not found with id: " + id));
+        Optional<Job> jobOpt = jobRepository.findById(id);
+        if (!jobOpt.isPresent()) {
+            throw new NotFoundException("Job not found with id: " + id);
+        }
+        
+        Job job = jobOpt.get();
+        JobDTO jobDTO = modelMapper.map(job, JobDTO.class);
+        
+        // Fetch and set custom questions
+        List<JobCustomQuestionDTO> customQuestions = jobCustomQuestionService.getAllCustomQuestionsbyJobId(id);
+        jobDTO.setCustomQuestions(customQuestions);
+        
+        return jobDTO;
     }
 
 

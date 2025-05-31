@@ -1,8 +1,73 @@
-import React, { useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { BriefcaseIcon, MapPinIcon, CurrencyDollarIcon, CalendarIcon, ClockIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import MainLayout from '../layouts/MainLayout';
+
+// Helper function to format description with bold subtitles
+const formatDescription = (description: string) => {
+  if (!description) return 'No description provided.';
+  
+  // Define section headers with their common variations
+  const sectionHeaders = {
+    responsibilities: ['responsibilities', 'key responsibilities', 'your role', 'what you\'ll do', 'role and responsibilities'],
+    requirements: ['requirements', 'qualifications', 'what we\'re looking for', 'must have', 'required skills'],
+    benefits: ['benefits', 'perks', 'what we offer', 'why join us', 'company benefits'],
+    compensation: ['salary', 'compensation', 'pay', 'remuneration', 'package'],
+    location: ['location', 'work location', 'office location', 'where you\'ll work'],
+    employment: ['employment type', 'job type', 'work type', 'contract type'],
+    application: ['how to apply', 'application process', 'next steps', 'hiring process'],
+    about: ['about us', 'company culture', 'our team', 'who we are'],
+    contact: ['contact', 'get in touch', 'reach out', 'contact us']
+  };
+  
+  let formatted = description;
+  
+  // Create a pattern for each group of synonyms
+  Object.values(sectionHeaders).forEach(synonyms => {
+    // Create a pattern that matches any of the synonyms
+    const pattern = new RegExp(
+      `(^|\\n)(?:${synonyms.join('|')}):?`,
+      'gi'
+    );
+    
+    // Replace with the first synonym in bold (for consistency)
+    formatted = formatted.replace(pattern, (match, p1) => {
+      return `${p1}**${synonyms[0].charAt(0).toUpperCase() + synonyms[0].slice(1)}**`;
+    });
+  });
+  
+  // Also handle common standalone patterns
+  const commonPatterns = [
+    // Time-related
+    /(^|\n)(full[- ]?time|part[- ]?time|contract|internship|freelance|remote|hybrid|onsite)/gi,
+    // Experience levels
+    /(^|\n)(entry[- ]?level|mid[- ]?level|senior|lead|principal|manager|director|vp|executive)/gi,
+    // Education
+    /(^|\n)(bachelor[']?s|master[']?s|phd|degree|diploma|certification)/gi,
+    // Skills
+    /(^|\n)(skills?|technologies?|tools?|frameworks?|languages?|stack)/gi
+  ];
+  
+  commonPatterns.forEach(pattern => {
+    formatted = formatted.replace(pattern, '$1**$2**');
+  });
+  
+  // Convert double asterisks to bold tags
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Convert newlines to <br> for proper line breaks
+  return (
+    <>
+      {formatted.split('\n').map((line, i) => (
+        <Fragment key={i}>
+          <span dangerouslySetInnerHTML={{ __html: line }} />
+          <br />
+        </Fragment>
+      ))}
+    </>
+  );
+};
 
 interface Job {
   id: number;
@@ -40,6 +105,11 @@ const JobDetailsPage: React.FC = () => {
 
     fetchJob();
   }, [id]);
+
+  // Format the job description with bold subtitles
+  const formattedDescription = useMemo(() => {
+    return job ? formatDescription(job.description) : [];
+  }, [job]);
 
   if (loading) {
     return (
@@ -125,29 +195,11 @@ const JobDetailsPage: React.FC = () => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Job Description</h2>
                 <div className="prose max-w-none text-gray-600">
-                  {job.description}
+                  {formattedDescription}
                 </div>
               </div>
 
-              {/* Key Responsibilities */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Key Responsibilities</h2>
-                <ul className="list-disc list-inside space-y-2 text-gray-600">
-                  {job.responsibilities?.map((responsibility, index) => (
-                    <li key={index} className="ml-4">{responsibility}</li>
-                  ))}
-                </ul>
-              </div>
 
-              {/* Requirements */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Requirements</h2>
-                <ul className="list-disc list-inside space-y-2 text-gray-600">
-                  {job.requirements?.map((requirement, index) => (
-                    <li key={index} className="ml-4">{requirement}</li>
-                  ))}
-                </ul>
-              </div>
             </div>
 
             {/* Sidebar */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   PlusIcon, 
   PencilIcon, 
@@ -8,10 +8,10 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-  ChevronDownIcon,
+
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
-import { Menu, Transition } from '@headlessui/react';
+
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -30,6 +30,14 @@ interface Job {
   salaryRange: string;
 }
 
+interface CustomQuestion {
+  id: string;
+  question: string;
+  isRequired: boolean;
+  type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CHECKBOX' | 'DROPDOWN';
+  options?: string[];
+}
+
 interface JobFormData {
   title: string;
   department: string;
@@ -40,6 +48,7 @@ interface JobFormData {
   workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
   jobStatus?: 'DRAFT' | 'PUBLISHED' | 'EXPIRED' | 'CLOSED' | 'REOPENED';
   salaryRange: string;
+  customQuestions: CustomQuestion[];
 }
 
 const initialFormData: JobFormData = {
@@ -51,7 +60,8 @@ const initialFormData: JobFormData = {
   skills: [],
   workSetting: 'ONSITE',
   jobStatus: 'DRAFT',
-  salaryRange: ''
+  salaryRange: '',
+  customQuestions: []
 };
 
 const JobManagementPage: React.FC = () => {
@@ -168,6 +178,110 @@ const JobManagementPage: React.FC = () => {
     }
   };
 
+  // State for new custom question form
+  const [newQuestion, setNewQuestion] = useState<Omit<CustomQuestion, 'id'>>({ 
+    question: '', 
+    isRequired: false, 
+    type: 'TEXT',
+    options: []
+  });
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [showQuestionForm, setShowQuestionForm] = useState<boolean>(false);
+  const [newOption, setNewOption] = useState<string>('');
+
+  // Add a new custom question
+  const handleAddQuestion = () => {
+    if (!newQuestion.question.trim()) return;
+    
+    const question: CustomQuestion = {
+      ...newQuestion,
+      id: Date.now().toString(),
+      options: newQuestion.type !== 'TEXT' ? (newQuestion.options || []) : undefined
+    };
+    
+    setFormData({
+      ...formData,
+      customQuestions: [...formData.customQuestions, question]
+    });
+    
+    // Reset form
+    setNewQuestion({ 
+      question: '', 
+      isRequired: false, 
+      type: 'TEXT',
+      options: [] 
+    });
+    setShowQuestionForm(false);
+  };
+
+  // Update an existing question
+  const handleUpdateQuestion = () => {
+    if (!newQuestion.question.trim() || !editingQuestionId) return;
+    
+    setFormData({
+      ...formData,
+      customQuestions: formData.customQuestions.map(q => 
+        q.id === editingQuestionId 
+          ? { 
+              ...newQuestion, 
+              id: editingQuestionId,
+              options: newQuestion.type !== 'TEXT' ? (newQuestion.options || []) : undefined
+            } 
+          : q
+      )
+    });
+    
+    // Reset form
+    setNewQuestion({ 
+      question: '', 
+      isRequired: false, 
+      type: 'TEXT',
+      options: [] 
+    });
+    setEditingQuestionId(null);
+    setShowQuestionForm(false);
+  };
+
+  // Delete a question
+  const handleDeleteQuestion = (id: string) => {
+    setFormData({
+      ...formData,
+      customQuestions: formData.customQuestions.filter(q => q.id !== id)
+    });
+  };
+
+  // Edit a question
+  const handleEditQuestion = (question: CustomQuestion) => {
+    setNewQuestion({
+      question: question.question,
+      isRequired: question.isRequired,
+      type: question.type,
+      options: [...(question.options || [])]
+    });
+    setEditingQuestionId(question.id);
+    setShowQuestionForm(true);
+  };
+
+  // Add option to question
+  const handleAddOption = () => {
+    if (!newOption.trim()) return;
+    setNewQuestion({
+      ...newQuestion,
+      options: [...(newQuestion.options || []), newOption.trim()]
+    });
+    setNewOption('');
+  };
+
+  // Remove option from question
+  const handleRemoveOption = (index: number) => {
+    const newOptions = [...(newQuestion.options || [])];
+    newOptions.splice(index, 1);
+    setNewQuestion({
+      ...newQuestion,
+      options: newOptions
+    });
+  };
+
   // Open edit modal with job data
   const handleEdit = (job: Job) => {
     console.log('Editing job:', job);
@@ -182,7 +296,8 @@ const JobManagementPage: React.FC = () => {
       skills: job.skills || [],
       workSetting: job.workSetting || 'ONSITE',
       jobStatus: job.jobStatus || 'DRAFT',
-      salaryRange: job.salaryRange || ''
+      salaryRange: job.salaryRange || '',
+      customQuestions: (job as any).customQuestions || []
     };
     
     console.log('Setting form data:', updatedFormData);
@@ -717,13 +832,207 @@ const JobManagementPage: React.FC = () => {
                                   onClick={() => handleRemoveSkill(skill)}
                                   className="ml-1.5 inline-flex text-indigo-400 hover:text-indigo-600"
                                 >
-                                  <XCircleIcon className="h-4 w-4" aria-hidden="true" />
+                                    <XCircleIcon className="h-4 w-4" aria-hidden="true" />
                                 </button>
                               </span>
                             ))}
                           </div>
                         )}
                       </div>
+
+                      {/* Custom Questions */}
+                      <div className="border-t border-gray-200 pt-4">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-sm font-medium text-gray-700">Custom Application Questions</h4>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewQuestion({ 
+                                question: '', 
+                                isRequired: false, 
+                                type: 'TEXT',
+                                options: [] 
+                              });
+                              setEditingQuestionId(null);
+                              setShowQuestionForm(true);
+                            }}
+                            className="text-sm text-indigo-600 hover:text-indigo-900"
+                          >
+                            + Add Question
+                          </button>
+                        </div>
+
+                        {/* Custom Questions List */}
+                        {formData.customQuestions.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {formData.customQuestions.map((q) => (
+                              <div key={q.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {q.question} {q.isRequired && <span className="text-red-500">*</span>}
+                                    <span className="ml-2 text-xs text-gray-500">
+                                      ({q.type.replace('_', ' ').toLowerCase()})
+                                    </span>
+                                  </p>
+                                  {q.options && q.options.length > 0 && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Options: {q.options.join(', ')}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditQuestion(q)}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                  >
+                                    <PencilIcon className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteQuestion(q.id)}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    <TrashIcon className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Add/Edit Question Form */}
+                      {showQuestionForm && (
+                        <div className="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                          <h4 className="text-sm font-medium text-gray-700 mb-3">
+                            {editingQuestionId ? 'Edit Question' : 'Add New Question'}
+                          </h4>
+                          
+                          <div className="space-y-4">
+                            {/* Question Text */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Question Text *
+                              </label>
+                              <input
+                                type="text"
+                                value={newQuestion.question}
+                                onChange={(e) => setNewQuestion({...newQuestion, question: e.target.value})}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="Enter your question"
+                              />
+                            </div>
+
+                            {/* Question Type */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Question Type *
+                              </label>
+                              <select
+                                value={newQuestion.type}
+                                onChange={(e) => setNewQuestion({
+                                  ...newQuestion, 
+                                  type: e.target.value as any,
+                                  options: e.target.value === 'TEXT' ? undefined : (newQuestion.options || [])
+                                })}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              >
+                                <option value="TEXT">Text</option>
+                                <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+                                <option value="CHECKBOX">Checkbox</option>
+                                <option value="DROPDOWN">Dropdown</option>
+                              </select>
+                            </div>
+
+                            {/* Options for non-text questions */}
+                            {newQuestion.type !== 'TEXT' && (
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                  Options (one per line) *
+                                </label>
+                                <div className="mt-1 flex rounded-md shadow-sm">
+                                  <input
+                                    type="text"
+                                    value={newOption}
+                                    onChange={(e) => setNewOption(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOption())}
+                                    placeholder="Add an option and press Enter"
+                                    className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={handleAddOption}
+                                    className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 sm:text-sm"
+                                  >
+                                    Add
+                                  </button>
+                                </div>
+                                
+                                {/* Display added options */}
+                                {newQuestion.options && newQuestion.options.length > 0 && (
+                                  <div className="mt-2 space-y-1">
+                                    {newQuestion.options.map((option, idx) => (
+                                      <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border">
+                                        <span className="text-sm">{option}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveOption(idx)}
+                                          className="text-red-500 hover:text-red-700"
+                                        >
+                                          <XCircleIcon className="h-4 w-4" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Required toggle */}
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="isRequired"
+                                checked={newQuestion.isRequired}
+                                onChange={(e) => setNewQuestion({...newQuestion, isRequired: e.target.checked})}
+                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              />
+                              <label htmlFor="isRequired" className="ml-2 block text-sm text-gray-700">
+                                Required
+                              </label>
+                            </div>
+
+                            {/* Form actions */}
+                            <div className="flex justify-end space-x-3 pt-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowQuestionForm(false);
+                                  setNewQuestion({ 
+                                    question: '', 
+                                    isRequired: false, 
+                                    type: 'TEXT',
+                                    options: [] 
+                                  });
+                                  setEditingQuestionId(null);
+                                }}
+                                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={editingQuestionId ? handleUpdateQuestion : handleAddQuestion}
+                                disabled={!newQuestion.question.trim() || (newQuestion.type !== 'TEXT' && (!newQuestion.options || newQuestion.options.length === 0))}
+                                className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${(!newQuestion.question.trim() || (newQuestion.type !== 'TEXT' && (!newQuestion.options || newQuestion.options.length === 0))) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                {editingQuestionId ? 'Update Question' : 'Add Question'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                         <button

@@ -14,4 +14,20 @@ public interface FileStorageService {
      * @return The URL where the file can be accessed
      */
     String storeProfilePicture(MultipartFile file);
+    
+    /**
+     * Stores a resume file and returns the URL to access it
+     * 
+     * @param file The resume file to store
+     * @return The URL where the file can be accessed
+     */
+    String storeResume(MultipartFile file);
+    
+    /**
+     * Stores a cover letter file and returns the URL to access it
+     * 
+     * @param file The cover letter file to store
+     * @return The URL where the file can be accessed
+     */
+    String storeCoverLetter(MultipartFile file);
 } 

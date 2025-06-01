@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect, useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { BriefcaseIcon, MapPinIcon, CurrencyDollarIcon, CalendarIcon, ClockIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import MainLayout from '../layouts/MainLayout';
@@ -87,6 +87,7 @@ interface Job {
 
 const JobDetailsPage: React.FC = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -180,7 +181,10 @@ const JobDetailsPage: React.FC = () => {
                 </div>
               </div>
               <div className="border-t border-gray-200 pt-6">
-                <button className="w-full sm:w-auto bg-indigo-600 text-white px-8 py-3 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200">
+                <button 
+                  className="w-full sm:w-auto bg-indigo-600 text-white px-8 py-3 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200"
+                  onClick={() => navigate(`/apply/${job.id}`)}
+                >
                   Apply Now
                 </button>
               </div>

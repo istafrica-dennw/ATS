@@ -26,4 +26,13 @@ public interface JobCustomQuestionRepository extends JpaRepository<JobCustomQues
      * @return true if the question exists for the job, false otherwise
      */
     boolean existsByJobIdAndId(Long jobId, Long customQuestionId);
+    
+    /**
+     * Find all custom questions for a specific job filtered by required status
+     * 
+     * @param jobId The ID of the job
+     * @param isRequired Whether the question is required or not
+     * @return List of custom questions for the job that match the required status
+     */
+    List<JobCustomQuestion> findByJobIdAndIsRequired(Long jobId, boolean isRequired);
 }

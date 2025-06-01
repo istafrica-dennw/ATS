@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,6 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -39,6 +41,34 @@ public class JobCustomQuestionController extends BaseJobController {
     
     public JobCustomQuestionController(JobCustomQuestionService jobCustomQuestionService) {
         this.jobCustomQuestionService = jobCustomQuestionService;
+    }
+    
+    @Operation(summary = "Get all custom questions for a job",
+              description = "Retrieves all custom questions associated with the specified job")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved list of custom questions",
+                     content = @Content(schema = @Schema(implementation = JobCustomQuestionDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Job not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/{jobId}/custom-questions")
+    public ResponseEntity<List<JobCustomQuestionDTO>> getAllCustomQuestionsByJobId(@PathVariable Long jobId) {
+        logger.info("Fetching all custom questions for job ID: {}", jobId);
+        
+        try {
+            List<JobCustomQuestionDTO> questions = jobCustomQuestionService.getAllCustomQuestionsbyJobId(jobId);
+            logger.info("Found {} custom questions for job ID: {}", questions.size(), jobId);
+            return ResponseEntity.ok(questions);
+            
+        } catch (NotFoundException e) {
+            logger.warn("Job not found: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+            
+        } catch (Exception e) {
+            logger.error("Error retrieving custom questions for job ID: {}", jobId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "An error occurred while retrieving custom questions", e);
+        }
     }
     
     @Operation(summary = "Create a new custom question for a job", 

@@ -26,6 +26,8 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     private final Path fileStorageLocation;
     private final Path profilePicturesDir;
+    private final Path resumesDir;
+    private final Path coverLettersDir;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -34,6 +36,8 @@ public class FileStorageServiceImpl implements FileStorageService {
         this.fileStorageLocation = Paths.get(uploadDir)
                 .toAbsolutePath().normalize();
         this.profilePicturesDir = this.fileStorageLocation.resolve("profile-pictures");
+        this.resumesDir = this.fileStorageLocation.resolve("resumes");
+        this.coverLettersDir = this.fileStorageLocation.resolve("cover-letters");
         
         // Initialize storage directories during construction
         try {
@@ -49,7 +53,19 @@ public class FileStorageServiceImpl implements FileStorageService {
                 logger.info("Created profile pictures directory at: {}", profilePicturesDir);
             }
             
-            // Verify directory is writable
+            // Create resumes directory if it doesn't exist
+            if (!Files.exists(resumesDir)) {
+                Files.createDirectories(resumesDir);
+                logger.info("Created resumes directory at: {}", resumesDir);
+            }
+            
+            // Create cover letters directory if it doesn't exist
+            if (!Files.exists(coverLettersDir)) {
+                Files.createDirectories(coverLettersDir);
+                logger.info("Created cover letters directory at: {}", coverLettersDir);
+            }
+            
+            // Verify directories are writable
             if (!Files.isWritable(profilePicturesDir)) {
                 logger.warn("Profile pictures directory is not writable: {}", profilePicturesDir);
                 // Try to fix permissions
@@ -58,6 +74,26 @@ public class FileStorageServiceImpl implements FileStorageService {
                     logger.info("Set permissions on profile pictures directory");
                 } catch (Exception e) {
                     logger.warn("Could not set permissions on profile pictures directory", e);
+                }
+            }
+            
+            if (!Files.isWritable(resumesDir)) {
+                logger.warn("Resumes directory is not writable: {}", resumesDir);
+                try {
+                    Files.setPosixFilePermissions(resumesDir, java.nio.file.attribute.PosixFilePermissions.fromString("rwxrwxrwx"));
+                    logger.info("Set permissions on resumes directory");
+                } catch (Exception e) {
+                    logger.warn("Could not set permissions on resumes directory", e);
+                }
+            }
+            
+            if (!Files.isWritable(coverLettersDir)) {
+                logger.warn("Cover letters directory is not writable: {}", coverLettersDir);
+                try {
+                    Files.setPosixFilePermissions(coverLettersDir, java.nio.file.attribute.PosixFilePermissions.fromString("rwxrwxrwx"));
+                    logger.info("Set permissions on cover letters directory");
+                } catch (Exception e) {
+                    logger.warn("Could not set permissions on cover letters directory", e);
                 }
             }
             
@@ -85,7 +121,19 @@ public class FileStorageServiceImpl implements FileStorageService {
                 logger.info("Created profile pictures directory at: {}", profilePicturesDir);
             }
             
-            // Verify directory is writable
+            // Create resumes directory if it doesn't exist
+            if (!Files.exists(resumesDir)) {
+                Files.createDirectories(resumesDir);
+                logger.info("Created resumes directory at: {}", resumesDir);
+            }
+            
+            // Create cover letters directory if it doesn't exist
+            if (!Files.exists(coverLettersDir)) {
+                Files.createDirectories(coverLettersDir);
+                logger.info("Created cover letters directory at: {}", coverLettersDir);
+            }
+            
+            // Verify directories are writable
             if (!Files.isWritable(profilePicturesDir)) {
                 logger.warn("Profile pictures directory is not writable: {}", profilePicturesDir);
                 // Try to fix permissions
@@ -94,6 +142,26 @@ public class FileStorageServiceImpl implements FileStorageService {
                     logger.info("Set permissions on profile pictures directory");
                 } catch (Exception e) {
                     logger.warn("Could not set permissions on profile pictures directory", e);
+                }
+            }
+            
+            if (!Files.isWritable(resumesDir)) {
+                logger.warn("Resumes directory is not writable: {}", resumesDir);
+                try {
+                    Files.setPosixFilePermissions(resumesDir, java.nio.file.attribute.PosixFilePermissions.fromString("rwxrwxrwx"));
+                    logger.info("Set permissions on resumes directory");
+                } catch (Exception e) {
+                    logger.warn("Could not set permissions on resumes directory", e);
+                }
+            }
+            
+            if (!Files.isWritable(coverLettersDir)) {
+                logger.warn("Cover letters directory is not writable: {}", coverLettersDir);
+                try {
+                    Files.setPosixFilePermissions(coverLettersDir, java.nio.file.attribute.PosixFilePermissions.fromString("rwxrwxrwx"));
+                    logger.info("Set permissions on cover letters directory");
+                } catch (Exception e) {
+                    logger.warn("Could not set permissions on cover letters directory", e);
                 }
             }
             
@@ -180,5 +248,128 @@ public class FileStorageServiceImpl implements FileStorageService {
         String contentType = file.getContentType();
         logger.debug("Checking file type: {}", contentType);
         return contentType != null && contentType.startsWith("image/");
+    }
+    
+    private boolean isDocumentFile(MultipartFile file) {
+        String contentType = file.getContentType();
+        logger.debug("Checking file type: {}", contentType);
+        return contentType != null && (
+            contentType.equals("application/pdf") || 
+            contentType.equals("application/msword") || 
+            contentType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document") ||
+            contentType.equals("text/plain")
+        );
+    }
+    
+    @Override
+    public String storeResume(MultipartFile file) {
+        // Check if directories exist, recreate if needed
+        if (!Files.exists(resumesDir)) {
+            logger.warn("Resumes directory not found, recreating...");
+            initializeStorageDirectories();
+        }
+        
+        // Normalize file name and add a UUID to avoid name collisions
+        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String fileExtension = "";
+        
+        if (fileName.contains(".")) {
+            fileExtension = fileName.substring(fileName.lastIndexOf("."));
+            fileName = fileName.substring(0, fileName.lastIndexOf("."));
+        }
+        
+        String uniqueFileName = UUID.randomUUID() + "-" + fileName + fileExtension;
+        logger.info("Generated unique filename: {}", uniqueFileName);
+        
+        // Check for valid file types (PDF, DOC, DOCX, TXT)
+        if (!isDocumentFile(file)) {
+            throw new FileStorageException("Only document files (PDF, DOC, DOCX, TXT) are allowed for resumes");
+        }
+        
+        try {
+            // Copy file to the target location
+            Path targetLocation = resumesDir.resolve(uniqueFileName);
+            
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+                logger.info("Stored file at: {}", targetLocation);
+                
+                // Verify file was actually written
+                if (!Files.exists(targetLocation)) {
+                    throw new FileStorageException("File appears not to have been written: " + targetLocation);
+                }
+                
+                if (Files.size(targetLocation) == 0) {
+                    throw new FileStorageException("File was written but has zero size: " + targetLocation);
+                }
+            }
+            
+            // Build the URL to access the file - use a relative URL that starts with / 
+            // to ensure it works with both localhost and production environments
+            String fileUrl = "/api/files/resumes/" + uniqueFileName;
+                    
+            logger.info("File URL for access: {}", fileUrl);
+            return fileUrl;
+            
+        } catch (IOException ex) {
+            logger.error("Failed to store file: {}", uniqueFileName, ex);
+            throw new FileStorageException("Could not store file " + uniqueFileName, ex);
+        }
+    }
+    
+    @Override
+    public String storeCoverLetter(MultipartFile file) {
+        // Check if directories exist, recreate if needed
+        if (!Files.exists(coverLettersDir)) {
+            logger.warn("Cover letters directory not found, recreating...");
+            initializeStorageDirectories();
+        }
+        
+        // Normalize file name and add a UUID to avoid name collisions
+        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String fileExtension = "";
+        
+        if (fileName.contains(".")) {
+            fileExtension = fileName.substring(fileName.lastIndexOf("."));
+            fileName = fileName.substring(0, fileName.lastIndexOf("."));
+        }
+        
+        String uniqueFileName = UUID.randomUUID() + "-" + fileName + fileExtension;
+        logger.info("Generated unique filename: {}", uniqueFileName);
+        
+        // Check for valid file types (PDF, DOC, DOCX, TXT)
+        if (!isDocumentFile(file)) {
+            throw new FileStorageException("Only document files (PDF, DOC, DOCX, TXT) are allowed for cover letters");
+        }
+        
+        try {
+            // Copy file to the target location
+            Path targetLocation = coverLettersDir.resolve(uniqueFileName);
+            
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+                logger.info("Stored file at: {}", targetLocation);
+                
+                // Verify file was actually written
+                if (!Files.exists(targetLocation)) {
+                    throw new FileStorageException("File appears not to have been written: " + targetLocation);
+                }
+                
+                if (Files.size(targetLocation) == 0) {
+                    throw new FileStorageException("File was written but has zero size: " + targetLocation);
+                }
+            }
+            
+            // Build the URL to access the file - use a relative URL that starts with / 
+            // to ensure it works with both localhost and production environments
+            String fileUrl = "/api/files/cover-letters/" + uniqueFileName;
+                    
+            logger.info("File URL for access: {}", fileUrl);
+            return fileUrl;
+            
+        } catch (IOException ex) {
+            logger.error("Failed to store file: {}", uniqueFileName, ex);
+            throw new FileStorageException("Could not store file " + uniqueFileName, ex);
+        }
     }
 } 

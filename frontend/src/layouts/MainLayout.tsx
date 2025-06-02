@@ -10,9 +10,9 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   console.log('MainLayout: Current location:', location.pathname);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Top Navigation */}
-      <nav className="bg-white shadow-sm">
+    <div className="h-screen bg-gray-100 flex flex-col">
+      {/* Top Navigation - Fixed */}
+      <nav className="bg-white shadow-sm flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
@@ -78,9 +78,11 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {children || <Outlet />}
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          {children || <Outlet />}
+        </div>
       </div>
     </div>
   );

@@ -4,6 +4,8 @@ import com.ats.dto.ApplicationDTO;
 import com.ats.exception.AtsCustomExceptions.BadRequestException;
 import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.ApplicationStatus;
+import com.ats.model.User;
+import com.ats.repository.UserRepository;
 import com.ats.service.ApplicationService;
 import com.ats.service.FileStorageService;
 import com.ats.service.JobCustomQuestionService;
@@ -47,17 +49,20 @@ public class ApplicationController {
     private final JobCustomQuestionService jobCustomQuestionService;
     private final FileStorageService fileStorageService;
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
 
     @Autowired
     public ApplicationController(
             ApplicationService applicationService,
             JobCustomQuestionService jobCustomQuestionService,
             FileStorageService fileStorageService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            UserRepository userRepository) {
         this.applicationService = applicationService;
         this.jobCustomQuestionService = jobCustomQuestionService;
         this.fileStorageService = fileStorageService;
         this.objectMapper = objectMapper;
+        this.userRepository = userRepository;
     }
 
     @Operation(summary = "Submit a job application", 
@@ -371,20 +376,18 @@ public class ApplicationController {
     
     /**
      * Extract user ID from the UserDetails object
-     * This is a placeholder that would be replaced with actual implementation
      * 
      * @param userDetails the authenticated user details
      * @return the user ID
      */
     private Long extractUserIdFromUserDetails(UserDetails userDetails) {
-        // In a real implementation, you would extract the user ID from UserDetails
-        // based on how your UserDetails implementation stores the user ID
-        // For example, if you have a custom UserDetails implementation:
-        // return ((CustomUserDetails) userDetails).getUserId();
+        // Get the email from UserDetails (which is used as the username)
+        String email = userDetails.getUsername();
         
-        // For now, this is a placeholder
-        // You would replace this with your actual implementation
-        // based on your security configuration
-        return 1L; // Placeholder
+        // Find the user by email and return their ID
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                
+        return user.getId();
     }
 }

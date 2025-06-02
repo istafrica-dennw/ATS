@@ -10,6 +10,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import EmailManagementPage from './pages/admin/EmailManagementPage';
 import JobManagementPage from './pages/admin/JobManagementPage';
+import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
@@ -182,6 +183,7 @@ const App: React.FC = () => {
               <Route path="users" element={<UserManagementPage />} />
               <Route path="emails" element={<EmailManagementPage />} />
               <Route path="jobs" element={<JobManagementPage />} />
+              <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
             </Route>
             
             {/* Direct routes removed to prevent infinite redirects */}

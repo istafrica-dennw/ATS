@@ -14,6 +14,7 @@ import {
 
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 // Types
 interface Job {
@@ -65,6 +66,7 @@ const initialFormData: JobFormData = {
 };
 
 const JobManagementPage: React.FC = () => {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -588,6 +590,7 @@ const JobManagementPage: React.FC = () => {
                             {/* View button */}
                             <button
                               type="button"
+                              onClick={() => navigate(`/admin/jobs/${job.id}`)}
                               className="text-indigo-600 hover:text-indigo-900"
                               title="View Details"
                             >

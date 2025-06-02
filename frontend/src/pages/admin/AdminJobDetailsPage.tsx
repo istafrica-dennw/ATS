@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import {
-  ArrowLeftIcon,
+import { 
+  MapPinIcon, 
+  BriefcaseIcon, 
+  UserGroupIcon, 
   DocumentTextIcon,
-  MapPinIcon,
-  BriefcaseIcon,
-  ClockIcon,
+  ArrowLeftIcon,
   CurrencyDollarIcon,
-  UserGroupIcon,
-  PaperClipIcon,
+  PaperClipIcon
 } from '@heroicons/react/24/outline';
+import { ClockIcon } from '@heroicons/react/24/solid';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import axiosInstance from '../../utils/axios';
+import { toast } from 'react-toastify';
 
 interface Job {
   id: number;
@@ -63,13 +63,13 @@ const AdminJobDetailsPage: React.FC = () => {
       setLoading(true);
       try {
         // Fetch job details
-        const jobResponse = await axios.get(`/api/jobs/${jobId}`);
+        const jobResponse = await axiosInstance.get(`/jobs/${jobId}`);
         setJob(jobResponse.data);
         setError(null);
         
         try {
           // Fetch applications for this job
-          const applicationsResponse = await axios.get(`/api/applications/job/${jobId}`);
+          const applicationsResponse = await axiosInstance.get(`/applications/job/${jobId}`);
           const applicationsData = applicationsResponse.data.content || [];
           setApplications(applicationsData);
           
@@ -81,7 +81,7 @@ const AdminJobDetailsPage: React.FC = () => {
           
           await Promise.all(uniqueCandidateIds.map(async (candidateId) => {
             try {
-              const userResponse = await axios.get(`/api/users/${candidateId}`);
+              const userResponse = await axiosInstance.get(`/users/${candidateId}`);
               const userData = userResponse.data;
               candidateDetailsMap[candidateId] = {
                 name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || `User ${candidateId}`,
@@ -100,7 +100,7 @@ const AdminJobDetailsPage: React.FC = () => {
           
           // Try to fetch application stats
           try {
-            const statsResponse = await axios.get(`/api/applications/stats/job/${jobId}`);
+            const statsResponse = await axiosInstance.get(`/applications/stats/job/${jobId}`);
             setStats(statsResponse.data);
           } catch (statsErr) {
             console.warn('Could not fetch application stats:', statsErr);
@@ -133,7 +133,7 @@ const AdminJobDetailsPage: React.FC = () => {
   
   const handleStatusChange = async (applicationId: number, newStatus: string) => {
     try {
-      await axios.patch(`/api/applications/${applicationId}`, {
+      await axiosInstance.patch(`/applications/${applicationId}`, {
         status: newStatus
       });
       

@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import FileUploader from './FileUploader';
 import CustomQuestionForm, { CustomQuestion, QuestionAnswer } from './CustomQuestionForm';
 import { applicationService, ApplicationDTO } from '../../services/applicationService';
+import axiosInstance from '../../utils/axios';
 import axios from 'axios';
 
 interface JobApplicationFormProps {
@@ -70,7 +71,7 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
         // TODO: Replace with actual API endpoint when available
         try {
           // Attempt to fetch custom questions
-          const response = await axios.get(`/api/jobs/${jobId}/custom-questions`);
+          const response = await axiosInstance.get(`/jobs/${jobId}/custom-questions`);
           setQuestions(response.data);
         } catch (error) {
           console.log('Custom questions API not implemented yet - using empty questions array');

@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
-const API_URL = '/api/files';
+const API_URL = '/files';
 
 export const fileUploadService = {
   // Upload resume
@@ -9,7 +9,7 @@ export const fileUploadService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await axios.post(`${API_URL}/resume`, formData, {
+      const response = await axiosInstance.post(`${API_URL}/resume`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -27,7 +27,7 @@ export const fileUploadService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await axios.post(`${API_URL}/cover-letter`, formData, {
+      const response = await axiosInstance.post(`${API_URL}/cover-letter`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

@@ -81,6 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(tokenData);
     setIsAuthenticated(true);
     
+    // Set the auth header for future requests
+    const formattedToken = tokenData.startsWith('Bearer ') ? tokenData : `Bearer ${tokenData}`;
+    axiosInstance.defaults.headers.common['Authorization'] = formattedToken;
+    console.log('AuthContext - Authorization header set in safeSetAuthData');
+    
     // Only store in localStorage
     try {
       localStorage.setItem('token', tokenData);
@@ -280,6 +285,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } as User);
       setToken(authResponse.accessToken);
       setIsAuthenticated(true);
+      
+      // Set the auth header for future requests
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${authResponse.accessToken}`;
+      console.log('AuthContext - Authentication header set for future requests');
       
       return authResponse;
     } catch (error: any) {

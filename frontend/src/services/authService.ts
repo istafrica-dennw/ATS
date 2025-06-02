@@ -2,7 +2,7 @@ import axios from 'axios';
 import axiosInstance from '../utils/axios';
 
 // Use a relative path to leverage the proxy configuration in package.json
-const API_URL = '/api';  // Changed from http://localhost:8080/api to /api for consistency
+const API_URL = '';  // Since axiosInstance already has baseURL '/api', we don't need a prefix
 
 export interface AuthRequest {
   email: string;
@@ -61,7 +61,7 @@ export interface MfaRequiredResponse {
 
 export const authService = {
   signup: async (email: string, password: string, firstName: string, lastName: string): Promise<SignupResponse> => {
-    const response = await axios.post<SignupResponse>(`${API_URL}/auth/signup`, {
+    const response = await axiosInstance.post<SignupResponse>(`/auth/signup`, {
       email,
       password,
       firstName,
@@ -71,7 +71,7 @@ export const authService = {
   },
 
   login: async (data: AuthRequest): Promise<AuthResponse | MfaRequiredResponse> => {
-    const response = await axios.post(`${API_URL}/auth/login`, data);
+    const response = await axiosInstance.post(`/auth/login`, data);
     
     // Check if 2FA is required
     if (response.status === 202 && response.data.requires2FA) {
@@ -83,7 +83,7 @@ export const authService = {
   },
   
   loginWithMfa: async (data: MfaLoginRequest): Promise<AuthResponse> => {
-    const response = await axios.post<AuthResponse>(`${API_URL}/auth/mfa/login`, data);
+    const response = await axiosInstance.post<AuthResponse>(`/auth/mfa/login`, data);
     return response.data;
   },
   
@@ -153,5 +153,26 @@ export const authService = {
       localStorage.setItem('mfaVerified', 'true');
       console.log('AuthService - User has no MFA, setting mfaVerified to true');
     }
+  },
+
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await axiosInstance.post<{ message: string }>('/auth/forgot-password', { email });
+    return response.data;
+  },
+  
+  resetPassword: async (token: string, newPassword: string): Promise<{ message: string }> => {
+    const response = await axiosInstance.post<{ message: string }>('/auth/reset-password', { 
+      token, 
+      newPassword 
+    });
+    return response.data;
+  },
+  
+  changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
+    const response = await axiosInstance.post<{ message: string }>('/auth/change-password', { 
+      currentPassword, 
+      newPassword 
+    });
+    return response.data;
   }
 }; 

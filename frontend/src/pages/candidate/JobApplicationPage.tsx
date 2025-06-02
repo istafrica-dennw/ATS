@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Box, CircularProgress, Typography, Alert } from '@mui/material';
 import MainLayout from '../../layouts/MainLayout';
 import JobApplicationForm from '../../components/application/JobApplicationForm';
-import axios from 'axios';
+import axiosInstance from '../../utils/axios';
 
 interface Job {
   id: number;
@@ -34,7 +34,7 @@ const JobApplicationPage: React.FC = () => {
         }
         
         // Fetch job details
-        const response = await axios.get(`/api/jobs/${jobId}`);
+        const response = await axiosInstance.get(`/jobs/${jobId}`);
         setJob(response.data);
       } catch (err) {
         console.error('Error fetching job details:', err);

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 export interface ApplicationDTO {
   id: number;
@@ -26,7 +26,7 @@ export interface ApplicationsResponse {
 export const candidateService = {
   // Get all applications for the logged-in candidate
   getMyApplications: async (page = 0, size = 10): Promise<ApplicationsResponse> => {
-    const response = await axios.get(`/api/applications/my-applications?page=${page}&size=${size}`);
+    const response = await axiosInstance.get(`/applications/my-applications?page=${page}&size=${size}`);
     return response.data;
   },
 
@@ -37,7 +37,7 @@ export const candidateService = {
     offers: number;
     rejections: number;
   }> => {
-    const response = await axios.get('/api/applications/my-statistics');
+    const response = await axiosInstance.get('/applications/my-statistics');
     return response.data;
   }
 };

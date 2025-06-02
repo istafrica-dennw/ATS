@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 export interface JobDTO {
   id: number;
@@ -19,7 +19,7 @@ export interface JobDTO {
 export const jobService = {
   // Get job by ID
   getJobById: async (jobId: number): Promise<JobDTO> => {
-    const response = await axios.get(`/api/jobs/${jobId}`);
+    const response = await axiosInstance.get(`/jobs/${jobId}`);
     return response.data;
   },
   
@@ -31,7 +31,7 @@ export const jobService = {
     size: number;
     number: number;
   }> => {
-    const response = await axios.get(`/api/jobs?page=${page}&size=${size}`);
+    const response = await axiosInstance.get(`/jobs?page=${page}&size=${size}`);
     return response.data;
   }
 };

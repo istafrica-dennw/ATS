@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
-const API_URL = '/api/applications';
+const API_URL = '/applications';
 
 export interface ApplicationDTO {
   id?: number;
@@ -22,7 +22,7 @@ export const applicationService = {
   // Submit a job application
   submitApplication: async (application: ApplicationDTO) => {
     try {
-      const response = await axios.post(API_URL, application);
+      const response = await axiosInstance.post(API_URL, application);
       return response.data;
     } catch (error) {
       throw error;
@@ -32,7 +32,7 @@ export const applicationService = {
   // Check if user has already applied to a job
   checkApplicationStatus: async (jobId: number) => {
     try {
-      const response = await axios.get(`${API_URL}/check-status/${jobId}`);
+      const response = await axiosInstance.get(`${API_URL}/check-status/${jobId}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -42,7 +42,7 @@ export const applicationService = {
   // Get user's applications
   getMyApplications: async (page = 0, size = 10) => {
     try {
-      const response = await axios.get(`${API_URL}/my-applications?page=${page}&size=${size}`);
+      const response = await axiosInstance.get(`${API_URL}/my-applications?page=${page}&size=${size}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -52,7 +52,7 @@ export const applicationService = {
   // Get application by ID
   getApplicationById: async (applicationId: number) => {
     try {
-      const response = await axios.get(`${API_URL}/${applicationId}`);
+      const response = await axiosInstance.get(`${API_URL}/${applicationId}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -62,7 +62,7 @@ export const applicationService = {
   // Delete an application
   deleteApplication: async (applicationId: number) => {
     try {
-      await axios.delete(`${API_URL}/${applicationId}`);
+      await axiosInstance.delete(`${API_URL}/${applicationId}`);
       return true;
     } catch (error) {
       throw error;

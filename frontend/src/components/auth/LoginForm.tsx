@@ -84,14 +84,9 @@ const LoginForm: React.FC = () => {
       
       // Normal login flow
       const authResponse = response as AuthResponse;
-      // Redirect based on role
-      if (authResponse.user.role === Role.ADMIN) {
-        navigate('/admin/dashboard');
-      } else if (authResponse.user.role === Role.CANDIDATE) {
-        navigate('/candidate/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      // Always redirect to /dashboard, which will handle role-based redirection
+      console.log('LoginForm - Login successful, redirecting to /dashboard');
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
       

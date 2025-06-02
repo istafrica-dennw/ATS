@@ -77,17 +77,8 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Otherwise, apply normal redirection logic for authenticated users
   if (user && token) {
-    switch (user.role) {
-      case Role.ADMIN:
-        return <Navigate to="/admin" replace />;
-      case Role.INTERVIEWER:
-      case Role.HIRING_MANAGER:
-        return <Navigate to="/recruiter" replace />;
-      case Role.CANDIDATE:
-        return <Navigate to="/candidate" replace />;
-      default:
-        return <Navigate to="/login" replace />;
-    }
+    // Always redirect authenticated users to dashboard, which will handle role-based redirection
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

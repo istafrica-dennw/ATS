@@ -9,13 +9,13 @@ export const fileUploadService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await axiosInstance.post(`${API_URL}/resume`, formData, {
+      const response = await axiosInstance.post(`${API_URL}/upload/resume`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      return response.data.fileUrl;
+      return response.data.url;
     } catch (error) {
       throw error;
     }
@@ -27,13 +27,13 @@ export const fileUploadService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await axiosInstance.post(`${API_URL}/cover-letter`, formData, {
+      const response = await axiosInstance.post(`${API_URL}/upload/cover-letter`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      return response.data.fileUrl;
+      return response.data.url;
     } catch (error) {
       throw error;
     }

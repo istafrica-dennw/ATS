@@ -66,21 +66,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         });
       }, 300);
       
-      // For demo purposes, simulate API call with a mock URL
-      // In production, this would be a real API call
-      let fileUrl;
-      try {
-        // Upload file based on type
-        const uploadFunction = fileType === 'resume' 
-          ? fileUploadService.uploadResume 
-          : fileUploadService.uploadCoverLetter;
-          
-        fileUrl = await uploadFunction(file);
-      } catch (uploadError) {
-        console.error('File upload API error:', uploadError);
-        // For demo, create a mock URL if the API fails
-        fileUrl = `https://example.com/uploads/${fileType}/${Date.now()}-${file.name}`;
-      }
+      // Upload file based on type
+      const uploadFunction = fileType === 'resume' 
+        ? fileUploadService.uploadResume 
+        : fileUploadService.uploadCoverLetter;
+        
+      let fileUrl = await uploadFunction(file);
       
       // Clear interval and set to 100%
       clearInterval(progressInterval);

@@ -174,6 +174,125 @@ const AdminJobDetailsPage: React.FC = () => {
     }
   };
   
+  const handleViewResume = (resumeUrl: string) => {
+    // Construct the proper URL for viewing - use backend URL from environment
+    let backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    // Remove trailing /api if it exists to avoid double /api
+    if (backendUrl.endsWith('/api')) {
+      backendUrl = backendUrl.slice(0, -4);
+    }
+    
+    console.log('handleViewResume - backendUrl:', backendUrl);
+    console.log('handleViewResume - resumeUrl:', resumeUrl);
+    
+    let fullUrl;
+    if (resumeUrl.startsWith('http')) {
+      fullUrl = resumeUrl;
+    } else if (resumeUrl.startsWith('/api')) {
+      // URL already includes /api, just prepend the base backend URL
+      fullUrl = `${backendUrl}${resumeUrl}`;
+    } else {
+      // URL doesn't include /api, add it
+      fullUrl = `${backendUrl}/api${resumeUrl}`;
+    }
+    
+    console.log('handleViewResume - final fullUrl:', fullUrl);
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  };
+  
+  const handleDownloadResume = (resumeUrl: string) => {
+    // Create a download link and trigger it - use backend URL from environment
+    let backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    // Remove trailing /api if it exists to avoid double /api
+    if (backendUrl.endsWith('/api')) {
+      backendUrl = backendUrl.slice(0, -4);
+    }
+    
+    let fullUrl;
+    if (resumeUrl.startsWith('http')) {
+      fullUrl = resumeUrl;
+    } else if (resumeUrl.startsWith('/api')) {
+      // URL already includes /api, just prepend the base backend URL
+      fullUrl = `${backendUrl}${resumeUrl}`;
+    } else {
+      // URL doesn't include /api, add it
+      fullUrl = `${backendUrl}/api${resumeUrl}`;
+    }
+    const link = document.createElement('a');
+    link.href = fullUrl;
+    link.download = resumeUrl.split('/').pop() || 'resume';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const handleViewCoverLetter = (coverLetterUrl: string) => {
+    let backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    // Remove trailing /api if it exists to avoid double /api
+    if (backendUrl.endsWith('/api')) {
+      backendUrl = backendUrl.slice(0, -4);
+    }
+    
+    let fullUrl;
+    if (coverLetterUrl.startsWith('http')) {
+      fullUrl = coverLetterUrl;
+    } else if (coverLetterUrl.startsWith('/api')) {
+      // URL already includes /api, just prepend the base backend URL
+      fullUrl = `${backendUrl}${coverLetterUrl}`;
+    } else {
+      // URL doesn't include /api, add it
+      fullUrl = `${backendUrl}/api${coverLetterUrl}`;
+    }
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  };
+  
+  const handleDownloadCoverLetter = (coverLetterUrl: string) => {
+    let backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    // Remove trailing /api if it exists to avoid double /api
+    if (backendUrl.endsWith('/api')) {
+      backendUrl = backendUrl.slice(0, -4);
+    }
+    
+    let fullUrl;
+    if (coverLetterUrl.startsWith('http')) {
+      fullUrl = coverLetterUrl;
+    } else if (coverLetterUrl.startsWith('/api')) {
+      // URL already includes /api, just prepend the base backend URL
+      fullUrl = `${backendUrl}${coverLetterUrl}`;
+    } else {
+      // URL doesn't include /api, add it
+      fullUrl = `${backendUrl}/api${coverLetterUrl}`;
+    }
+    const link = document.createElement('a');
+    link.href = fullUrl;
+    link.download = coverLetterUrl.split('/').pop() || 'cover-letter';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const handleViewPortfolio = (portfolioUrl: string) => {
+    let backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    // Remove trailing /api if it exists to avoid double /api
+    if (backendUrl.endsWith('/api')) {
+      backendUrl = backendUrl.slice(0, -4);
+    }
+    
+    let fullUrl;
+    if (portfolioUrl.startsWith('http')) {
+      fullUrl = portfolioUrl;
+    } else if (portfolioUrl.startsWith('/api')) {
+      // URL already includes /api, just prepend the base backend URL
+      fullUrl = `${backendUrl}${portfolioUrl}`;
+    } else {
+      // URL doesn't include /api, add it
+      fullUrl = `${backendUrl}/api${portfolioUrl}`;
+    }
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  };
+  
   const getStatusBadge = (status: string) => {
     switch (status.toUpperCase()) {
       case 'APPLIED':
@@ -406,7 +525,7 @@ const AdminJobDetailsPage: React.FC = () => {
                       Status
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Resume
+                      Documents
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -443,18 +562,56 @@ const AdminJobDetailsPage: React.FC = () => {
                         {getStatusBadge(application.status)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {application.resumeUrl ? (
-                          <a 
-                            href={application.resumeUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-indigo-600 hover:text-indigo-900 flex items-center"
-                          >
-                            <PaperClipIcon className="h-5 w-5 mr-1" /> View
-                          </a>
-                        ) : (
-                          'No resume'
-                        )}
+                        <div className="space-y-1">
+                          {application.resumeUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewResume(application.resumeUrl!)}
+                                className="text-indigo-600 hover:text-indigo-900 flex items-center text-xs"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Resume
+                              </button>
+                              <button
+                                onClick={() => handleDownloadResume(application.resumeUrl!)}
+                                className="text-green-600 hover:text-green-900 text-xs"
+                              >
+                                ↓
+                              </button>
+                            </div>
+                          )}
+                          
+                          {application.coverLetterUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewCoverLetter(application.coverLetterUrl!)}
+                                className="text-indigo-600 hover:text-indigo-900 flex items-center text-xs"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Cover Letter
+                              </button>
+                              <button
+                                onClick={() => handleDownloadCoverLetter(application.coverLetterUrl!)}
+                                className="text-green-600 hover:text-green-900 text-xs"
+                              >
+                                ↓
+                              </button>
+                            </div>
+                          )}
+                          
+                          {application.portfolioUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewPortfolio(application.portfolioUrl!)}
+                                className="text-indigo-600 hover:text-indigo-900 flex items-center text-xs"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Portfolio
+                              </button>
+                            </div>
+                          )}
+                          
+                          {!application.resumeUrl && !application.coverLetterUrl && !application.portfolioUrl && (
+                            <span className="text-gray-400 text-xs">No documents</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="relative inline-block text-left">

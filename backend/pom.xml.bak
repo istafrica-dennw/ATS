@@ -161,21 +161,7 @@
             <version>3.6.0</version>
         </dependency>
 
-        <!-- LangChain4j for AI integration (optional for premium features) -->
-        <!-- <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-spring-boot-starter</artifactId>
-            <version>0.25.0</version>
-            <optional>true</optional>
-        </dependency> -->
-
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-open-ai</artifactId>
-            <version>0.25.0</version>
-            <optional>true</optional>
         </dependency>
-    </dependencies>
 
     <build>
         <plugins>

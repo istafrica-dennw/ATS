@@ -117,7 +117,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**", "/error",
                     "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**",
-                    "/api/test/**", "/api/files/**").permitAll()
+                    "/api/test/**", "/api/files/**", "/api/jobs/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

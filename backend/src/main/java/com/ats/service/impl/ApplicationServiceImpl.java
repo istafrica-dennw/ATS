@@ -11,9 +11,11 @@ import com.ats.repository.JobCustomQuestionRepository;
 import com.ats.repository.JobRepository;
 import com.ats.repository.UserRepository;
 import com.ats.service.ApplicationService;
+import com.ats.service.ResumeAnalysisService;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +35,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final JobCustomQuestionRepository jobCustomQuestionRepository;
+    private final ResumeAnalysisService resumeAnalysisService;
 
     @Autowired
     public ApplicationServiceImpl(
@@ -40,12 +43,14 @@ public class ApplicationServiceImpl implements ApplicationService {
             ApplicationAnswerRepository applicationAnswerRepository,
             JobRepository jobRepository,
             UserRepository userRepository,
-            JobCustomQuestionRepository jobCustomQuestionRepository) {
+            JobCustomQuestionRepository jobCustomQuestionRepository,
+            @Qualifier("freeResumeAnalysisService") ResumeAnalysisService resumeAnalysisService) {
         this.applicationRepository = applicationRepository;
         this.applicationAnswerRepository = applicationAnswerRepository;
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.jobCustomQuestionRepository = jobCustomQuestionRepository;
+        this.resumeAnalysisService = resumeAnalysisService;
     }
 
     @Override
@@ -105,6 +110,20 @@ public class ApplicationServiceImpl implements ApplicationService {
         if (!answers.isEmpty()) {
             applicationAnswerRepository.saveAll(answers);
             savedApplication.setAnswers(answers);
+        }
+        
+        // Trigger resume analysis asynchronously if resume URL is provided
+        if (savedApplication.getResumeUrl() != null && !savedApplication.getResumeUrl().trim().isEmpty()) {
+            log.info("Triggering resume analysis for application ID: {}", savedApplication.getId());
+            resumeAnalysisService.analyzeAndUpdateApplication(savedApplication, job)
+                    .thenAccept(updatedApplication -> {
+                        log.info("Resume analysis completed for application ID: {}", updatedApplication.getId());
+                    })
+                    .exceptionally(throwable -> {
+                        log.error("Resume analysis failed for application ID: {}: {}", 
+                                savedApplication.getId(), throwable.getMessage());
+                        return null;
+                    });
         }
         
         log.info("Application submitted successfully with ID: {}", savedApplication.getId());
@@ -328,6 +347,9 @@ public class ApplicationServiceImpl implements ApplicationService {
         dto.setExpectedSalary(application.getExpectedSalary());
         dto.setCreatedAt(application.getCreatedAt());
         dto.setUpdatedAt(application.getUpdatedAt());
+        
+        // Map resume analysis if available
+        dto.setResumeAnalysis(application.getResumeAnalysis());
         
         // Map application answers
         List<ApplicationAnswerDTO> answerDTOs = application.getAnswers().stream()

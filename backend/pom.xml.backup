@@ -140,41 +140,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        
-        <!-- Apache Tika for document parsing (FREE) -->
-        <dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>2.9.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-parsers-standard-package</artifactId>
-            <version>2.9.1</version>
-        </dependency>
-
-        <!-- JSON processing for resume analysis data -->
-        <dependency>
-            <groupId>io.hypersistence</groupId>
-            <artifactId>hypersistence-utils-hibernate-62</artifactId>
-            <version>3.6.0</version>
-        </dependency>
-
-        <!-- LangChain4j for AI integration (optional for premium features) -->
-        <!-- <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-spring-boot-starter</artifactId>
-            <version>0.25.0</version>
-            <optional>true</optional>
-        </dependency> -->
-
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-open-ai</artifactId>
-            <version>0.25.0</version>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
 
     <build>

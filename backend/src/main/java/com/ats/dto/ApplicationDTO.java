@@ -63,6 +63,9 @@ public class ApplicationDTO {
     @Schema(description = "Date and time when the application was last updated", accessMode = Schema.AccessMode.READ_ONLY)
     private ZonedDateTime updatedAt;
 
+    @Schema(description = "AI-powered resume analysis data", accessMode = Schema.AccessMode.READ_ONLY)
+    private ResumeAnalysisDTO resumeAnalysis;
+
     @Schema(description = "Answers to custom questions for this job")
     @Valid
     private List<ApplicationAnswerDTO> answers = new ArrayList<>();

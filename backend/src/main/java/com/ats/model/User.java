@@ -100,6 +100,7 @@ public class User extends BaseEntity {
     @Column(name = "mfa_secret")
     private String mfaSecret;
     
-    @Column(name = "mfa_recovery_codes", columnDefinition = "TEXT[]")
+    // Temporarily using @Transient to avoid hypersistence-utils conflicts
+    @Transient
     private String[] mfaRecoveryCodes;
 } 

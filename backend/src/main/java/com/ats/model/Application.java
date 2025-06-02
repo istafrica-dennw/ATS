@@ -11,6 +11,8 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.Type;
+
 @Entity
 @Table(name = "applications")
 @Data
@@ -65,6 +67,10 @@ public class Application {
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ApplicationAnswer> answers = new ArrayList<>();
+
+    @Column(name = "resume_analysis", columnDefinition = "jsonb")
+    @Type(io.hypersistence.utils.hibernate.type.json.JsonBinaryType.class)
+    private com.ats.dto.ResumeAnalysisDTO resumeAnalysis;
 
     @PrePersist
     protected void onCreate() {

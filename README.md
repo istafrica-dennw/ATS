@@ -19,6 +19,16 @@ A comprehensive Applicant Tracking System built with Spring Boot and React, desi
 - **Experience Tracking**: Years of experience with detailed breakdown
 - **Salary Expectations**: Expected salary tracking
 - **Application Analytics**: Comprehensive statistics and reporting
+- **🤖 AI Resume Analysis**: Automatic resume parsing with experience extraction, skills matching, and job-specific scoring (powered by free Ollama models)
+
+### 🤖 AI Resume Analysis
+- **Automatic Analysis**: AI-powered resume parsing and scoring
+- **Experience Extraction**: Years of experience and company history
+- **Skills Matching**: Job-specific skill compatibility scoring
+- **Scoring System**: Overall, experience, and skills match percentages
+- **Free AI Models**: Powered by Ollama (phi3, llama3, codellama)
+- **Rescore Functionality**: Re-analyze resumes against different jobs
+- **Detailed Insights**: Work history, education, and comprehensive analysis
 
 ### 🎯 User Management
 - **Role-Based Access**: Admin, Recruiter, Interviewer, Candidate roles
@@ -60,6 +70,7 @@ A comprehensive Applicant Tracking System built with Spring Boot and React, desi
 - **Docker & Docker Compose** - Containerization
 - **Multi-stage builds** - Optimized container images
 - **Health checks** - Container monitoring
+- **Ollama + phi3** - Local AI models for resume analysis
 
 ## 🚀 Quick Start
 
@@ -75,15 +86,18 @@ git clone <repository-url>
 cd ats-system
 ```
 
-2. **Start the application**
+2. **Start the application** (includes automatic AI setup)
 ```bash
-docker-compose up -d
+docker-compose up --build
 ```
+
+*Note: On first startup, the system will automatically download the phi3 AI model (2.3GB) for resume analysis. This takes 2-5 minutes but only happens once.*
 
 3. **Access the application**
 - Frontend: http://localhost:3001
 - Backend API: http://localhost:8080
 - API Documentation: http://localhost:8080/swagger-ui.html
+- Ollama AI Service: http://localhost:11434
 
 ### Default Admin Account
 - Email: `admin@ats.istafrica`

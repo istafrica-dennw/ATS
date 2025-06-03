@@ -22,6 +22,29 @@ services:
       timeout: 5s
       retries: 5
 
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    container_name: ats-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - ats-network
+    restart: unless-stopped
+    # Optional: GPU support (uncomment if you have NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
   backend:
     build:
       context: ./backend
@@ -43,11 +66,17 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
       - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+      # Ollama configuration
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3}
+      - APP_RESUME_ANALYSIS_PROVIDER=${APP_RESUME_ANALYSIS_PROVIDER:-ollama}
     volumes:
       - profile_uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
+      ollama:
+        condition: service_started
     networks:
       - ats-network
 
@@ -82,4 +111,6 @@ volumes:
   postgres_data:
     name: ats-system_postgres_data
   profile_uploads:
-    name: ats-system_ats_uploads 
+    name: ats-system_ats_uploads
+  ollama_data:
+    name: ats-system_ollama_data 

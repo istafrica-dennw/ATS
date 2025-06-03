@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { User, Role } from '../../types/user';
 import AddUserModal from '../../components/admin/AddUserModal';
 import UserDetailsModal from '../../components/admin/UserDetailsModal';
@@ -14,6 +15,7 @@ import {
 
 const UserManagementPage: React.FC = () => {
   const { token } = useAuth();
+  const location = useLocation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,6 +46,13 @@ const UserManagementPage: React.FC = () => {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  // Check if we should open the Add User modal from dashboard navigation
+  useEffect(() => {
+    if (location.state?.openAddModal) {
+      setIsAddUserModalOpen(true);
+    }
+  }, [location.state]);
 
   const handleAddUserClick = () => {
     setIsAddUserModalOpen(true);

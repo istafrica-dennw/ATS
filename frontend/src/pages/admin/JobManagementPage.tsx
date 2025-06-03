@@ -14,7 +14,7 @@ import {
 
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Types
 interface Job {
@@ -67,6 +67,7 @@ const initialFormData: JobFormData = {
 
 const JobManagementPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +117,16 @@ const JobManagementPage: React.FC = () => {
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
+
+  // Check if we should open the Create Job modal from dashboard navigation
+  useEffect(() => {
+    if (location.state?.openCreateModal) {
+      setFormData(initialFormData);
+      setIsEditing(false);
+      setCurrentJobId(null);
+      setShowModal(true);
+    }
+  }, [location.state]);
 
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

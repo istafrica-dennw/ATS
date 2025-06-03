@@ -31,20 +31,14 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Handle page refresh - ensure we stay on the correct admin page
   React.useEffect(() => {
     // Store the current path in session storage to handle page refreshes
-    if (location.pathname.startsWith('/admin/')) {
+    if (location.pathname.startsWith('/admin/') && location.pathname !== '/admin') {
       sessionStorage.setItem('lastAdminRoute', location.pathname);
       console.log('AdminLayout - Stored current admin route:', location.pathname);
     }
     
-    // If we're at the root admin path, check if we should redirect to a previously visited admin page
-    if (location.pathname === '/admin') {
-      const lastRoute = sessionStorage.getItem('lastAdminRoute');
-      if (lastRoute && lastRoute !== '/admin') {
-        console.log('AdminLayout - Redirecting to last admin route:', lastRoute);
-        navigate(lastRoute);
-      }
-    }
-  }, [location.pathname, navigate]);
+    // Removed automatic redirect logic - allow users to navigate to /admin dashboard freely
+    // Previous logic was redirecting users away from /admin when they tried to access it
+  }, [location.pathname]);
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col">
@@ -72,7 +66,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Fixed */}
         <div className="hidden md:flex md:w-64 md:flex-col md:flex-shrink-0">
-          <div className="flex flex-col flex-grow pt-5 bg-indigo-700 overflow-y-auto">
+          <div className="flex flex-col flex-grow pt-5 bg-white border-r border-gray-200 overflow-y-auto">
             <div className="flex-grow flex flex-col">
               <nav className="flex-1 px-2 pb-4 space-y-1">
                 {navigation.map((item) => {
@@ -82,7 +76,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <li key={item.name}>
                       {item.disabled ? (
                         <span
-                          className="flex items-center px-2 py-2 text-sm font-medium text-indigo-300 rounded-md cursor-not-allowed"
+                          className="flex items-center px-2 py-2 text-sm font-medium text-gray-400 rounded-md cursor-not-allowed"
                           title="Coming soon"
                         >
                           <item.icon className="mr-3 h-6 w-6" aria-hidden="true" />
@@ -93,8 +87,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                           to={item.href}
                           className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
                             isCurrent
-                              ? 'bg-indigo-800 text-white'
-                              : 'text-indigo-200 hover:bg-indigo-600 hover:text-white'
+                              ? 'bg-indigo-100 text-indigo-700 border-r-2 border-indigo-500'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                           }`}
                         >
                           <item.icon className="mr-3 h-6 w-6" aria-hidden="true" />

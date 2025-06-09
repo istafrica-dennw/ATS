@@ -4,7 +4,6 @@ import com.ats.model.ConversationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.ZonedDateTime;
 
 @Data
 @NoArgsConstructor
@@ -16,6 +15,6 @@ public class ConversationDTO {
     private Long adminId;
     private String adminName;
     private ConversationStatus status;
-    private ZonedDateTime createdAt;
-    private ZonedDateTime updatedAt;
+    private String createdAt;
+    private String updatedAt;
 } 

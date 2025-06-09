@@ -24,6 +24,7 @@ import LandingPage from './pages/LandingPage';
 import JobsPage from './pages/JobsPage';
 import JobDetailsPage from './pages/JobDetailsPage';
 import JobApplicationPage from './pages/candidate/JobApplicationPage';
+import ChatTestPage from './pages/ChatTestPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -177,13 +178,12 @@ const App: React.FC = () => {
               <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
             </Route>
             
-            {/* Direct routes removed to prevent infinite redirects */}
-
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/:id" element={<JobDetailsPage />} />
             <Route path="/apply/:id" element={<JobApplicationPage />} />
+            <Route path="/chat-test" element={<ChatTestPage />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<Navigate to="/" />} />

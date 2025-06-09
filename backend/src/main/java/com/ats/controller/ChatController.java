@@ -93,7 +93,7 @@ public class ChatController {
         dto.setSenderName(chat.getSender().getFirstName() + " " + chat.getSender().getLastName());
         dto.setSenderRole(chat.getSender().getRole().toString());
         dto.setContent(chat.getContent());
-        dto.setCreatedAt(chat.getCreatedAt().atZone(ZoneId.systemDefault()));
+        dto.setCreatedAt(chat.getCreatedAt().atZone(ZoneId.systemDefault()).toString());
         dto.setMessageType("text");
         return dto;
     }
@@ -110,8 +110,8 @@ public class ChatController {
         }
         
         dto.setStatus(conversation.getStatus());
-        dto.setCreatedAt(conversation.getCreatedAt().atZone(ZoneId.systemDefault()));
-        dto.setUpdatedAt(conversation.getUpdatedAt().atZone(ZoneId.systemDefault()));
+        dto.setCreatedAt(conversation.getCreatedAt().atZone(ZoneId.systemDefault()).toString());
+        dto.setUpdatedAt(conversation.getUpdatedAt().atZone(ZoneId.systemDefault()).toString());
         return dto;
     }
 } 

@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import UserProfileDropdown from '../common/UserProfileDropdown';
+import AdminChatNotifications from './AdminChatNotifications';
 import {
   HomeIcon,
   UsersIcon,
@@ -57,7 +58,16 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <span className="text-gray-700 mr-4">
                 Welcome, {user?.firstName} {user?.lastName}
               </span>
-              <UserProfileDropdown />
+              {/* Admin Chat Notifications */}
+              {user && (
+                <AdminChatNotifications 
+                  adminId={user.id} 
+                  adminName={`${user.firstName} ${user.lastName}`} 
+                />
+              )}
+              <div className="ml-3">
+                <UserProfileDropdown />
+              </div>
             </div>
           </div>
         </div>

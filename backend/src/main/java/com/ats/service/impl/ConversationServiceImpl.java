@@ -45,13 +45,6 @@ public class ConversationServiceImpl implements ConversationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Admin not found with ID: " + adminId));
         }
         
-        // Check if conversation already exists for this candidate
-        List<Conversation> existingConversations = conversationRepository.findByCandidateId(candidateId);
-        if (!existingConversations.isEmpty()) {
-            log.warn("Conversation already exists for candidate {}", candidateId);
-            return existingConversations.get(0); // Return existing conversation
-        }
-        
         // Create new conversation
         Conversation conversation = new Conversation();
         conversation.setCandidate(candidate);
@@ -68,15 +61,15 @@ public class ConversationServiceImpl implements ConversationService {
     public Conversation getOrCreateConversationForCandidate(Long candidateId) {
         log.debug("Getting or creating conversation for candidate {}", candidateId);
         
-        // Try to find existing conversation
-        List<Conversation> existingConversations = conversationRepository.findByCandidateId(candidateId);
+        // Try to find existing ACTIVE conversation first
+        List<Conversation> activeConversations = conversationRepository.findByCandidateIdAndStatus(candidateId, ConversationStatus.ACTIVE);
         
-        if (!existingConversations.isEmpty()) {
-            log.debug("Found existing conversation for candidate {}", candidateId);
-            return existingConversations.get(0);
+        if (!activeConversations.isEmpty()) {
+            log.debug("Found existing active conversation for candidate {}", candidateId);
+            return activeConversations.get(0);
         }
         
-        // Create new conversation if none exists
+        // Create new conversation if no active one exists
         log.debug("Creating new conversation for candidate {}", candidateId);
         return createConversation(candidateId, null);
     }
@@ -175,7 +168,7 @@ public class ConversationServiceImpl implements ConversationService {
     @Transactional(readOnly = true)
     public List<Conversation> getUnassignedConversations() {
         log.debug("Fetching unassigned conversations");
-        return conversationRepository.findByAdminId(null);
+        return conversationRepository.findByAdminIdAndStatus(null, ConversationStatus.ACTIVE);
     }
 
     @Override

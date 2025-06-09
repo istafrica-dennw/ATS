@@ -3,7 +3,6 @@ package com.ats.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.ZonedDateTime;
 
 @Data
 @NoArgsConstructor
@@ -15,6 +14,6 @@ public class ChatMessageDTO {
     private String senderName;
     private String senderRole;
     private String content;
-    private ZonedDateTime createdAt;
+    private String createdAt;
     private String messageType; // "text", "system", etc.
 } 

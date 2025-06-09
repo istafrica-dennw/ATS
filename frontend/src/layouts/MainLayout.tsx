@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import UserProfileDropdown from '../components/common/UserProfileDropdown';
+import ChatWidget from '../components/chat/ChatWidget';
+import { Role } from '../types/user';
 
 const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -84,6 +86,15 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           {children || <Outlet />}
         </div>
       </div>
+
+      {/* Chat Widget - Only for candidates */}
+      {user && user.role === Role.CANDIDATE && (
+        <ChatWidget 
+          userId={user.id} 
+          userName={`${user.firstName} ${user.lastName}`} 
+          userRole="CANDIDATE" 
+        />
+      )}
     </div>
   );
 };

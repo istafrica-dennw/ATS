@@ -26,7 +26,7 @@ public class Conversation extends BaseEntity {
     private User candidate;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id", nullable = false)
+    @JoinColumn(name = "admin_id", nullable = true)
     private User admin;
     
     @Enumerated(EnumType.STRING)

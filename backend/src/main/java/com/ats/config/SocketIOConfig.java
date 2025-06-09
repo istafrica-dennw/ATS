@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SocketIOConfig {
 
-    @Value("${socketio.host:localhost}")
+    @Value("${socketio.host:0.0.0.0}")
     private String host;
 
     @Value("${socketio.port:9092}")
@@ -43,8 +43,11 @@ public class SocketIOConfig {
     @Bean
     public SocketIOServer socketIOServer() {
         log.info("🏭 Creating SocketIOServer bean...");
+        log.info("🔍 Host value from @Value: {}", host);
+        log.info("🔍 Port value from @Value: {}", port);
+        
         Configuration config = new Configuration();
-        config.setHostname(host);
+        config.setHostname("0.0.0.0"); // Force to 0.0.0.0
         config.setPort(port);
         config.setBossThreads(bossCount);
         config.setWorkerThreads(workCount);
@@ -64,7 +67,7 @@ public class SocketIOConfig {
 
         SocketIOServer server = new SocketIOServer(config);
         
-        log.info("✅ SocketIOServer bean created on {}:{}", host, port);
+        log.info("✅ SocketIOServer bean created on 0.0.0.0:{}", port);
         return server;
     }
 

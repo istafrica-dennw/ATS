@@ -2,13 +2,8 @@ package com.ats.socket;
 
 import com.ats.dto.ChatMessageDTO;
 import com.ats.dto.ConversationDTO;
-import com.ats.model.Chat;
-import com.ats.model.Conversation;
 import com.ats.model.ConversationStatus;
-import com.ats.model.User;
-import com.ats.service.ChatService;
-import com.ats.service.ConversationService;
-import com.ats.service.UserService;
+import com.ats.service.SocketChatService;
 import com.corundumstudio.socketio.AckRequest;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
@@ -21,8 +16,6 @@ import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,9 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChatSocketHandler {
 
     private final SocketIOServer server;
-    private final ChatService chatService;
-    private final ConversationService conversationService;
-    private final UserService userService;
+    private final SocketChatService socketChatService;
     
     // Track active connections: conversationId -> clientId
     private final Map<Long, String> activeConversations = new ConcurrentHashMap<>();
@@ -44,15 +35,10 @@ public class ChatSocketHandler {
     private final Map<String, Long> clientConversationMap = new ConcurrentHashMap<>();
 
     @Autowired
-    public ChatSocketHandler(SocketIOServer server, 
-                           ChatService chatService, 
-                           ConversationService conversationService,
-                           UserService userService) {
+    public ChatSocketHandler(SocketIOServer server, SocketChatService socketChatService) {
         log.info("🎯 ChatSocketHandler constructor called - Injecting dependencies");
         this.server = server;
-        this.chatService = chatService;
-        this.conversationService = conversationService;
-        this.userService = userService;
+        this.socketChatService = socketChatService;
         log.info("✅ ChatSocketHandler dependencies injected successfully");
     }
 
@@ -83,26 +69,16 @@ public class ChatSocketHandler {
         Long conversationId = clientConversationMap.get(clientId);
         Long userId = clientUserMap.get(clientId);
         
-        if (conversationId != null) {
-            // Close conversation permanently when user disconnects
-            try {
-                conversationService.closeConversation(conversationId);
-                log.info("Conversation {} closed due to disconnect", conversationId);
-                
-                // Notify other participants that conversation is closed
-                notifyConversationClosed(conversationId, userId);
-                
-            } catch (Exception e) {
-                log.error("Error closing conversation on disconnect: {}", e.getMessage());
-            }
-        }
-        
-        // Cleanup tracking maps
+        // Just cleanup tracking maps - don't close conversation on disconnect
+        // Conversations should only be closed when explicitly requested
         clientUserMap.remove(clientId);
         clientConversationMap.remove(clientId);
         if (conversationId != null) {
             activeConversations.remove(conversationId);
         }
+        
+        log.info("Client {} disconnected and cleaned up tracking for user {} and conversation {}", 
+                clientId, userId, conversationId);
     }
 
     @OnEvent("join_chat")
@@ -116,33 +92,32 @@ public class ChatSocketHandler {
             // Store client-user mapping
             clientUserMap.put(clientId, userId);
             
-            // Get or create conversation for candidate
-            Conversation conversation = conversationService.getOrCreateConversationForCandidate(userId);
+            // Get or create conversation and messages through transactional service
+            SocketChatService.ConversationJoinResult result = socketChatService.joinChat(userId);
             
             // Store client-conversation mapping
-            clientConversationMap.put(clientId, conversation.getId());
-            activeConversations.put(conversation.getId(), clientId);
+            clientConversationMap.put(clientId, result.getConversation().getId());
+            activeConversations.put(result.getConversation().getId(), clientId);
             
             // Join client to conversation room
-            client.joinRoom("conversation_" + conversation.getId());
+            client.joinRoom("conversation_" + result.getConversation().getId());
             
-            // Send conversation info and message history
-            ConversationDTO conversationDTO = mapToConversationDTO(conversation);
-            List<Chat> messages = chatService.getMessagesByConversation(conversation.getId());
-            List<ChatMessageDTO> messageDTOs = messages.stream()
-                .map(this::mapToChatMessageDTO)
-                .toList();
+            // If this is a newly created conversation, notify all admins
+            if (result.isNewConversation()) {
+                log.info("Notifying admins about new unassigned conversation {}", result.getConversation().getId());
+                server.getBroadcastOperations().sendEvent("new_unassigned_conversation", result.getConversation());
+            }
             
             // Acknowledge join with conversation data
             if (ackRequest.isAckRequested()) {
                 ackRequest.sendAckData(Map.of(
                     "success", true,
-                    "conversation", conversationDTO,
-                    "messages", messageDTOs
+                    "conversation", result.getConversation(),
+                    "messages", result.getMessages()
                 ));
             }
             
-            log.info("User {} joined conversation {}", userId, conversation.getId());
+            log.info("User {} joined conversation {}", userId, result.getConversation().getId());
             
         } catch (Exception e) {
             log.error("Error in join_chat: {}", e.getMessage());
@@ -161,23 +136,8 @@ public class ChatSocketHandler {
             
             log.info("Admin {} taking conversation {}", adminId, conversationId);
             
-            // Check if conversation is already assigned
-            Conversation conversation = conversationService.getConversationById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
-            
-            if (conversation.getAdmin() != null) {
-                // Conversation already assigned to another admin
-                if (ackRequest.isAckRequested()) {
-                    ackRequest.sendAckData(Map.of(
-                        "success", false, 
-                        "error", "Conversation already assigned to another admin"
-                    ));
-                }
-                return;
-            }
-            
-            // Assign admin to conversation
-            Conversation updatedConversation = conversationService.assignAdminToConversation(conversationId, adminId);
+            // Take conversation through transactional service
+            ConversationDTO conversationDTO = socketChatService.takeConversation(adminId, conversationId);
             
             // Store mappings
             clientUserMap.put(clientId, adminId);
@@ -187,9 +147,14 @@ public class ChatSocketHandler {
             client.joinRoom("conversation_" + conversationId);
             
             // Notify all participants about admin assignment
-            ConversationDTO conversationDTO = mapToConversationDTO(updatedConversation);
             server.getRoomOperations("conversation_" + conversationId)
                 .sendEvent("admin_assigned", conversationDTO);
+            
+            // Notify all admins that this conversation was taken
+            server.getBroadcastOperations().sendEvent("conversation_taken", Map.of(
+                "conversationId", conversationId,
+                "adminId", adminId
+            ));
             
             if (ackRequest.isAckRequested()) {
                 ackRequest.sendAckData(Map.of(
@@ -222,11 +187,8 @@ public class ChatSocketHandler {
             
             log.info("Sending message from user {} to conversation {}", userId, conversationId);
             
-            // Send message through service
-            Chat savedMessage = chatService.sendMessage(conversationId, userId, content);
-            
-            // Create DTO for broadcast
-            ChatMessageDTO messageDTO = mapToChatMessageDTO(savedMessage);
+            // Send message through transactional service
+            ChatMessageDTO messageDTO = socketChatService.sendMessage(conversationId, userId, content);
             
             // Broadcast message to all participants in the conversation
             server.getRoomOperations("conversation_" + conversationId)
@@ -240,7 +202,7 @@ public class ChatSocketHandler {
                 ));
             }
             
-            log.info("Message sent successfully: {}", savedMessage.getId());
+            log.info("Message sent successfully: {}", messageDTO.getId());
             
         } catch (Exception e) {
             log.error("Error in send_message: {}", e.getMessage());
@@ -263,8 +225,8 @@ public class ChatSocketHandler {
             
             log.info("Closing conversation {} by user {}", conversationId, userId);
             
-            // Close conversation permanently
-            Conversation closedConversation = conversationService.closeConversation(conversationId);
+            // Close conversation through transactional service
+            ConversationDTO closedConversation = socketChatService.closeConversation(conversationId);
             
             // Notify all participants
             notifyConversationClosed(conversationId, userId);
@@ -276,7 +238,7 @@ public class ChatSocketHandler {
             if (ackRequest.isAckRequested()) {
                 ackRequest.sendAckData(Map.of(
                     "success", true,
-                    "conversation", mapToConversationDTO(closedConversation)
+                    "conversation", closedConversation
                 ));
             }
             
@@ -295,10 +257,8 @@ public class ChatSocketHandler {
         try {
             log.info("Fetching unassigned conversations for admin");
             
-            List<Conversation> unassignedConversations = conversationService.getUnassignedConversations();
-            List<ConversationDTO> conversationDTOs = unassignedConversations.stream()
-                .map(this::mapToConversationDTO)
-                .toList();
+            // Get unassigned conversations through transactional service
+            List<ConversationDTO> conversationDTOs = socketChatService.getUnassignedConversations();
             
             if (ackRequest.isAckRequested()) {
                 ackRequest.sendAckData(Map.of(
@@ -309,6 +269,42 @@ public class ChatSocketHandler {
             
         } catch (Exception e) {
             log.error("Error fetching unassigned conversations: {}", e.getMessage());
+            if (ackRequest.isAckRequested()) {
+                ackRequest.sendAckData(Map.of("success", false, "error", e.getMessage()));
+            }
+        }
+    }
+
+    @OnEvent("close_all_admin_conversations")
+    public void onCloseAllAdminConversations(SocketIOClient client, Map<String, Object> data, AckRequest ackRequest) {
+        try {
+            Long adminId = Long.valueOf(data.get("adminId").toString());
+            log.info("Closing all conversations for admin {}", adminId);
+            
+            // Get all active conversations for this admin
+            List<ConversationDTO> closedConversations = socketChatService.closeAllAdminConversations(adminId);
+            
+            // Notify all participants of closed conversations
+            for (ConversationDTO conversation : closedConversations) {
+                notifyConversationClosed(conversation.getId(), adminId);
+            }
+            
+            // Clean up tracking for this admin
+            String clientId = client.getSessionId().toString();
+            clientUserMap.remove(clientId);
+            clientConversationMap.remove(clientId);
+            
+            if (ackRequest.isAckRequested()) {
+                ackRequest.sendAckData(Map.of(
+                    "success", true,
+                    "closedConversations", closedConversations
+                ));
+            }
+            
+            log.info("Closed {} conversations for admin {}", closedConversations.size(), adminId);
+            
+        } catch (Exception e) {
+            log.error("Error closing all admin conversations: {}", e.getMessage());
             if (ackRequest.isAckRequested()) {
                 ackRequest.sendAckData(Map.of("success", false, "error", e.getMessage()));
             }
@@ -326,35 +322,5 @@ public class ChatSocketHandler {
                 "closedBy", closedByUserId,
                 "message", "Conversation has been closed and cannot be reopened."
             ));
-    }
-
-    private ChatMessageDTO mapToChatMessageDTO(Chat chat) {
-        ChatMessageDTO dto = new ChatMessageDTO();
-        dto.setId(chat.getId());
-        dto.setConversationId(chat.getConversation().getId());
-        dto.setSenderId(chat.getSender().getId());
-        dto.setSenderName(chat.getSender().getFirstName() + " " + chat.getSender().getLastName());
-        dto.setSenderRole(chat.getSender().getRole().toString());
-        dto.setContent(chat.getContent());
-        dto.setCreatedAt(chat.getCreatedAt().atZone(ZoneId.systemDefault()));
-        dto.setMessageType("text");
-        return dto;
-    }
-
-    private ConversationDTO mapToConversationDTO(Conversation conversation) {
-        ConversationDTO dto = new ConversationDTO();
-        dto.setId(conversation.getId());
-        dto.setCandidateId(conversation.getCandidate().getId());
-        dto.setCandidateName(conversation.getCandidate().getFirstName() + " " + conversation.getCandidate().getLastName());
-        
-        if (conversation.getAdmin() != null) {
-            dto.setAdminId(conversation.getAdmin().getId());
-            dto.setAdminName(conversation.getAdmin().getFirstName() + " " + conversation.getAdmin().getLastName());
-        }
-        
-        dto.setStatus(conversation.getStatus());
-        dto.setCreatedAt(conversation.getCreatedAt().atZone(ZoneId.systemDefault()));
-        dto.setUpdatedAt(conversation.getUpdatedAt().atZone(ZoneId.systemDefault()));
-        return dto;
     }
 } 

@@ -8,9 +8,12 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { candidateService, ApplicationDTO } from '../../services/candidateService';
 import { jobService, JobDTO } from '../../services/jobService';
+import { interviewAPI } from '../../services/api';
+import { Interview } from '../../types/interview';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 
@@ -23,7 +26,7 @@ interface ApplicationStats {
 
 interface EnhancedApplicationDTO extends ApplicationDTO {
   jobTitle?: string;
-  company?: string;
+  department?: string;
   appliedDate?: string;
 }
 
@@ -31,6 +34,7 @@ const CandidateDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [applications, setApplications] = useState<EnhancedApplicationDTO[]>([]);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingJobDetails, setLoadingJobDetails] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -47,24 +51,30 @@ const CandidateDashboardPage: React.FC = () => {
         setLoading(true);
         setError('');
         
-        const response = await candidateService.getMyApplications();
+        // Fetch applications and interviews in parallel
+        const [applicationsResponse, interviewsResponse] = await Promise.all([
+          candidateService.getMyApplications(),
+          interviewAPI.getMyCandidateInterviews()
+        ]);
         
         // Enhance applications with date information
-        const enhancedApplications = response.content.map(app => ({
+        const enhancedApplications = applicationsResponse.content.map(app => ({
           ...app,
           appliedDate: app.createdAt
         }));
         
         setApplications(enhancedApplications);
+        setInterviews(interviewsResponse.data);
         
-        // Calculate stats
-        const interviews = response.content.filter(app => app.status === 'INTERVIEW').length;
-        const offers = response.content.filter(app => app.status === 'OFFER').length;
-        const rejections = response.content.filter(app => app.status === 'REJECTED').length;
+        // Calculate stats based on application status and actual interviews
+        const interviewingStatus = applicationsResponse.content.filter(app => app.status === 'INTERVIEWING').length;
+        const actualInterviews = interviewsResponse.data.length;
+        const offers = applicationsResponse.content.filter(app => app.status === 'OFFERED').length;
+        const rejections = applicationsResponse.content.filter(app => app.status === 'REJECTED').length;
         
         setStats({
-          totalApplications: response.content.length,
-          interviews,
+          totalApplications: applicationsResponse.content.length,
+          interviews: Math.max(interviewingStatus, actualInterviews), // Use the higher count
           offers,
           rejections
         });
@@ -73,7 +83,7 @@ const CandidateDashboardPage: React.FC = () => {
         fetchJobDetails(enhancedApplications);
         
       } catch (err) {
-        console.error('Error fetching applications:', err);
+        console.error('Error fetching data:', err);
         setError('Failed to load your applications. Please try again later.');
         setLoading(false);
       }
@@ -94,7 +104,7 @@ const CandidateDashboardPage: React.FC = () => {
               updatedApplications[index] = {
                 ...updatedApplications[index],
                 jobTitle: jobDetails.title,
-                company: jobDetails.company
+                department: jobDetails.department
               };
             } catch (err) {
               console.error(`Error fetching job details for job ID ${app.jobId}:`, err);
@@ -102,7 +112,7 @@ const CandidateDashboardPage: React.FC = () => {
               updatedApplications[index] = {
                 ...updatedApplications[index],
                 jobTitle: 'Software Engineer Position',
-                company: 'IST Africa'
+                department: 'IST Africa'
               };
             }
           })
@@ -225,6 +235,61 @@ const CandidateDashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Upcoming Interviews Section */}
+      {interviews.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-3">Upcoming Interviews</h3>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="space-y-4">
+              {interviews
+                .filter(interview => interview.status === 'ASSIGNED' || interview.status === 'IN_PROGRESS')
+                .sort((a, b) => {
+                  // Sort by scheduled date if available, otherwise by creation date
+                  const dateA = a.scheduledAt ? new Date(a.scheduledAt) : new Date(a.createdAt);
+                  const dateB = b.scheduledAt ? new Date(b.scheduledAt) : new Date(b.createdAt);
+                  return dateA.getTime() - dateB.getTime();
+                })
+                .map((interview) => (
+                  <div key={interview.id} className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm">
+                    <div className="flex items-center space-x-3">
+                      <UserGroupIcon className="h-8 w-8 text-blue-600" />
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">{interview.application.jobTitle}</h4>
+                        <p className="text-sm text-gray-600">with {interview.interviewerName}</p>
+                        {/* <p className="text-xs text-gray-500">Template: {interview.skeletonName}</p> */}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center space-x-2">
+                        <CalendarIcon className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-900">
+                          {interview.scheduledAt 
+                            ? new Date(interview.scheduledAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
+                            : 'Date TBD'
+                          }
+                        </span>
+                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                        interview.status === 'ASSIGNED' 
+                          ? 'bg-yellow-100 text-yellow-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {interview.status === 'ASSIGNED' ? 'Scheduled' : 'In Progress'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center items-center py-10">
           <CircularProgress />
@@ -262,7 +327,7 @@ const CandidateDashboardPage: React.FC = () => {
                       Job Title
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Company
+                      Department
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -281,7 +346,7 @@ const CandidateDashboardPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{app.company || 'IST Africa'}</div>
+                        <div className="text-sm text-gray-500">{app.department || 'IST Africa'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">

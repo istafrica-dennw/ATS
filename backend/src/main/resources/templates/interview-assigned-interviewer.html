@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>New Interview Assignment</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb;">New Interview Assignment</h2>
+        <p>Dear <span th:text="${interviewerName}">Interviewer</span>,</p>
+        
+        <p>You have been assigned to conduct a new interview. Here are the details:</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin: 0 0 15px 0; color: #1f2937;">Interview Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563; width: 40%;">Position:</td>
+                    <td style="padding: 8px 0;" th:text="${jobTitle}">Job Title</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563;">Candidate:</td>
+                    <td style="padding: 8px 0;" th:text="${candidateName}">Candidate Name</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563;">Email:</td>
+                    <td style="padding: 8px 0;" th:text="${candidateEmail}">candidate@email.com</td>
+                </tr>
+                <tr th:if="${scheduledDate}">
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563;">Scheduled:</td>
+                    <td style="padding: 8px 0;" th:text="${scheduledDate}">Date & Time</td>
+                </tr>
+                <tr th:if="${interviewTemplate}">
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563;">Template:</td>
+                    <td style="padding: 8px 0;" th:text="${interviewTemplate}">Interview Template</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563;">Application ID:</td>
+                    <td style="padding: 8px 0;" th:text="${applicationId}">#12345</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #1e40af;">
+                <strong>Action Required:</strong> Please log into the system to view the candidate's application details and schedule the interview if not already scheduled.
+            </p>
+        </div>
+        
+        <p><strong>Next Steps:</strong></p>
+        <ul style="color: #4b5563;">
+            <li>Review the candidate's application and resume in the system</li>
+            <li th:unless="${scheduledDate}">Schedule the interview at a convenient time</li>
+            <li th:if="${scheduledDate}">Prepare for the scheduled interview</li>
+            <li>Use the provided interview template to guide the session</li>
+            <li>Submit your feedback and rating after the interview</li>
+        </ul>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a th:href="${interviewerPortalLink}" 
+               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                Access Interviewer Portal
+            </a>
+        </div>
+        
+        <p>If you have any questions about this interview assignment or need to reschedule, please contact the recruiting team.</p>
+        
+        <p style="margin-top: 30px;">
+            Best regards,<br>
+            <strong>IST Africa Recruiting Team</strong>
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="font-size: 0.9em; color: #666;">
+            For questions about interview assignments, contact us at <a href="mailto:interviews@istafrica.com" style="color: #2563eb;">interviews@istafrica.com</a>
+        </p>
+    </div>
+</body>
+</html> 

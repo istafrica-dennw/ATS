@@ -3,17 +3,16 @@ import axiosInstance from '../utils/axios';
 export interface JobDTO {
   id: number;
   title: string;
-  company: string;
-  location: string;
-  type: string;
+  department: string;
   description: string;
-  requirements: string;
-  responsibilities: string;
-  salary: string;
-  benefits: string;
-  createdAt: string;
-  updatedAt: string;
-  active: boolean;
+  location: string;
+  employmentType: string;
+  skills: string[];
+  postedDate: string;
+  workSetting: string;
+  jobStatus: string;
+  salaryRange: string;
+  customQuestions?: any[];
 }
 
 export const jobService = {
@@ -23,15 +22,9 @@ export const jobService = {
     return response.data;
   },
   
-  // Get all jobs
-  getAllJobs: async (page = 0, size = 10): Promise<{
-    content: JobDTO[];
-    totalElements: number;
-    totalPages: number;
-    size: number;
-    number: number;
-  }> => {
-    const response = await axiosInstance.get(`/jobs?page=${page}&size=${size}`);
+  // Get all jobs (returns list directly, not paginated)
+  getAllJobs: async (): Promise<JobDTO[]> => {
+    const response = await axiosInstance.get(`/jobs`);
     return response.data;
   }
 };

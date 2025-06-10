@@ -229,157 +229,229 @@ const AdminChatPanel: React.FC<AdminChatPanelProps> = ({ adminId, adminName, onA
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="bg-blue-600 text-white p-4 rounded-t-lg">
-          <h2 className="text-xl font-semibold">Admin Chat Panel</h2>
-          <p className="text-sm opacity-90">
-            {adminName} • {isConnected ? 'Connected' : 'Disconnected'}
-            <span className={`ml-2 inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} />
-          </p>
-        </div>
-
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="w-full h-full flex flex-col" style={{ backgroundColor: 'transparent' }}>
+      <div className="flex flex-col h-full" style={{ backgroundColor: 'transparent' }}>
+        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0" style={{ backgroundColor: 'transparent' }}>
           {/* Unassigned Conversations */}
-          <div>
-            <h3 className="text-lg font-medium mb-4 flex items-center">
-              <UserGroupIcon className="h-5 w-5 mr-2" />
-              Unassigned Conversations ({unassignedConversations.length})
-            </h3>
-            
-            {unassignedConversations.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <UserGroupIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No unassigned conversations</p>
-                <p className="text-sm">New conversations will appear here</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {unassignedConversations.map((conversation) => (
-                  <div key={conversation.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-medium">{conversation.candidateName}</h4>
-                        <p className="text-sm text-gray-500">
-                          Started: {formatTime(conversation.createdAt)}
-                        </p>
-                      </div>
-                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                        {conversation.status}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => takeConversation(conversation.id)}
-                      disabled={isLoading || !isConnected}
-                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-lg text-sm transition-colors"
-                    >
-                      {isLoading ? 'Taking...' : 'Take Conversation'}
-                    </button>
+          <div className="flex flex-col min-h-0" style={{ backgroundColor: 'transparent' }}>
+            <div className="glass-effect rounded-2xl p-6 flex flex-col h-full" style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+            }}>
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                  <div className="p-2.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl mr-3 shadow-lg">
+                    <UserGroupIcon className="h-6 w-6 text-white" />
                   </div>
-                ))}
+                  Unassigned Conversations
+                </h3>
+                <div className="flex items-center space-x-3">
+                  <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
+                    {unassignedConversations.length}
+                  </span>
+                  <div className="flex items-center space-x-1">
+                    <span className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+                    <span className="text-xs font-medium text-gray-600">
+                      {isConnected ? 'Online' : 'Offline'}
+                    </span>
+                  </div>
+                </div>
               </div>
-            )}
+              
+              {unassignedConversations.length === 0 ? (
+                <div className="text-center text-gray-500 py-12 flex-1 flex flex-col justify-center">
+                  <div className="p-4 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                    <UserGroupIcon className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <p className="font-bold text-gray-700 text-lg">No unassigned conversations</p>
+                  <p className="text-sm text-gray-500 mt-2 font-medium">New conversations will appear here</p>
+                </div>
+              ) : (
+                <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+                  {unassignedConversations.map((conversation, index) => (
+                    <div 
+                      key={conversation.id} 
+                      className="glass-effect rounded-xl p-4 hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.8) 100%)',
+                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                        animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="font-bold text-gray-800 flex items-center text-lg">
+                            <div className="w-2.5 h-2.5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full mr-3 animate-pulse"></div>
+                            {conversation.candidateName}
+                          </h4>
+                          <p className="text-sm text-gray-600 mt-2 font-medium">
+                            Started: {formatTime(conversation.createdAt)}
+                          </p>
+                        </div>
+                        <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                          {conversation.status}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => takeConversation(conversation.id)}
+                        disabled={isLoading || !isConnected}
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 transform hover:scale-105 shadow-lg disabled:transform-none"
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Taking...
+                          </div>
+                        ) : (
+                          'Take Conversation'
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Active Conversation */}
-          <div>
-            <h3 className="text-lg font-medium mb-4 flex items-center">
-              <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
-              Active Conversation
-            </h3>
-
-            {!activeConversation ? (
-              <div className="text-center text-gray-500 py-8">
-                <ChatBubbleLeftRightIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No active conversation</p>
-                <p className="text-sm">Take a conversation to start chatting</p>
-              </div>
-            ) : (
-              <div className="border border-gray-200 rounded-lg flex flex-col h-96">
-                {/* Chat Header */}
-                <div className="bg-gray-50 p-3 rounded-t-lg border-b border-gray-200 flex justify-between items-center">
-                  <div>
-                    <h4 className="font-medium">{activeConversation.candidateName}</h4>
-                    <p className="text-sm text-gray-500">Conversation #{activeConversation.id}</p>
+          <div className="flex flex-col min-h-0" style={{ backgroundColor: 'transparent' }}>
+            <div className="glass-effect rounded-2xl p-6 flex flex-col h-full" style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+            }}>
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center">
+                  <div className="p-2.5 bg-gradient-to-r from-green-500 to-teal-600 rounded-xl mr-3 shadow-lg">
+                    <ChatBubbleLeftRightIcon className="h-6 w-6 text-white" />
                   </div>
-                  <button
-                    onClick={closeConversation}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-                  >
-                    Close Chat
-                  </button>
-                </div>
+                  Active Conversation
+                </h3>
+                {activeConversation && (
+                  <span className="bg-gradient-to-r from-green-500 to-teal-600 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
+                    {adminName}
+                  </span>
+                )}
+              </div>
 
-                {/* Messages */}
-                <div className="flex-1 p-4 overflow-y-auto">
-                  {messages.length === 0 ? (
-                    <div className="text-center text-gray-500">
-                      <p>No messages yet</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            message.senderId === adminId ? 'justify-end' : 'justify-start'
-                          }`}
-                        >
-                          <div
-                            className={`max-w-xs px-3 py-2 rounded-lg ${
-                              message.messageType === 'system'
-                                ? 'bg-yellow-100 text-yellow-800 text-center text-xs'
-                                : message.senderId === adminId
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-200 text-gray-800'
-                            }`}
-                          >
-                            {message.messageType !== 'system' && message.senderId !== adminId && (
-                              <div className="text-xs text-gray-500 mb-1">
-                                {message.senderName} ({message.senderRole})
-                              </div>
-                            )}
-                            <div className="text-sm">{message.content}</div>
-                            {message.messageType !== 'system' && (
-                              <div
-                                className={`text-xs mt-1 ${
-                                  message.senderId === adminId ? 'text-blue-200' : 'text-gray-500'
-                                }`}
-                              >
-                                {formatTime(message.createdAt)}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  )}
+              {!activeConversation ? (
+                <div className="text-center text-gray-500 py-12 flex-1 flex flex-col justify-center">
+                  <div className="p-4 bg-gradient-to-r from-green-100 to-teal-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                    <ChatBubbleLeftRightIcon className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <p className="font-bold text-gray-700 text-lg">No active conversation</p>
+                  <p className="text-sm text-gray-500 mt-2 font-medium">Take a conversation to start chatting</p>
                 </div>
-
-                {/* Input */}
-                <div className="p-3 border-t border-gray-200">
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder={isConnected ? "Type a message..." : "Connecting..."}
-                      disabled={!isConnected}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                    />
+              ) : (
+                <div className="glass-effect rounded-xl flex flex-col flex-1 min-h-0" style={{
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(248, 250, 252, 0.7) 100%)',
+                  border: '1px solid rgba(255, 255, 255, 0.4)'
+                }}>
+                  {/* Chat Header */}
+                  <div className="p-5 rounded-t-xl flex justify-between items-center flex-shrink-0" style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                  }}>
+                    <div>
+                      <h4 className="font-bold text-white text-lg tracking-tight">{activeConversation.candidateName}</h4>
+                      <p className="text-sm text-white text-opacity-90 font-medium mt-1">Conversation #{activeConversation.id}</p>
+                    </div>
                     <button
-                      onClick={sendMessage}
-                      disabled={!isConnected || !newMessage.trim()}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-2 rounded-lg transition-colors"
+                      onClick={closeConversation}
+                      className="bg-red-500 bg-opacity-90 hover:bg-opacity-100 text-white px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 transform hover:scale-105 shadow-lg"
                     >
-                      <PaperAirplaneIcon className="h-4 w-4" />
+                      Close Chat
                     </button>
                   </div>
+
+                  {/* Messages */}
+                  <div className="flex-1 p-4 overflow-y-auto min-h-0 custom-scrollbar">
+                    {messages.length === 0 ? (
+                      <div className="text-center text-gray-500 py-8">
+                        <p className="font-bold text-gray-700 text-lg">No messages yet</p>
+                        <p className="text-sm text-gray-500 mt-2 font-medium">Start the conversation!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {messages.map((message, index) => (
+                          <div
+                            key={message.id}
+                            className={`flex ${
+                              message.senderId === adminId ? 'justify-end' : 'justify-start'
+                            }`}
+                            style={{
+                              animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`
+                            }}
+                          >
+                            <div
+                              className={`max-w-xs px-4 py-3 rounded-2xl shadow-lg ${
+                                message.messageType === 'system'
+                                  ? 'bg-gradient-to-r from-yellow-100 to-orange-100 text-yellow-800 text-center text-sm border border-yellow-200'
+                                  : message.senderId === adminId
+                                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                                  : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300'
+                              }`}
+                            >
+                              {message.messageType !== 'system' && message.senderId !== adminId && (
+                                <div className="text-xs text-gray-600 mb-2 font-bold uppercase tracking-wide">
+                                  {message.senderName} ({message.senderRole})
+                                </div>
+                              )}
+                              <div className="text-sm leading-relaxed font-medium">{message.content}</div>
+                              {message.messageType !== 'system' && (
+                                <div
+                                  className={`text-xs mt-2 font-medium ${
+                                    message.senderId === adminId ? 'text-blue-200' : 'text-gray-500'
+                                  }`}
+                                >
+                                  {formatTime(message.createdAt)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input */}
+                  <div className="p-4 rounded-b-xl flex-shrink-0" style={{
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.3)'
+                  }}>
+                    <div className="flex space-x-3">
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder={isConnected ? "Type a message..." : "Connecting..."}
+                        disabled={!isConnected}
+                        className="flex-1 border-0 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 shadow-lg"
+                        style={{ 
+                          background: isConnected 
+                            ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)'
+                            : 'rgba(243, 244, 246, 0.9)',
+                          border: '1px solid rgba(255, 255, 255, 0.3)'
+                        }}
+                      />
+                      <button
+                        onClick={sendMessage}
+                        disabled={!isConnected || !newMessage.trim()}
+                        className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white p-3 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg disabled:transform-none"
+                      >
+                        <PaperAirplaneIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

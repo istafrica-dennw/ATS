@@ -2,6 +2,12 @@ package com.ats.service;
 
 import com.ats.model.EmailNotification;
 import com.ats.model.User;
+import com.ats.model.Application;
+import com.ats.model.EmailEvent;
+import com.ats.model.Job;
+import com.ats.model.RecipientType;
+import com.ats.model.Interview;
+import com.ats.model.InterviewSkeleton;
 import com.ats.repository.EmailNotificationRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -13,7 +19,9 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +32,31 @@ public class EmailService {
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
+
+   
+
+   
+    /**
+     * Email event configuration
+     */
+    private static class EventConfig {
+        final RecipientType recipientType;
+        final String subjectTemplate;
+
+        EventConfig(RecipientType recipientType, String subjectTemplate) {
+            this.recipientType = recipientType;
+            this.subjectTemplate = subjectTemplate;
+        }
+    }
+
+    // Event configuration mapping
+    private final Map<EmailEvent, EventConfig> eventConfigs = Map.of(
+        EmailEvent.APPLICATION_RECEIVED, new EventConfig(RecipientType.CANDIDATE, "Application Received - %s"),
+        EmailEvent.APPLICATION_REVIEWED, new EventConfig(RecipientType.CANDIDATE, "Application Status Update - %s"),
+        EmailEvent.APPLICATION_SHORTLISTED, new EventConfig(RecipientType.CANDIDATE, "Congratulations! You've Been Shortlisted - %s"),
+        EmailEvent.INTERVIEW_ASSIGNED_TO_INTERVIEWER, new EventConfig(RecipientType.INTERVIEWER, "New Interview Assignment - %s"),
+        EmailEvent.INTERVIEW_ASSIGNED_TO_CANDIDATE, new EventConfig(RecipientType.CANDIDATE, "Interview Scheduled - %s")
+    );
 
     /**
      * Generic method to send an email with a template and save notification
@@ -175,5 +208,160 @@ public class EmailService {
             notification.setErrorMessage(e.getMessage());
             return emailNotificationRepository.save(notification);
         }
+    }
+
+    /**
+     * Sends an application-related email based on the event type
+     * @param application The application involved in the event
+     * @param event The type of email event
+     * @return The created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    @Transactional
+    public EmailNotification sendApplicationEmail(Application application, EmailEvent event) throws MessagingException {
+        EventConfig config = eventConfigs.get(event);
+        if (config == null) {
+            throw new IllegalArgumentException("Unsupported email event: " + event);
+        }
+
+        // Determine recipient based on event configuration
+        String recipientEmail = getRecipientEmail(application, null, config.recipientType);
+        User relatedUser = getRelatedUser(application, null, config.recipientType);
+        
+        // Generate subject
+        String subject = String.format(config.subjectTemplate, application.getJob().getTitle());
+        
+        // Generate template variables based on event
+        Map<String, Object> templateVars = buildApplicationTemplateVariables(application, event);
+        
+        return sendTemplateEmail(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser);
+    }
+
+    /**
+     * Sends an interview-related email based on the event type
+     * @param interview The interview involved in the event
+     * @param event The type of email event
+     * @return The created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    @Transactional
+    public EmailNotification sendInterviewEmail(Interview interview, EmailEvent event) throws MessagingException {
+        EventConfig config = eventConfigs.get(event);
+        if (config == null) {
+            throw new IllegalArgumentException("Unsupported email event: " + event);
+        }
+
+        // Determine recipient based on event configuration
+        String recipientEmail = getRecipientEmail(interview.getApplication(), interview, config.recipientType);
+        User relatedUser = getRelatedUser(interview.getApplication(), interview, config.recipientType);
+        
+        // Generate subject
+        String subject = String.format(config.subjectTemplate, interview.getApplication().getJob().getTitle());
+        
+        // Generate template variables based on event
+        Map<String, Object> templateVars = buildInterviewTemplateVariables(interview, event);
+        
+        return sendTemplateEmail(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser);
+    }
+
+    /**
+     * Determines the recipient email based on the recipient type
+     */
+    private String getRecipientEmail(Application application, Interview interview, RecipientType recipientType) {
+        switch (recipientType) {
+            case CANDIDATE:
+                return application.getCandidate().getEmail();
+            case INTERVIEWER:
+                if (interview == null) {
+                    throw new IllegalArgumentException("Interview is required for INTERVIEWER recipient type");
+                }
+                return interview.getInterviewer().getEmail();
+            case ADMIN:
+                // For now, return the admin who shortlisted (if available)
+                return application.getShortlistedBy() != null ? 
+                       application.getShortlistedBy().getEmail() : 
+                       application.getCandidate().getEmail(); // fallback
+            default:
+                throw new IllegalArgumentException("Unsupported recipient type: " + recipientType);
+        }
+    }
+
+    /**
+     * Determines the related user based on the recipient type
+     */
+    private User getRelatedUser(Application application, Interview interview, RecipientType recipientType) {
+        switch (recipientType) {
+            case CANDIDATE:
+                return application.getCandidate();
+            case INTERVIEWER:
+                if (interview == null) {
+                    throw new IllegalArgumentException("Interview is required for INTERVIEWER recipient type");
+                }
+                return interview.getInterviewer();
+            case ADMIN:
+                return application.getShortlistedBy();
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Builds template variables for application-related emails
+     */
+    private Map<String, Object> buildApplicationTemplateVariables(Application application, EmailEvent event) {
+        Map<String, Object> templateVars = new HashMap<>();
+        
+        // Common variables for all application emails
+        templateVars.put("candidateName", application.getCandidate().getFirstName() + " " + application.getCandidate().getLastName());
+        templateVars.put("jobTitle", application.getJob().getTitle());
+        templateVars.put("applicationId", application.getId().toString());
+        
+        // Event-specific variables
+        switch (event) {
+            case APPLICATION_RECEIVED:
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a");
+                templateVars.put("applicationDate", application.getCreatedAt().format(formatter));
+                break;
+            case APPLICATION_REVIEWED:
+            case APPLICATION_SHORTLISTED:
+                // No additional variables needed for these events
+                break;
+        }
+        
+        return templateVars;
+    }
+
+    /**
+     * Builds template variables for interview-related emails
+     */
+    private Map<String, Object> buildInterviewTemplateVariables(Interview interview, EmailEvent event) {
+        Map<String, Object> templateVars = new HashMap<>();
+        Application application = interview.getApplication();
+        
+        // Common variables for all interview emails
+        templateVars.put("candidateName", application.getCandidate().getFirstName() + " " + application.getCandidate().getLastName());
+        templateVars.put("jobTitle", application.getJob().getTitle());
+        templateVars.put("applicationId", application.getId().toString());
+        
+        // Add scheduled date if available
+        if (interview.getScheduledAt() != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy 'at' hh:mm a");
+            templateVars.put("scheduledDate", interview.getScheduledAt().format(formatter));
+        }
+        
+        // Event-specific variables
+        switch (event) {
+            case INTERVIEW_ASSIGNED_TO_INTERVIEWER:
+                templateVars.put("interviewerName", interview.getInterviewer().getFirstName() + " " + interview.getInterviewer().getLastName());
+                templateVars.put("candidateEmail", application.getCandidate().getEmail());
+                templateVars.put("interviewTemplate", interview.getSkeleton().getName());
+                templateVars.put("interviewerPortalLink", frontendUrl + "/interviewer/dashboard");
+                break;
+            case INTERVIEW_ASSIGNED_TO_CANDIDATE:
+                templateVars.put("candidatePortalLink", frontendUrl + "/candidate/dashboard");
+                break;
+        }
+        
+        return templateVars;
     }
 } 

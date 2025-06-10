@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { io, Socket } from 'socket.io-client';
 import { ChatBubbleLeftRightIcon, BellIcon } from '@heroicons/react/24/outline';
 import AdminChatPanel from '../chat/AdminChatPanel';
@@ -160,31 +161,110 @@ const AdminChatNotifications: React.FC<AdminChatNotificationsProps> = ({ adminId
       </div>
 
       {/* Full Screen Chat Panel Modal */}
-      {showChatPanel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-5/6 flex flex-col">
+      {showChatPanel && ReactDOM.createPortal(
+        <div 
+          className="chat-modal-override"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999,
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.8) 100%)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            animation: 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <div 
+            className="chat-modal-content glass-effect"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
+              borderRadius: '20px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              position: 'relative',
+              zIndex: 1000000,
+              maxWidth: '95vw',
+              width: '100%',
+              height: '95vh',
+              maxHeight: '95vh',
+              minHeight: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              animation: 'slideInFromBottom 0.4s ease-out'
+            }}
+          >
             {/* Modal Header */}
-            <div className="flex justify-between items-center p-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Support Chat Management</h2>
-              <div className="flex items-center space-x-2">
+            <div 
+              className="flex justify-between items-center p-8 flex-shrink-0 relative overflow-hidden"
+              style={{ 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: '20px 20px 0 0',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)'
+              }}
+            >
+              {/* Decorative Background Elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white bg-opacity-10 rounded-full -translate-y-32 translate-x-32"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white bg-opacity-5 rounded-full translate-y-16 -translate-x-16"></div>
+              
+              <div className="flex items-center space-x-0" style={{borderRadius: '20px'}}>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-white bg-opacity-30 rounded-2xl blur-sm"></div>
+                  <div className="relative p-4 bg-gradient-to-br from-white from-20% to-transparent to-80% bg-opacity-25 rounded-2xl border border-white border-opacity-30">
+                    <ChatBubbleLeftRightIcon className="h-8 w-8 text-white drop-shadow-lg" />
+                  </div>
+                </div>
+                <div className="ml-6" style={{paddingRight: '20px'}}>
+                  <div className="relative" >
+                    <h2 className="text-3xl font-black text-white tracking-tight leading-tight drop-shadow-lg">
+                      Support Chat Management
+                    </h2>
+                    <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-white from-0% to-transparent to-50% opacity-60"></div>
+                  </div>
+                  <p className="text-base text-white text-opacity-95 font-semibold mt-3 tracking-wide drop-shadow-md">
+                    Real-time customer support dashboard
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 relative z-10">
                 <button
                   onClick={refreshCount}
-                  className="text-gray-500 hover:text-gray-700 p-1 rounded"
-                  title="Refresh"
+                  className="group p-4 text-white text-opacity-90 hover:text-white rounded-2xl transition-all duration-300 transform hover:scale-110 relative overflow-hidden"
+                  title="Refresh conversations"
                 >
-                  <BellIcon className="h-5 w-5" />
+                  <div className="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-20 rounded-2xl transition-all duration-300"></div>
+                  <BellIcon className="h-6 w-6 relative z-10 drop-shadow-lg" />
                 </button>
                 <button
                   onClick={handleCloseModal}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                  className="group p-4 text-white text-opacity-90 hover:text-white rounded-2xl transition-all duration-300 transform hover:scale-110 relative overflow-hidden"
+                  title="Close chat panel"
                 >
-                  ×
+                  <div className="absolute inset-0 bg-red-500 bg-opacity-0 group-hover:bg-opacity-30 rounded-2xl transition-all duration-300"></div>
+                  <svg className="h-6 w-6 relative z-10 drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </div>
             
             {/* Chat Panel Content */}
-            <div className="flex-1 overflow-hidden">
+            <div 
+              className="flex-1 overflow-hidden"
+              style={{ 
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)'
+              }}
+            >
               <AdminChatPanel 
                 adminId={adminId} 
                 adminName={adminName} 
@@ -192,26 +272,51 @@ const AdminChatNotifications: React.FC<AdminChatNotificationsProps> = ({ adminId
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Close Confirmation Modal */}
-      {showCloseConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      {showCloseConfirmation && ReactDOM.createPortal(
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1000001,
+            background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.9) 100%)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <div 
+            className="glass-effect rounded-xl shadow-2xl max-w-md w-full mx-4 p-6"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              zIndex: 1000002,
+              animation: 'slideInFromBottom 0.4s ease-out'
+            }}
+          >
             <div className="flex items-center mb-4">
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 p-2 bg-red-100 rounded-full">
                 <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">Close Chat Panel</h3>
+                <h3 className="text-lg font-bold text-gray-900">Close Chat Panel</h3>
               </div>
             </div>
             
             <div className="mb-6">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-600 leading-relaxed">
                 You have active conversations. Closing the chat panel will terminate all open conversations 
                 and notify candidates that support has ended. Are you sure you want to continue?
               </p>
@@ -220,19 +325,20 @@ const AdminChatNotifications: React.FC<AdminChatNotificationsProps> = ({ adminId
             <div className="flex justify-end space-x-3">
               <button
                 onClick={cancelCloseModal}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white bg-opacity-80 border border-gray-300 rounded-lg hover:bg-opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-105"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmCloseModal}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 border border-transparent rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 Close All Conversations
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

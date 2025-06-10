@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Application Shortlisted</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb;">Congratulations! You've Been Shortlisted</h2>
+        <p>Dear <span th:text="${candidateName}">Candidate</span>,</p>
+        
+        <p>We have excellent news regarding your application!</p>
+        
+        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin: 0; color: #1f2937;" th:text="${jobTitle}">Job Title</h3>
+            <p style="margin: 5px 0 0 0; color: #6b7280;">Application ID: <span th:text="${applicationId}">#12345</span></p>
+        </div>
+        
+        <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #92400e;">
+                <strong>🎉 Congratulations!</strong> Your application has been shortlisted for the next stage of our hiring process.
+            </p>
+        </div>
+        
+        <p>After careful review of your qualifications and experience, we're excited to move forward with your application. Your background and skills align well with what we're looking for in this role.</p>
+        
+        <p><strong>What happens next?</strong></p>
+        <ul style="color: #4b5563;">
+            <li>We'll be assigning an interviewer to review your application in detail</li>
+            <li>You'll receive another email with interview details once scheduled</li>
+            <li>The interview process typically includes technical and behavioral assessments</li>
+            <li>We'll keep you updated on your application status throughout the process</li>
+        </ul>
+        
+        <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #1e40af;">
+                <strong>Tip:</strong> Start preparing for your interview by reviewing the job description and researching our company culture and values.
+            </p>
+        </div>
+        
+        <p>We're looking forward to getting to know you better and learning more about how you can contribute to our team.</p>
+        
+        <p>Thank you for your interest in joining IST Africa. We're excited about the possibility of having you on our team!</p>
+        
+        <p style="margin-top: 30px;">
+            Best regards,<br>
+            <strong>IST Africa Recruiting Team</strong>
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="font-size: 0.9em; color: #666;">
+            If you have any questions about your application or the next steps, please contact us at <a href="mailto:careers@istafrica.com" style="color: #2563eb;">careers@istafrica.com</a>
+        </p>
+    </div>
+</body>
+</html> 

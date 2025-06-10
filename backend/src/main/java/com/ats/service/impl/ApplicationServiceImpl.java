@@ -12,12 +12,12 @@ import com.ats.repository.JobRepository;
 import com.ats.repository.UserRepository;
 import com.ats.service.ApplicationService;
 import com.ats.service.ResumeAnalysisService;
+import com.ats.service.EmailService;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +36,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final UserRepository userRepository;
     private final JobCustomQuestionRepository jobCustomQuestionRepository;
     private final ResumeAnalysisService resumeAnalysisService;
+    private final EmailService emailService;
 
     @Autowired
     public ApplicationServiceImpl(
@@ -44,13 +45,15 @@ public class ApplicationServiceImpl implements ApplicationService {
             JobRepository jobRepository,
             UserRepository userRepository,
             JobCustomQuestionRepository jobCustomQuestionRepository,
-            @Qualifier("freeResumeAnalysisService") ResumeAnalysisService resumeAnalysisService) {
+            @Qualifier("freeResumeAnalysisService") ResumeAnalysisService resumeAnalysisService,
+            EmailService emailService) {
         this.applicationRepository = applicationRepository;
         this.applicationAnswerRepository = applicationAnswerRepository;
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.jobCustomQuestionRepository = jobCustomQuestionRepository;
         this.resumeAnalysisService = resumeAnalysisService;
+        this.emailService = emailService;
     }
 
     @Override
@@ -110,6 +113,16 @@ public class ApplicationServiceImpl implements ApplicationService {
         if (!answers.isEmpty()) {
             applicationAnswerRepository.saveAll(answers);
             savedApplication.setAnswers(answers);
+        }
+        
+        // Send application received email using event-based system
+        try {
+            emailService.sendApplicationEmail(savedApplication, EmailEvent.APPLICATION_RECEIVED);
+            log.info("Application received email sent for application ID: {}", savedApplication.getId());
+        } catch (Exception e) {
+            log.error("Failed to send application received email for application ID: {}: {}", 
+                     savedApplication.getId(), e.getMessage());
+            // Don't fail the entire operation if email fails
         }
         
         // Trigger resume analysis asynchronously if resume URL is provided
@@ -187,10 +200,41 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application not found with ID: " + applicationId));
         
+        ApplicationStatus oldStatus = application.getStatus();
         application.setStatus(newStatus);
         application.setUpdatedAt(ZonedDateTime.now());
         
+        // Automatically set shortlisted flag when status is changed to SHORTLISTED
+        if (newStatus == ApplicationStatus.SHORTLISTED) {
+            application.setIsShortlisted(true);
+            application.setShortlistedAt(ZonedDateTime.now());
+            // Note: We don't set shortlistedBy here since we don't have admin context in this service
+            // If needed, this could be enhanced to pass admin ID as parameter
+        }
+        
         Application updatedApplication = applicationRepository.save(application);
+        
+        // Send email notifications based on status change using event-based system
+        try {
+            if (oldStatus != newStatus) {
+                switch (newStatus) {
+                    case REVIEWED:
+                        emailService.sendApplicationEmail(updatedApplication, EmailEvent.APPLICATION_REVIEWED);
+                        log.info("Application reviewed email sent for application ID: {}", applicationId);
+                        break;
+                    case SHORTLISTED:
+                        emailService.sendApplicationEmail(updatedApplication, EmailEvent.APPLICATION_SHORTLISTED);
+                        log.info("Application shortlisted email sent for application ID: {}", applicationId);
+                        break;
+                    // Add more cases if needed for other status changes
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to send status change email for application ID: {}: {}", 
+                     applicationId, e.getMessage());
+            // Don't fail the entire operation if email fails
+        }
+        
         log.info("Application status updated successfully for ID: {}", applicationId);
         
         return mapToDTO(updatedApplication);

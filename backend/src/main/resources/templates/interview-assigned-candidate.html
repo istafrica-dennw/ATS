@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Interview Scheduled</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb;">Interview Scheduled - Next Step in Your Application</h2>
+        <p>Dear <span th:text="${candidateName}">Candidate</span>,</p>
+        
+        <p>Great news! We're excited to move forward with your application and have scheduled an interview for the position:</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin: 0 0 15px 0; color: #1f2937;">Interview Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563; width: 40%;">Position:</td>
+                    <td style="padding: 8px 0;" th:text="${jobTitle}">Job Title</td>
+                </tr>
+                <tr th:if="${scheduledDate}">
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563;">Date & Time:</td>
+                    <td style="padding: 8px 0;" th:text="${scheduledDate}">Date & Time</td>
+                </tr>
+                <tr th:unless="${scheduledDate}">
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563;">Status:</td>
+                    <td style="padding: 8px 0; color: #f59e0b;">We'll contact you soon to schedule the specific time</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; font-weight: bold; color: #4b5563;">Application ID:</td>
+                    <td style="padding: 8px 0;" th:text="${applicationId}">#12345</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #047857;">
+                <strong>🎉 Congratulations!</strong> You've been selected for the interview stage of our hiring process.
+            </p>
+        </div>
+        
+        <p><strong>What to expect:</strong></p>
+        <ul style="color: #4b5563;">
+            <li>The interview will focus on your technical skills and experience</li>
+            <li>We'll discuss your background and how it relates to this role</li>
+            <li>You'll have the opportunity to ask questions about the position and our company</li>
+            <li th:unless="${scheduledDate}">Our team will contact you within 24-48 hours to schedule the exact time</li>
+            <li>The interview typically lasts 45-60 minutes</li>
+        </ul>
+        
+        <p><strong>How to prepare:</strong></p>
+        <ul style="color: #4b5563;">
+            <li>Review the job description and requirements</li>
+            <li>Research our company, mission, and values</li>
+            <li>Prepare examples that demonstrate your relevant experience</li>
+            <li>Think of questions you'd like to ask about the role and team</li>
+            <li>Test your technology setup if it's a virtual interview</li>
+        </ul>
+        
+        <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #1e40af;">
+                <strong>Important:</strong> Please check your email regularly for any updates or additional details about your interview. If you need to reschedule, contact us as soon as possible.
+            </p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a th:href="${candidatePortalLink}" 
+               style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                View Application Status
+            </a>
+        </div>
+        
+        <p>We're looking forward to speaking with you and learning more about your qualifications. This is an exciting opportunity for both of us to see if there's a great fit!</p>
+        
+        <p>Thank you for your continued interest in joining IST Africa.</p>
+        
+        <p style="margin-top: 30px;">
+            Best regards,<br>
+            <strong>IST Africa Recruiting Team</strong>
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="font-size: 0.9em; color: #666;">
+            If you have any questions about your interview or need to reschedule, please contact us at <a href="mailto:careers@istafrica.com" style="color: #2563eb;">careers@istafrica.com</a>
+        </p>
+    </div>
+</body>
+</html> 

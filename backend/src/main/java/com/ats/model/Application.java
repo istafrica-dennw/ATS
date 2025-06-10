@@ -72,6 +72,18 @@ public class Application {
     @Type(io.hypersistence.utils.hibernate.type.json.JsonBinaryType.class)
     private com.ats.dto.ResumeAnalysisDTO resumeAnalysis;
 
+    // Shortlisting fields
+    @Column(name = "is_shortlisted")
+    @Builder.Default
+    private Boolean isShortlisted = false;
+
+    @Column(name = "shortlisted_at")
+    private ZonedDateTime shortlistedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shortlisted_by")
+    private User shortlistedBy;
+
     @PrePersist
     protected void onCreate() {
         createdAt = ZonedDateTime.now();

@@ -8,7 +8,6 @@ import axiosInstance from '../../utils/axios';
 interface Job {
   id: number;
   title: string;
-  companyName: string;
   department: string;
   location: string;
 }
@@ -94,13 +93,13 @@ const JobApplicationPage: React.FC = () => {
         </Typography>
         
         <Typography variant="subtitle1" sx={{ mb: 3 }}>
-          Complete the application form below to apply for the {job.title} position at {job.companyName || 'the company'}.
+          Complete the application form below to apply for the {job.title} position at {job.department || 'the department'}.
         </Typography>
         
         <JobApplicationForm 
           jobId={job.id} 
           jobTitle={job.title} 
-          companyName={job.companyName || 'the company'} 
+          department={job.department || 'the department'} 
         />
       </Box>
     </MainLayout>

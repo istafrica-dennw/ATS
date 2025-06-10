@@ -1,22 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  MapPinIcon, 
-  BriefcaseIcon, 
-  UserGroupIcon, 
-  DocumentTextIcon,
+import axiosInstance from '../../utils/axios';
+import { interviewAPI } from '../../services/api';
+import { Interview } from '../../types/interview';
+import { toast } from 'react-toastify';
+import {
   ArrowLeftIcon,
+  MapPinIcon,
   CurrencyDollarIcon,
+  BuildingOfficeIcon,
+  UserIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ExclamationTriangleIcon,
   PaperClipIcon,
   ChartBarIcon,
+  ArrowsUpDownIcon,
+  EyeIcon,
+  UserGroupIcon,
   XMarkIcon,
-  ArrowsUpDownIcon
+  BriefcaseIcon
 } from '@heroicons/react/24/outline';
-import { ClockIcon } from '@heroicons/react/24/solid';
+import { ClockIcon as SolidClockIcon } from '@heroicons/react/24/solid';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import axiosInstance from '../../utils/axios';
-import { toast } from 'react-toastify';
 
 interface Job {
   id: number;
@@ -30,7 +39,6 @@ interface Job {
   workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
   jobStatus: 'DRAFT' | 'PUBLISHED' | 'EXPIRED' | 'CLOSED' | 'REOPENED';
   salaryRange: string;
-  company: string;
 }
 
 interface ResumeAnalysis {
@@ -109,9 +117,11 @@ const AdminJobDetailsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hoveredApplication, setHoveredApplication] = useState<number | null>(null);
   const [rescoringApplications, setRescoringApplications] = useState<Set<number>>(new Set());
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [loadingInterviews, setLoadingInterviews] = useState(false);
 
   // Sorting function
-  const sortApplications = useCallback((apps: Application[], criteria: 'date' | 'score', order: 'asc' | 'desc') => {
+  const sortApplications = (apps: Application[], criteria: 'date' | 'score', order: 'asc' | 'desc') => {
     return [...apps].sort((a, b) => {
       let compareValue = 0;
       
@@ -125,7 +135,7 @@ const AdminJobDetailsPage: React.FC = () => {
       
       return order === 'asc' ? compareValue : -compareValue;
     });
-  }, []);
+  };
 
   // Get sorted applications
   const sortedApplications = sortApplications(applications, sortBy, sortOrder);
@@ -161,6 +171,9 @@ const AdminJobDetailsPage: React.FC = () => {
       const applicationsData = applicationsResponse.data.content || [];
       setApplications(applicationsData);
       
+      // Update candidate details for any new applications
+      await fetchCandidateDetails(applicationsData);
+      
       toast.success('Resume analysis updated successfully!');
     } catch (err) {
       console.error('Error rescoring resume:', err);
@@ -183,7 +196,7 @@ const AdminJobDetailsPage: React.FC = () => {
       return;
     }
 
-    const applicationIds = applicationsWithResumes.map(app => app.id);
+    const applicationIds = Array.from(new Set(applicationsWithResumes.map(app => app.id)));
     // Add all applications to rescoring state
     setRescoringApplications(new Set(applicationIds));
     
@@ -266,74 +279,86 @@ const AdminJobDetailsPage: React.FC = () => {
     );
   };
 
-  useEffect(() => {
-    const fetchJobDetails = async () => {
+  const fetchJobDetails = async () => {
+    try {
       setLoading(true);
-      try {
-        // Fetch job details
-        const jobResponse = await axiosInstance.get(`/jobs/${jobId}`);
-        setJob(jobResponse.data);
-        setError(null);
-        
+      const [jobResponse, applicationsResponse] = await Promise.all([
+        axiosInstance.get(`/jobs/${jobId}`),
+        axiosInstance.get(`/applications/job/${jobId}`)
+      ]);
+      
+      setJob(jobResponse.data);
+      const applicationsData = applicationsResponse.data.content || [];
+      setApplications(applicationsData);
+      
+      // Fetch candidate details for each application
+      await fetchCandidateDetails(applicationsData);
+      
+      // Calculate statistics
+      const stats = applicationsData.reduce((acc: any, app: Application) => {
+        acc[app.status] = (acc[app.status] || 0) + 1;
+        return acc;
+      }, {});
+      setStats(stats);
+      
+      // Fetch interviews for this job
+      await fetchInterviews();
+      
+    } catch (error) {
+      console.error('Error fetching job details:', error);
+      toast.error('Failed to load job details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCandidateDetails = async (applications: Application[]) => {
+    try {
+      const candidateIds = Array.from(new Set(applications.map(app => app.candidateId)));
+      const candidateDetailsMap: {[key: number]: {name: string, email: string}} = {};
+      
+      // Fetch details for each unique candidate
+      const candidatePromises = candidateIds.map(async (candidateId) => {
         try {
-          // Fetch applications for this job
-          const applicationsResponse = await axiosInstance.get(`/applications/job/${jobId}`);
-          const applicationsData = applicationsResponse.data.content || [];
-          setApplications(applicationsData);
-          
-          // Fetch candidate details for each application
-          const candidateIds: number[] = applicationsData.map((app: Application) => app.candidateId);
-          const uniqueCandidateIds: number[] = Array.from(new Set(candidateIds));
-          
-          const candidateDetailsMap: {[key: number]: {name: string, email: string}} = {};
-          
-          await Promise.all(uniqueCandidateIds.map(async (candidateId) => {
-            try {
-              const userResponse = await axiosInstance.get(`/users/${candidateId}`);
-              const userData = userResponse.data;
-              candidateDetailsMap[candidateId] = {
-                name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || `User ${candidateId}`,
-                email: userData.email || 'No email available'
-              };
-            } catch (error) {
-              console.warn(`Could not fetch details for candidate ${candidateId}:`, error);
-              candidateDetailsMap[candidateId] = {
-                name: `Candidate ${candidateId}`,
-                email: 'No email available'
-              };
-            }
-          }));
-          
-          setCandidateDetails(candidateDetailsMap);
-          
-          // Try to fetch application stats
-          try {
-            const statsResponse = await axiosInstance.get(`/applications/stats/job/${jobId}`);
-            setStats(statsResponse.data);
-          } catch (statsErr) {
-            console.warn('Could not fetch application stats:', statsErr);
-            // Continue without stats - not a critical failure
-            // Calculate basic stats from applications data
-            const calculatedStats: {[key: string]: number} = {};
-            applications.forEach(app => {
-              const status = app.status.toUpperCase();
-              calculatedStats[status] = (calculatedStats[status] || 0) + 1;
-            });
-            setStats(calculatedStats);
-          }
-        } catch (appErr) {
-          console.warn('Could not fetch applications:', appErr);
-          // This is not a critical failure - we can show job details without applications
-          toast.warning('Could not load applications for this job.');
+          const response = await axiosInstance.get(`/users/${candidateId}`);
+          const user = response.data;
+          candidateDetailsMap[candidateId] = {
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email
+          };
+        } catch (error) {
+          console.error(`Error fetching candidate ${candidateId}:`, error);
+          candidateDetailsMap[candidateId] = {
+            name: `Candidate ${candidateId}`,
+            email: 'No email available'
+          };
         }
-      } catch (err) {
-        console.error('Error fetching job details:', err);
-        setError('Failed to load job details. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+      });
+      
+      await Promise.all(candidatePromises);
+      setCandidateDetails(candidateDetailsMap);
+    } catch (error) {
+      console.error('Error fetching candidate details:', error);
+    }
+  };
+
+  const fetchInterviews = async () => {
+    if (!jobId) return;
     
+    try {
+      setLoadingInterviews(true);
+      const response = await interviewAPI.getByJobId(parseInt(jobId));
+      setInterviews(response.data);
+      console.log('Fetched interviews for job:', jobId, response.data);
+    } catch (error) {
+      console.error('Error fetching interviews:', error);
+      // Don't show error toast for interviews as it's not critical
+    } finally {
+      setLoadingInterviews(false);
+    }
+  };
+
+  useEffect(() => {
     if (jobId) {
       fetchJobDetails();
     }
@@ -341,7 +366,7 @@ const AdminJobDetailsPage: React.FC = () => {
   
   const handleStatusChange = async (applicationId: number, newStatus: string) => {
     try {
-      await axiosInstance.patch(`/applications/${applicationId}`, {
+      await axiosInstance.patch(`/applications/${applicationId}/status`, {
         status: newStatus
       });
       
@@ -509,22 +534,46 @@ const AdminJobDetailsPage: React.FC = () => {
             <ClockIcon className="h-4 w-4 mr-1" /> Applied
           </span>
         );
-      case 'INTERVIEW':
+      case 'REVIEWED':
         return (
-          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-            <UserGroupIcon className="h-4 w-4 mr-1" /> Interview
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+            <DocumentTextIcon className="h-4 w-4 mr-1" /> Reviewed
           </span>
         );
-      case 'OFFER':
+      case 'SHORTLISTED':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+            <UserGroupIcon className="h-4 w-4 mr-1" /> Shortlisted
+          </span>
+        );
+      case 'INTERVIEWING':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+            <UserGroupIcon className="h-4 w-4 mr-1" /> Interviewing
+          </span>
+        );
+      case 'OFFERED':
         return (
           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-            <DocumentTextIcon className="h-4 w-4 mr-1" /> Offer
+            <DocumentTextIcon className="h-4 w-4 mr-1" /> Offered
+          </span>
+        );
+      case 'ACCEPTED':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800">
+            <DocumentTextIcon className="h-4 w-4 mr-1" /> Accepted
           </span>
         );
       case 'REJECTED':
         return (
           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
             <XMarkIcon className="h-4 w-4 mr-1" /> Rejected
+          </span>
+        );
+      case 'WITHDRAWN':
+        return (
+          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+            <XMarkIcon className="h-4 w-4 mr-1" /> Withdrawn
           </span>
         );
       default:
@@ -537,12 +586,42 @@ const AdminJobDetailsPage: React.FC = () => {
   };
   
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString(undefined, {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
+  };
+
+  // Get interview for a specific application
+  const getInterviewForApplication = (applicationId: number): Interview | null => {
+    const found = interviews.find(interview => interview.applicationId === applicationId) || null;
+    console.log(`Looking for interview for application ${applicationId}:`, found);
+    console.log('All interviews:', interviews);
+    return found;
+  };
+
+  // Handle interview assignment (redirect to assignment page)
+  const handleAssignInterview = (applicationId: number) => {
+    navigate('/admin/interview-assignments');
+  };
+
+  // Handle interview cancellation
+  const handleCancelInterview = async (interviewId: number) => {
+    if (!window.confirm('Are you sure you want to cancel this interview assignment?')) {
+      return;
+    }
+
+    try {
+      await interviewAPI.cancelInterview(interviewId);
+      toast.success('Interview assignment cancelled successfully');
+      await fetchInterviews(); // Refresh interviews
+    } catch (error) {
+      console.error('Error cancelling interview:', error);
+      toast.error('Failed to cancel interview assignment');
+    }
   };
   
   if (loading) {
@@ -591,7 +670,7 @@ const AdminJobDetailsPage: React.FC = () => {
           <ArrowLeftIcon className="h-5 w-5 mr-1" /> Back to Job Management
         </button>
         <h1 className="text-3xl font-bold text-gray-900 mt-2">{job.title}</h1>
-        <p className="text-lg text-gray-500">{job.company || 'IST Africa'}</p>
+        <p className="text-lg text-gray-500">{job.department || 'IST Africa'}</p>
       </div>
       
       <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
@@ -681,7 +760,7 @@ const AdminJobDetailsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Interviews Scheduled</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.INTERVIEW || 0}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.INTERVIEWING || 0}</p>
               </div>
               <UserGroupIcon className="h-8 w-8 text-yellow-500" />
             </div>
@@ -690,7 +769,7 @@ const AdminJobDetailsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Offers Extended</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.OFFER || 0}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.OFFERED || 0}</p>
               </div>
               <DocumentTextIcon className="h-8 w-8 text-green-500" />
             </div>
@@ -792,6 +871,9 @@ const AdminJobDetailsPage: React.FC = () => {
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Resume Analysis
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Interview Assignment
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -950,7 +1032,73 @@ const AdminJobDetailsPage: React.FC = () => {
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {(() => {
+                          const interview = getInterviewForApplication(application.id);
+                          console.log('Interview check for application', application.id, ':', interview);
+                          if (interview) {
+                            // Show current interview assignment
+                            return (
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2">
+                                  <UserGroupIcon className="h-4 w-4 text-blue-500" />
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {interview.interviewerName}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {interview.scheduledAt 
+                                    ? formatDate(interview.scheduledAt)
+                                    : 'Date TBD'
+                                  }
+                                </div>
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => handleAssignInterview(application.id)}
+                                    className="inline-flex items-center px-2 py-1 border border-indigo-300 rounded-md text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
+                                    title="Re-assign interview"
+                                  >
+                                    Re-assign
+                                  </button>
+                                  <button
+                                    onClick={() => handleCancelInterview(interview.id)}
+                                    className="inline-flex items-center px-2 py-1 border border-red-300 rounded-md text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100"
+                                    title="Cancel interview assignment"
+                                  >
+                                    De-assign
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          } else if (application.status === 'SHORTLISTED') {
+                            // Show assign button for shortlisted applications
+                            return (
+                              <button
+                                onClick={() => handleAssignInterview(application.id)}
+                                className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                                title="Assign interview"
+                              >
+                                <CalendarIcon className="h-3 w-3 mr-1" />
+                                Assign Interview
+                              </button>
+                            );
+                          } else {
+                            // Show status info for non-shortlisted applications
+                            return (
+                              <span className="text-xs text-gray-400">
+                                {application.status === 'APPLIED' && 'Application under review'}
+                                {application.status === 'REVIEWED' && 'Ready for shortlisting'}
+                                {application.status === 'INTERVIEWING' && 'Interview in progress'}
+                                {application.status === 'OFFERED' && 'Offer extended'}
+                                {application.status === 'ACCEPTED' && 'Offer accepted'}
+                                {application.status === 'REJECTED' && 'Application rejected'}
+                                {application.status === 'WITHDRAWN' && 'Application withdrawn'}
+                              </span>
+                            );
+                          }
+                        })()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {getStatusBadge(application.status)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -1042,18 +1190,39 @@ const AdminJobDetailsPage: React.FC = () => {
                                 Applied
                               </button>
                               <button
-                                onClick={() => handleStatusChange(application.id, 'INTERVIEW')}
+                                onClick={() => handleStatusChange(application.id, 'REVIEWED')}
                                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                                 role="menuitem"
                               >
-                                Interview
+                                Reviewed
                               </button>
                               <button
-                                onClick={() => handleStatusChange(application.id, 'OFFER')}
+                                onClick={() => handleStatusChange(application.id, 'SHORTLISTED')}
                                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                                 role="menuitem"
                               >
-                                Offer
+                                Shortlisted
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(application.id, 'INTERVIEWING')}
+                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                role="menuitem"
+                              >
+                                Interviewing
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(application.id, 'OFFERED')}
+                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                role="menuitem"
+                              >
+                                Offered
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(application.id, 'ACCEPTED')}
+                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                role="menuitem"
+                              >
+                                Accepted
                               </button>
                               <button
                                 onClick={() => handleStatusChange(application.id, 'REJECTED')}
@@ -1061,6 +1230,13 @@ const AdminJobDetailsPage: React.FC = () => {
                                 role="menuitem"
                               >
                                 Rejected
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(application.id, 'WITHDRAWN')}
+                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                role="menuitem"
+                              >
+                                Withdrawn
                               </button>
                             </div>
                           </div>

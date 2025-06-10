@@ -22,10 +22,10 @@ import axios from 'axios';
 interface JobApplicationFormProps {
   jobId: number;
   jobTitle: string;
-  companyName: string;
+  department: string;
 }
 
-const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle, companyName }) => {
+const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle, department }) => {
   const navigate = useNavigate();
   
   // Form state
@@ -231,7 +231,7 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
     return (
       <Alert severity="success" sx={{ mt: 4 }}>
         <AlertTitle>Application Submitted!</AlertTitle>
-        Your application for <strong>{jobTitle}</strong> at <strong>{companyName}</strong> has been submitted successfully. 
+        Your application for <strong>{jobTitle}</strong> at <strong>{department}</strong> has been submitted successfully. 
         You will be redirected to your dashboard.
       </Alert>
     );
@@ -240,7 +240,7 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   return (
     <Paper sx={{ p: 3, mt: 4 }}>
       <Typography variant="h5" gutterBottom>
-        Apply for {jobTitle} at {companyName}
+        Apply for {jobTitle} at {department}
       </Typography>
       
       <Stepper activeStep={activeStep} sx={{ py: 4 }}>

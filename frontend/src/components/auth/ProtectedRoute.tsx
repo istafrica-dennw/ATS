@@ -127,9 +127,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
         console.log('ProtectedRoute - Redirecting to admin dashboard');
         return <Navigate to="/admin" replace />;
       case Role.INTERVIEWER:
+        console.log('ProtectedRoute - Redirecting to interviewer dashboard');
+        return <Navigate to="/interviewer" replace />;
       case Role.HIRING_MANAGER:
-        console.log('ProtectedRoute - Redirecting to recruiter dashboard');
-        return <Navigate to="/recruiter" replace />;
+        console.log('ProtectedRoute - Redirecting to hiring manager dashboard');
+        return <Navigate to="/hiring-manager" replace />;
       case Role.CANDIDATE:
         console.log('ProtectedRoute - Redirecting to candidate dashboard');
         return <Navigate to="/candidate" replace />;

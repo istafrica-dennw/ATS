@@ -11,6 +11,8 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import EmailManagementPage from './pages/admin/EmailManagementPage';
 import JobManagementPage from './pages/admin/JobManagementPage';
 import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
+import InterviewSkeletonManagementPage from './pages/admin/InterviewSkeletonManagementPage';
+import InterviewAssignmentPage from './pages/admin/InterviewAssignmentPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
@@ -20,6 +22,9 @@ import ProfilePage from './pages/profile/ProfilePage';
 import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
 import SecuritySettingsPage from './pages/profile/SecuritySettingsPage';
 import CandidateDashboardPage from './pages/candidate/CandidateDashboardPage';
+import InterviewerDashboardPage from './pages/interviewer/InterviewerDashboardPage';
+import InterviewDetailPage from './pages/interviewer/InterviewDetailPage';
+import InterviewListPage from './pages/interviewer/InterviewListPage';
 import LandingPage from './pages/LandingPage';
 import JobsPage from './pages/JobsPage';
 import JobDetailsPage from './pages/JobDetailsPage';
@@ -147,13 +152,39 @@ const App: React.FC = () => {
               {/* Candidate Routes */}
               <Route path="/candidate" element={<CandidateDashboardPage />} />
 
-              {/* Recruiter Routes */}
+              {/* Interviewer Routes */}
               <Route
-                path="/recruiter"
+                path="/interviewer"
                 element={
-                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER]}>
+                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
+                    <InterviewerDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/interviewer/interviews"
+                element={
+                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
+                    <InterviewListPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/interviewer/interviews/:interviewId"
+                element={
+                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
+                    <InterviewDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Hiring Manager Routes */}
+              <Route
+                path="/hiring-manager"
+                element={
+                  <ProtectedRoute allowedRoles={[Role.HIRING_MANAGER]}>
                     <div>
-                      <h1>Recruiter Dashboard (Coming Soon)</h1>
+                      <h1>Hiring Manager Dashboard (Coming Soon)</h1>
                     </div>
                   </ProtectedRoute>
                 }
@@ -176,6 +207,8 @@ const App: React.FC = () => {
               <Route path="emails" element={<EmailManagementPage />} />
               <Route path="jobs" element={<JobManagementPage />} />
               <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
+              <Route path="interview-skeletons" element={<InterviewSkeletonManagementPage />} />
+              <Route path="interview-assignments" element={<InterviewAssignmentPage />} />
             </Route>
             
             {/* Public routes */}

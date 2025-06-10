@@ -47,9 +47,12 @@ const DashboardPage: React.FC = () => {
     if (roleEnum === Role.ADMIN) {
       console.log('DashboardPage - Redirecting to admin dashboard');
       navigate('/admin');
-    } else if (roleEnum === Role.INTERVIEWER || roleEnum === Role.HIRING_MANAGER) {
-      console.log('DashboardPage - Redirecting to recruiter dashboard');
-      navigate('/recruiter');
+    } else if (roleEnum === Role.INTERVIEWER) {
+      console.log('DashboardPage - Redirecting to interviewer dashboard');
+      navigate('/interviewer');
+    } else if (roleEnum === Role.HIRING_MANAGER) {
+      console.log('DashboardPage - Redirecting to hiring manager dashboard');
+      navigate('/hiring-manager');
     } else if (roleEnum === Role.CANDIDATE) {
       console.log('DashboardPage - Redirecting to candidate dashboard');
       navigate('/candidate');

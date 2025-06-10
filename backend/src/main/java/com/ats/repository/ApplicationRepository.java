@@ -87,4 +87,21 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      */
     @Query("SELECT a.status as status, COUNT(a) as count FROM Application a WHERE a.job.id = :jobId GROUP BY a.status")
     List<Object[]> getApplicationStatsByJobId(@Param("jobId") Long jobId);
+    
+    /**
+     * Find applications by job ID and shortlisting status
+     * 
+     * @param jobId the job ID
+     * @param isShortlisted the shortlisting status
+     * @return list of applications
+     */
+    List<Application> findByJobIdAndIsShortlisted(Long jobId, Boolean isShortlisted);
+    
+    /**
+     * Find all shortlisted applications across all jobs
+     * 
+     * @param isShortlisted the shortlisting status
+     * @return list of shortlisted applications
+     */
+    List<Application> findByIsShortlisted(Boolean isShortlisted);
 }

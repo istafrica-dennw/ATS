@@ -142,46 +142,46 @@ CREATE INDEX idx_application_answers_application_id ON application_answers(appli
 
 
 -- Interviews table
-CREATE TABLE interviews (
-    id BIGSERIAL PRIMARY KEY,
-    application_id BIGINT REFERENCES applications(id),
-    interview_type VARCHAR(50) NOT NULL,
-    scheduled_time TIMESTAMP WITH TIME ZONE,
-    duration_minutes INTEGER,
-    status VARCHAR(50) DEFAULT 'SCHEDULED',
-    meeting_link VARCHAR(255),
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- CREATE TABLE interviews (
+--     id BIGSERIAL PRIMARY KEY,
+--     application_id BIGINT REFERENCES applications(id),
+--     interview_type VARCHAR(50) NOT NULL,
+--     scheduled_time TIMESTAMP WITH TIME ZONE,
+--     duration_minutes INTEGER,
+--     status VARCHAR(50) DEFAULT 'SCHEDULED',
+--     meeting_link VARCHAR(255),
+--     notes TEXT,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- );
 
--- Interview participants
-CREATE TABLE interview_participants (
-    id BIGSERIAL PRIMARY KEY,
-    interview_id BIGINT REFERENCES interviews(id),
-    user_id BIGINT REFERENCES users(id),
-    role VARCHAR(50) NOT NULL,
-    status VARCHAR(50) DEFAULT 'PENDING',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- -- Interview participants
+-- CREATE TABLE interview_participants (
+--     id BIGSERIAL PRIMARY KEY,
+--     interview_id BIGINT REFERENCES interviews(id),
+--     user_id BIGINT REFERENCES users(id),
+--     role VARCHAR(50) NOT NULL,
+--     status VARCHAR(50) DEFAULT 'PENDING',
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- );
 
--- Evaluations table
-CREATE TABLE evaluations (
-    id BIGSERIAL PRIMARY KEY,
-    interview_id BIGINT REFERENCES interviews(id),
-    interviewer_id BIGINT REFERENCES users(id),
-    technical_score INTEGER,
-    presentation_score INTEGER,
-    understanding_score INTEGER,
-    total_score INTEGER,
-    recommendation TEXT,
-    strengths TEXT,
-    improvements TEXT,
-    examples TEXT,
-    team_fit TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- -- Evaluations table
+-- CREATE TABLE evaluations (
+--     id BIGSERIAL PRIMARY KEY,
+--     interview_id BIGINT REFERENCES interviews(id),
+--     interviewer_id BIGINT REFERENCES users(id),
+--     technical_score INTEGER,
+--     presentation_score INTEGER,
+--     understanding_score INTEGER,
+--     total_score INTEGER,
+--     recommendation TEXT,
+--     strengths TEXT,
+--     improvements TEXT,
+--     examples TEXT,
+--     team_fit TEXT,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- );
 
 -- Experience calculation
 CREATE TABLE experience_calculations (
@@ -233,6 +233,6 @@ CREATE TABLE testmessages (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_linkedin_id ON users(linkedin_id);
 CREATE INDEX idx_applications_status ON applications(status);
-CREATE INDEX idx_interviews_status ON interviews(status);
-CREATE INDEX idx_evaluations_interview_id ON evaluations(interview_id);
+-- CREATE INDEX idx_interviews_status ON interviews(status);
+-- CREATE INDEX idx_evaluations_interview_id ON evaluations(interview_id);
 CREATE INDEX idx_communications_status ON communications(status); 

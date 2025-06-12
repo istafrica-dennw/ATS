@@ -18,10 +18,6 @@ import java.util.List;
 @AllArgsConstructor
 public class InterviewSkeleton extends BaseEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_id", nullable = false)
-    private Job job;
-
     @Column(name = "name", nullable = false)
     private String name;
 

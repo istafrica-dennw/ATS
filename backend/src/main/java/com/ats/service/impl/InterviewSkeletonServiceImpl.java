@@ -4,11 +4,9 @@ import com.ats.dto.CreateInterviewSkeletonRequest;
 import com.ats.dto.InterviewSkeletonDTO;
 import com.ats.exception.ResourceNotFoundException;
 import com.ats.model.InterviewSkeleton;
-import com.ats.model.Job;
 import com.ats.model.User;
 import com.ats.repository.InterviewRepository;
 import com.ats.repository.InterviewSkeletonRepository;
-import com.ats.repository.JobRepository;
 import com.ats.repository.UserRepository;
 import com.ats.service.InterviewSkeletonService;
 import lombok.extern.slf4j.Slf4j;
@@ -26,29 +24,22 @@ import java.util.stream.Collectors;
 public class InterviewSkeletonServiceImpl implements InterviewSkeletonService {
 
     private final InterviewSkeletonRepository interviewSkeletonRepository;
-    private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final InterviewRepository interviewRepository;
 
     @Autowired
     public InterviewSkeletonServiceImpl(
             InterviewSkeletonRepository interviewSkeletonRepository,
-            JobRepository jobRepository,
             UserRepository userRepository,
             InterviewRepository interviewRepository) {
         this.interviewSkeletonRepository = interviewSkeletonRepository;
-        this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.interviewRepository = interviewRepository;
     }
 
     @Override
     public InterviewSkeletonDTO createSkeleton(CreateInterviewSkeletonRequest request, Long createdById) {
-        log.info("Creating interview skeleton for job {} by user {}", request.getJobId(), createdById);
-
-        // Validate job exists
-        Job job = jobRepository.findById(request.getJobId())
-                .orElseThrow(() -> new ResourceNotFoundException("Job not found with ID: " + request.getJobId()));
+        log.info("Creating interview skeleton '{}' by user {}", request.getName(), createdById);
 
         // Validate creator exists
         User creator = userRepository.findById(createdById)
@@ -56,7 +47,6 @@ public class InterviewSkeletonServiceImpl implements InterviewSkeletonService {
 
         // Convert request to entity
         InterviewSkeleton skeleton = new InterviewSkeleton();
-        skeleton.setJob(job);
         skeleton.setName(request.getName());
         skeleton.setDescription(request.getDescription());
         skeleton.setCreatedBy(creator);
@@ -81,13 +71,6 @@ public class InterviewSkeletonServiceImpl implements InterviewSkeletonService {
         // Validate skeleton exists
         InterviewSkeleton skeleton = interviewSkeletonRepository.findById(skeletonId)
                 .orElseThrow(() -> new ResourceNotFoundException("Interview skeleton not found with ID: " + skeletonId));
-
-        // Validate job exists (if changed)
-        if (!skeleton.getJob().getId().equals(request.getJobId())) {
-            Job job = jobRepository.findById(request.getJobId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Job not found with ID: " + request.getJobId()));
-            skeleton.setJob(job);
-        }
 
         // Update fields
         skeleton.setName(request.getName());
@@ -117,10 +100,9 @@ public class InterviewSkeletonServiceImpl implements InterviewSkeletonService {
     @Override
     @Transactional(readOnly = true)
     public List<InterviewSkeletonDTO> getSkeletonsByJobId(Long jobId) {
-        log.debug("Fetching interview skeletons for job ID: {}", jobId);
-        return interviewSkeletonRepository.findByJobIdOrderByCreatedAtDesc(jobId).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        log.debug("Method getSkeletonsByJobId is deprecated - skeletons are now independent of jobs");
+        // Return all skeletons since they're no longer job-specific
+        return getAllSkeletons();
     }
 
     @Override
@@ -155,7 +137,7 @@ public class InterviewSkeletonServiceImpl implements InterviewSkeletonService {
     @Transactional(readOnly = true)
     public List<InterviewSkeletonDTO> getAllSkeletons() {
         log.debug("Fetching all interview skeletons");
-        return interviewSkeletonRepository.findAll().stream()
+        return interviewSkeletonRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -163,8 +145,6 @@ public class InterviewSkeletonServiceImpl implements InterviewSkeletonService {
     private InterviewSkeletonDTO mapToDTO(InterviewSkeleton skeleton) {
         InterviewSkeletonDTO dto = new InterviewSkeletonDTO();
         dto.setId(skeleton.getId());
-        dto.setJobId(skeleton.getJob().getId());
-        dto.setJobTitle(skeleton.getJob().getTitle());
         dto.setName(skeleton.getName());
         dto.setDescription(skeleton.getDescription());
         dto.setCreatedById(skeleton.getCreatedBy().getId());

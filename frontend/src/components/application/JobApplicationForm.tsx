@@ -126,7 +126,7 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
       let isValid = true;
       
       questions.forEach(question => {
-        if (question.isRequired) {
+        if (question.required) {
           const answer = answers.find(a => a.questionId === question.id);
           if (!answer || !answer.answer.trim()) {
             newValidationErrors[question.id] = 'This question is required';
@@ -331,7 +331,7 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
                     return (
                       <Box key={question.id} sx={{ mb: 2 }}>
                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                          {question.question}
+                          {question.questionText}
                         </Typography>
                         <Typography variant="body2">
                           {answer?.answer || 'No answer provided'}

@@ -9,9 +9,7 @@ import java.util.List;
 @Repository
 public interface InterviewSkeletonRepository extends JpaRepository<InterviewSkeleton, Long> {
     
-    List<InterviewSkeleton> findByJobId(Long jobId);
-    
     List<InterviewSkeleton> findByCreatedById(Long createdById);
     
-    List<InterviewSkeleton> findByJobIdOrderByCreatedAtDesc(Long jobId);
+    List<InterviewSkeleton> findAllByOrderByCreatedAtDesc();
 } 

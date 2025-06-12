@@ -22,6 +22,27 @@ const InterviewDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [responses, setResponses] = useState<{ [key: string]: { feedback: string; rating: number } }>({});
 
+  // Backend URL for file downloads
+  const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+  // Function to construct proper resume URL
+  const constructResumeUrl = (resumeUrl: string): string => {
+    if (!resumeUrl) return '';
+    
+    // If it's already a full URL, return as is
+    if (resumeUrl.startsWith('http')) {
+      return resumeUrl;
+    }
+    
+    // If it starts with /api, prepend backend URL
+    if (resumeUrl.startsWith('/api')) {
+      return `${backendUrl}${resumeUrl.slice(4)}`;
+    }
+    
+    // Otherwise, assume it needs /api prefix
+    return `${backendUrl}${resumeUrl}`;
+  };
+
   useEffect(() => {
     if (interviewId) {
       fetchInterview(parseInt(interviewId));
@@ -230,7 +251,7 @@ const InterviewDetailPage: React.FC = () => {
                   <div>
                     <h3 className="text-sm font-medium text-gray-900">Resume</h3>
                     <a 
-                      href={interview.application.resumeUrl}
+                      href={constructResumeUrl(interview.application.resumeUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-indigo-600 hover:text-indigo-700"

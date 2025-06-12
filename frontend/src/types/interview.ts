@@ -53,7 +53,6 @@ export interface Interview {
 }
 
 export interface CreateInterviewSkeletonRequest {
-  jobId: number;
   name: string;
   description?: string;
   focusAreas: CreateFocusAreaRequest[];
@@ -84,8 +83,6 @@ export interface SubmitInterviewResponseRequest {
 
 export interface InterviewSkeletonDTO {
   id: number;
-  jobId: number;
-  jobTitle: string;
   name: string;
   description?: string;
   focusAreas: FocusArea[];

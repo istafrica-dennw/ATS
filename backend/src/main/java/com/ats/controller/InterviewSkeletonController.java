@@ -41,7 +41,7 @@ public class InterviewSkeletonController {
             @Valid @RequestBody CreateInterviewSkeletonRequest request,
             Authentication authentication) {
         
-        log.info("Creating interview skeleton for job: {}", request.getJobId());
+        log.info("Creating interview skeleton: {}", request.getName());
         
         try {
             String email = authentication.getName();
@@ -110,15 +110,17 @@ public class InterviewSkeletonController {
 
     /**
      * Get all interview skeletons for a specific job
+     * @deprecated Interview skeletons are now independent of jobs. Use getAllSkeletons() instead.
      * Admin and Interviewer access
      */
     @GetMapping("/job/{jobId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('INTERVIEWER')")
+    @Deprecated
     public ResponseEntity<List<InterviewSkeletonDTO>> getSkeletonsByJob(@PathVariable Long jobId) {
         
-        log.debug("Fetching interview skeletons for job: {}", jobId);
+        log.debug("Deprecated endpoint called - returning all skeletons since they're no longer job-specific");
         
-        List<InterviewSkeletonDTO> skeletons = interviewSkeletonService.getSkeletonsByJobId(jobId);
+        List<InterviewSkeletonDTO> skeletons = interviewSkeletonService.getAllSkeletons();
         return ResponseEntity.ok(skeletons);
     }
 

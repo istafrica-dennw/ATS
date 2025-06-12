@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
@@ -15,9 +14,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateInterviewSkeletonRequest {
-    
-    @NotNull(message = "Job ID is required")
-    private Long jobId;
     
     @NotBlank(message = "Skeleton name is required")
     private String name;

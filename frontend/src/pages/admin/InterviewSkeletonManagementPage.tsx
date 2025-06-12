@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { interviewSkeletonAPI } from '../../services/api';
-import { jobService, JobDTO } from '../../services/jobService';
 import { InterviewSkeleton, CreateInterviewSkeletonRequest, CreateFocusAreaRequest } from '../../types/interview';
 import { 
   PlusIcon, 
@@ -18,7 +17,6 @@ interface FocusAreaForm {
 
 const InterviewSkeletonManagementPage: React.FC = () => {
   const [skeletons, setSkeletons] = useState<InterviewSkeleton[]>([]);
-  const [jobs, setJobs] = useState<JobDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -29,39 +27,29 @@ const InterviewSkeletonManagementPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    jobId: '',
     focusAreas: [{ title: '', description: '' }] as FocusAreaForm[]
   });
 
   useEffect(() => {
-    fetchInitialData();
+    fetchSkeletons();
   }, []);
 
-  const fetchInitialData = async () => {
+  const fetchSkeletons = async () => {
     try {
       setLoading(true);
       
-      console.log('Fetching skeletons and jobs...');
+      console.log('Fetching skeletons...');
       
-      // Fetch both skeletons and jobs in parallel
-      const [skeletonsResponse, jobsData] = await Promise.all([
-        interviewSkeletonAPI.getAll(),
-        jobService.getAllJobs() // Returns JobDTO[] directly
-      ]);
+      const skeletonsResponse = await interviewSkeletonAPI.getAll();
       
       console.log('Skeletons response:', skeletonsResponse);
-      console.log('Jobs data:', jobsData);
       
       setSkeletons(skeletonsResponse.data || []);
-      setJobs(jobsData || []);
       
-      console.log('Jobs set to state:', jobsData || []);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load data');
-      // Set default empty arrays to prevent undefined errors
       setSkeletons([]);
-      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -72,7 +60,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
     setFormData({
       name: '',
       description: '',
-      jobId: '',
       focusAreas: [{ title: '', description: '' }]
     });
     setShowModal(true);
@@ -83,7 +70,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
     setFormData({
       name: skeleton.name,
       description: skeleton.description || '',
-      jobId: '', // We don't have jobId in the skeleton response, would need to be added
       focusAreas: skeleton.focusAreas.map(area => ({
         title: area.title,
         description: area.description || ''
@@ -99,7 +85,7 @@ const InterviewSkeletonManagementPage: React.FC = () => {
 
     try {
       await interviewSkeletonAPI.delete(id);
-      fetchInitialData();
+      fetchSkeletons();
     } catch (err) {
       console.error('Error deleting skeleton:', err);
       setError('Failed to delete interview skeleton');
@@ -114,11 +100,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
       return;
     }
 
-    if (!formData.jobId) {
-      setError('Please select a job');
-      return;
-    }
-
     if (formData.focusAreas.length === 0 || !formData.focusAreas[0].title.trim()) {
       setError('At least one focus area is required');
       return;
@@ -129,7 +110,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
       setError(null);
 
       const requestData: CreateInterviewSkeletonRequest = {
-        jobId: parseInt(formData.jobId),
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         focusAreas: formData.focusAreas
@@ -141,15 +121,13 @@ const InterviewSkeletonManagementPage: React.FC = () => {
       };
 
       if (editingSkeleton) {
-        // Note: Update endpoint would need to be implemented
-        console.log('Update not implemented yet:', requestData);
-        setError('Update functionality not implemented yet');
+        await interviewSkeletonAPI.update(editingSkeleton.id, requestData);
       } else {
         await interviewSkeletonAPI.create(requestData);
       }
 
       setShowModal(false);
-      fetchInitialData();
+      fetchSkeletons();
     } catch (err) {
       console.error('Error saving skeleton:', err);
       setError('Failed to save interview skeleton');
@@ -312,28 +290,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Job *</label>
-                <select
-                  value={formData.jobId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, jobId: e.target.value }))}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                >
-                  <option value="">Select a job</option>
-                  {(jobs || []).map((job) => (
-                    <option key={job.id} value={job.id}>
-                      {job.title} - {job.department} ({job.location})
-                    </option>
-                  ))}
-                </select>
-                {(!jobs || jobs.length === 0) && (
-                  <p className="mt-1 text-sm text-gray-500">
-                    No jobs available. Please create a job first.
-                  </p>
-                )}
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-gray-700">Name *</label>
                 <input
                   type="text"
@@ -421,7 +377,7 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting || !jobs || jobs.length === 0}
+                  disabled={submitting}
                   className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {submitting ? 'Saving...' : (editingSkeleton ? 'Update' : 'Create')}

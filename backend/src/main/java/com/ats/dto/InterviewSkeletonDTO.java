@@ -15,8 +15,6 @@ import java.util.List;
 public class InterviewSkeletonDTO {
     
     private Long id;
-    private Long jobId;
-    private String jobTitle; // For display purposes
     private String name;
     private String description;
     private List<FocusAreaDTO> focusAreas;

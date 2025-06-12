@@ -15,10 +15,10 @@ import {
 export interface CustomQuestion {
   id: number;
   jobId: number;
-  question: string;
-  questionType: 'TEXT' | 'MULTIPLE_CHOICE' | 'CHECKBOX';
-  isRequired: boolean;
-  options?: string[]; // For multiple choice/checkbox questions
+  questionText: string;
+  questionType: 'TEXT' | 'MULTIPLE_CHOICE' | 'YES_NO' | 'RATING' | 'FILE_UPLOAD' | 'DATE';
+  required: boolean;
+  options?: string[];
 }
 
 export interface QuestionAnswer {
@@ -101,8 +101,8 @@ const CustomQuestionForm: React.FC<CustomQuestionFormProps> = ({
       {questions.map((question) => (
         <Box key={question.id} sx={{ mb: 4 }}>
           <Typography variant="subtitle1" gutterBottom>
-            {question.question}
-            {question.isRequired && <span style={{ color: 'red' }}> *</span>}
+            {question.questionText}
+            {question.required && <span style={{ color: 'red' }}> *</span>}
           </Typography>
           
           {question.questionType === 'TEXT' && (
@@ -139,7 +139,30 @@ const CustomQuestionForm: React.FC<CustomQuestionFormProps> = ({
             </FormControl>
           )}
           
-          {question.questionType === 'CHECKBOX' && question.options && (
+          {question.questionType === 'YES_NO' && (
+            <FormControl component="fieldset" error={!!errors[question.id]}>
+              <RadioGroup 
+                value={getQuestionAnswer(question.id)}
+                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+              >
+                <FormControlLabel 
+                  value="Yes" 
+                  control={<Radio />} 
+                  label="Yes" 
+                />
+                <FormControlLabel 
+                  value="No" 
+                  control={<Radio />} 
+                  label="No" 
+                />
+              </RadioGroup>
+              {errors[question.id] && (
+                <FormHelperText>{errors[question.id]}</FormHelperText>
+              )}
+            </FormControl>
+          )}
+          
+          {/* {question.questionType === 'CHECKBOX' && question.options && (
             <FormControl component="fieldset" error={!!errors[question.id]}>
               <FormGroup>
                 {question.options.map((option, index) => (
@@ -163,7 +186,7 @@ const CustomQuestionForm: React.FC<CustomQuestionFormProps> = ({
                 <FormHelperText>{errors[question.id]}</FormHelperText>
               )}
             </FormControl>
-          )}
+          )} */}
         </Box>
       ))}
     </Box>

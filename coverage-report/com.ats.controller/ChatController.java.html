@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">ChatController.java</span></div><h1>ChatController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.dto.ChatMessageDTO;
+import com.ats.dto.ConversationDTO;
+import com.ats.model.Chat;
+import com.ats.model.Conversation;
+import com.ats.service.ChatService;
+import com.ats.service.ConversationService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.ZoneId;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/api/chat&quot;)
+<span class="fc" id="L20">@Slf4j</span>
+public class ChatController {
+
+    private final ChatService chatService;
+    private final ConversationService conversationService;
+
+    @Autowired
+<span class="fc" id="L27">    public ChatController(ChatService chatService, ConversationService conversationService) {</span>
+<span class="fc" id="L28">        this.chatService = chatService;</span>
+<span class="fc" id="L29">        this.conversationService = conversationService;</span>
+<span class="fc" id="L30">    }</span>
+
+    @GetMapping(&quot;/conversations/unassigned&quot;)
+    public ResponseEntity&lt;List&lt;ConversationDTO&gt;&gt; getUnassignedConversations() {
+<span class="nc" id="L34">        log.info(&quot;Fetching unassigned conversations&quot;);</span>
+        
+<span class="nc" id="L36">        List&lt;Conversation&gt; conversations = conversationService.getUnassignedConversations();</span>
+<span class="nc" id="L37">        List&lt;ConversationDTO&gt; conversationDTOs = conversations.stream()</span>
+<span class="nc" id="L38">            .map(this::mapToConversationDTO)</span>
+<span class="nc" id="L39">            .collect(Collectors.toList());</span>
+        
+<span class="nc" id="L41">        return ResponseEntity.ok(conversationDTOs);</span>
+    }
+
+    @GetMapping(&quot;/conversations/{conversationId}/messages&quot;)
+    public ResponseEntity&lt;List&lt;ChatMessageDTO&gt;&gt; getConversationMessages(@PathVariable Long conversationId) {
+<span class="nc" id="L46">        log.info(&quot;Fetching messages for conversation {}&quot;, conversationId);</span>
+        
+<span class="nc" id="L48">        List&lt;Chat&gt; messages = chatService.getMessagesByConversation(conversationId);</span>
+<span class="nc" id="L49">        List&lt;ChatMessageDTO&gt; messageDTOs = messages.stream()</span>
+<span class="nc" id="L50">            .map(this::mapToChatMessageDTO)</span>
+<span class="nc" id="L51">            .collect(Collectors.toList());</span>
+        
+<span class="nc" id="L53">        return ResponseEntity.ok(messageDTOs);</span>
+    }
+
+    @GetMapping(&quot;/conversations/candidate/{candidateId}&quot;)
+    public ResponseEntity&lt;ConversationDTO&gt; getCandidateConversation(@PathVariable Long candidateId) {
+<span class="nc" id="L58">        log.info(&quot;Getting conversation for candidate {}&quot;, candidateId);</span>
+        
+<span class="nc" id="L60">        Conversation conversation = conversationService.getOrCreateConversationForCandidate(candidateId);</span>
+<span class="nc" id="L61">        ConversationDTO conversationDTO = mapToConversationDTO(conversation);</span>
+        
+<span class="nc" id="L63">        return ResponseEntity.ok(conversationDTO);</span>
+    }
+
+    @PostMapping(&quot;/conversations/{conversationId}/assign/{adminId}&quot;)
+    public ResponseEntity&lt;ConversationDTO&gt; assignAdminToConversation(
+            @PathVariable Long conversationId, 
+            @PathVariable Long adminId) {
+<span class="nc" id="L70">        log.info(&quot;Assigning admin {} to conversation {}&quot;, adminId, conversationId);</span>
+        
+<span class="nc" id="L72">        Conversation conversation = conversationService.assignAdminToConversation(conversationId, adminId);</span>
+<span class="nc" id="L73">        ConversationDTO conversationDTO = mapToConversationDTO(conversation);</span>
+        
+<span class="nc" id="L75">        return ResponseEntity.ok(conversationDTO);</span>
+    }
+
+    @PostMapping(&quot;/conversations/{conversationId}/close&quot;)
+    public ResponseEntity&lt;ConversationDTO&gt; closeConversation(@PathVariable Long conversationId) {
+<span class="nc" id="L80">        log.info(&quot;Closing conversation {}&quot;, conversationId);</span>
+        
+<span class="nc" id="L82">        Conversation conversation = conversationService.closeConversation(conversationId);</span>
+<span class="nc" id="L83">        ConversationDTO conversationDTO = mapToConversationDTO(conversation);</span>
+        
+<span class="nc" id="L85">        return ResponseEntity.ok(conversationDTO);</span>
+    }
+
+    private ChatMessageDTO mapToChatMessageDTO(Chat chat) {
+<span class="nc" id="L89">        ChatMessageDTO dto = new ChatMessageDTO();</span>
+<span class="nc" id="L90">        dto.setId(chat.getId());</span>
+<span class="nc" id="L91">        dto.setConversationId(chat.getConversation().getId());</span>
+<span class="nc" id="L92">        dto.setSenderId(chat.getSender().getId());</span>
+<span class="nc" id="L93">        dto.setSenderName(chat.getSender().getFirstName() + &quot; &quot; + chat.getSender().getLastName());</span>
+<span class="nc" id="L94">        dto.setSenderRole(chat.getSender().getRole().toString());</span>
+<span class="nc" id="L95">        dto.setContent(chat.getContent());</span>
+<span class="nc" id="L96">        dto.setCreatedAt(chat.getCreatedAt().atZone(ZoneId.systemDefault()).toString());</span>
+<span class="nc" id="L97">        dto.setMessageType(&quot;text&quot;);</span>
+<span class="nc" id="L98">        return dto;</span>
+    }
+
+    private ConversationDTO mapToConversationDTO(Conversation conversation) {
+<span class="nc" id="L102">        ConversationDTO dto = new ConversationDTO();</span>
+<span class="nc" id="L103">        dto.setId(conversation.getId());</span>
+<span class="nc" id="L104">        dto.setCandidateId(conversation.getCandidate().getId());</span>
+<span class="nc" id="L105">        dto.setCandidateName(conversation.getCandidate().getFirstName() + &quot; &quot; + conversation.getCandidate().getLastName());</span>
+        
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (conversation.getAdmin() != null) {</span>
+<span class="nc" id="L108">            dto.setAdminId(conversation.getAdmin().getId());</span>
+<span class="nc" id="L109">            dto.setAdminName(conversation.getAdmin().getFirstName() + &quot; &quot; + conversation.getAdmin().getLastName());</span>
+        }
+        
+<span class="nc" id="L112">        dto.setStatus(conversation.getStatus());</span>
+<span class="nc" id="L113">        dto.setCreatedAt(conversation.getCreatedAt().atZone(ZoneId.systemDefault()).toString());</span>
+<span class="nc" id="L114">        dto.setUpdatedAt(conversation.getUpdatedAt().atZone(ZoneId.systemDefault()).toString());</span>
+<span class="nc" id="L115">        return dto;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

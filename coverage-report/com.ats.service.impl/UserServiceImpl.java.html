@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">UserServiceImpl.java</span></div><h1>UserServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import com.ats.dto.UserDTO;
+import com.ats.exception.ResourceAlreadyExistsException;
+import com.ats.exception.ResourceNotFoundException;
+import com.ats.model.User;
+import com.ats.model.Role;
+import com.ats.repository.UserRepository;
+import com.ats.service.EmailService;
+import com.ats.service.UserService;
+import com.ats.util.TokenUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.ats.dto.MfaSetupResponse;
+import com.ats.service.TotpService;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final TotpService totpService;
+
+    @Autowired
+<span class="fc" id="L34">    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, TotpService totpService) {</span>
+<span class="fc" id="L35">        this.userRepository = userRepository;</span>
+<span class="fc" id="L36">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L37">        this.emailService = emailService;</span>
+<span class="fc" id="L38">        this.totpService = totpService;</span>
+<span class="fc" id="L39">    }</span>
+
+    @Override
+    @Transactional
+    public UserDTO createUser(UserDTO userDTO) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (userRepository.existsByEmail(userDTO.getEmail())) {</span>
+<span class="fc" id="L45">            throw new ResourceAlreadyExistsException(&quot;Email already exists&quot;);</span>
+        }
+<span class="fc bfc" id="L47" title="All 4 branches covered.">        if (userDTO.getLinkedinId() != null &amp;&amp; userRepository.existsByLinkedinId(userDTO.getLinkedinId())) {</span>
+<span class="fc" id="L48">            throw new ResourceAlreadyExistsException(&quot;LinkedIn ID already exists&quot;);</span>
+        }
+
+<span class="fc" id="L51">        User user = new User();</span>
+<span class="fc" id="L52">        user.setEmail(userDTO.getEmail());</span>
+        
+<span class="pc bpc" id="L54" title="1 of 4 branches missed.">        if (userDTO.getPassword() != null &amp;&amp; !userDTO.getPassword().isEmpty()) {</span>
+<span class="fc" id="L55">            user.setPasswordHash(passwordEncoder.encode(userDTO.getPassword()));</span>
+        }
+        
+<span class="fc" id="L58">        user.setFirstName(userDTO.getFirstName());</span>
+<span class="fc" id="L59">        user.setLastName(userDTO.getLastName());</span>
+<span class="fc" id="L60">        user.setRole(userDTO.getRole());</span>
+<span class="fc" id="L61">        user.setDepartment(userDTO.getDepartment());</span>
+<span class="fc" id="L62">        user.setLinkedinId(userDTO.getLinkedinId());</span>
+<span class="fc" id="L63">        user.setLinkedinProfileUrl(userDTO.getLinkedinProfileUrl());</span>
+<span class="fc" id="L64">        user.setProfilePictureUrl(userDTO.getProfilePictureUrl());</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        user.setIsEmailPasswordEnabled(userDTO.getIsEmailPasswordEnabled() != null ? userDTO.getIsEmailPasswordEnabled() : true);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        user.setIsActive(userDTO.getIsActive() != null ? userDTO.getIsActive() : true);</span>
+        
+        // Handle email verification based on request
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        boolean shouldSendVerificationEmail = userDTO.getSendVerificationEmail() != null ? userDTO.getSendVerificationEmail() : false;</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (shouldSendVerificationEmail) {</span>
+            // Use TokenUtil to generate verification token
+<span class="nc" id="L72">            TokenUtil.generateVerificationToken(user);</span>
+        } else {
+            // Otherwise, use the value from the DTO or default to false
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            user.setIsEmailVerified(userDTO.getIsEmailVerified() != null ? userDTO.getIsEmailVerified() : false);</span>
+        }
+        
+<span class="fc" id="L78">        User savedUser = userRepository.save(user);</span>
+        
+        // Send verification email if requested
+<span class="pc bpc" id="L81" title="3 of 4 branches missed.">        if (shouldSendVerificationEmail &amp;&amp; savedUser.getEmailVerificationToken() != null) {</span>
+            try {
+<span class="nc" id="L83">                emailService.sendNewUserVerificationEmail(savedUser, savedUser.getEmailVerificationToken());</span>
+<span class="nc" id="L84">            } catch (Exception e) {</span>
+                // Log the error but continue since the user was created successfully
+<span class="nc" id="L86">                System.err.println(&quot;Failed to send verification email to &quot; + savedUser.getEmail());</span>
+<span class="nc" id="L87">                e.printStackTrace();</span>
+<span class="nc" id="L88">            }</span>
+        }
+        
+<span class="fc" id="L91">        return convertToDTO(savedUser);</span>
+    }
+
+    @Override
+    @Transactional
+    public UserDTO updateUser(Long id, UserDTO userDTO) {
+<span class="nc" id="L97">        User user = userRepository.findById(id)</span>
+<span class="nc" id="L98">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+
+        // Do not allow changing email address
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (!user.getEmail().equals(userDTO.getEmail())) {</span>
+<span class="nc" id="L102">            throw new IllegalArgumentException(&quot;Email address cannot be changed&quot;);</span>
+        }
+
+        // Update basic information
+<span class="nc" id="L106">        user.setFirstName(userDTO.getFirstName());</span>
+<span class="nc" id="L107">        user.setLastName(userDTO.getLastName());</span>
+        
+        // Update address information
+<span class="nc" id="L110">        user.setBirthDate(userDTO.getBirthDate());</span>
+<span class="nc" id="L111">        user.setPhoneNumber(userDTO.getPhoneNumber());</span>
+<span class="nc" id="L112">        user.setAddressLine1(userDTO.getAddressLine1());</span>
+<span class="nc" id="L113">        user.setAddressLine2(userDTO.getAddressLine2());</span>
+<span class="nc" id="L114">        user.setCity(userDTO.getCity());</span>
+<span class="nc" id="L115">        user.setState(userDTO.getState());</span>
+<span class="nc" id="L116">        user.setCountry(userDTO.getCountry());</span>
+<span class="nc" id="L117">        user.setPostalCode(userDTO.getPostalCode());</span>
+<span class="nc" id="L118">        user.setBio(userDTO.getBio());</span>
+        
+        // Only allow admins to change these fields
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (isCurrentUserAdmin()) {</span>
+<span class="nc" id="L122">            user.setDepartment(userDTO.getDepartment());</span>
+<span class="nc" id="L123">            user.setRole(userDTO.getRole());</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            user.setIsActive(userDTO.getIsActive() != null ? userDTO.getIsActive() : user.getIsActive());</span>
+        }
+
+        // Update LinkedIn information if provided
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (userDTO.getLinkedinProfileUrl() != null) {</span>
+<span class="nc" id="L129">            user.setLinkedinProfileUrl(userDTO.getLinkedinProfileUrl());</span>
+        }
+        
+        // Update profile picture if provided
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (userDTO.getProfilePictureUrl() != null) {</span>
+<span class="nc" id="L134">            user.setProfilePictureUrl(userDTO.getProfilePictureUrl());</span>
+        }
+
+        // Handle password update if provided
+<span class="nc bnc" id="L138" title="All 4 branches missed.">        if (userDTO.getPassword() != null &amp;&amp; !userDTO.getPassword().isEmpty()) {</span>
+<span class="nc" id="L139">            user.setPasswordHash(passwordEncoder.encode(userDTO.getPassword()));</span>
+        }
+
+<span class="nc" id="L142">        User updatedUser = userRepository.save(user);</span>
+<span class="nc" id="L143">        return convertToDTO(updatedUser);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDTO getUserById(Long id) {
+<span class="nc" id="L149">        return userRepository.findById(id)</span>
+<span class="nc" id="L150">            .map(this::convertToDTO)</span>
+<span class="nc" id="L151">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDTO getUserByEmail(String email) {
+<span class="nc" id="L157">        return userRepository.findByEmail(email)</span>
+<span class="nc" id="L158">            .map(this::convertToDTO)</span>
+<span class="nc" id="L159">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;UserDTO&gt; getAllUsers() {
+<span class="nc" id="L165">        return userRepository.findAll().stream()</span>
+<span class="nc" id="L166">            .map(this::convertToDTO)</span>
+<span class="nc" id="L167">            .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long id) {
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (!userRepository.existsById(id)) {</span>
+<span class="nc" id="L174">            throw new ResourceNotFoundException(&quot;User not found&quot;);</span>
+        }
+<span class="nc" id="L176">        userRepository.deleteById(id);</span>
+<span class="nc" id="L177">    }</span>
+
+    @Override
+    @Transactional
+    public UserDTO updateUserStatus(Long id, boolean isActive) {
+<span class="nc" id="L182">        User user = userRepository.findById(id)</span>
+<span class="nc" id="L183">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+<span class="nc" id="L184">        user.setIsActive(isActive);</span>
+<span class="nc" id="L185">        User updatedUser = userRepository.save(user);</span>
+<span class="nc" id="L186">        return convertToDTO(updatedUser);</span>
+    }
+
+    @Override
+    @Transactional
+    public UserDTO updateUserRole(Long id, Role role) {
+<span class="nc" id="L192">        User user = userRepository.findById(id)</span>
+<span class="nc" id="L193">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+<span class="nc" id="L194">        user.setRole(role);</span>
+<span class="nc" id="L195">        User updatedUser = userRepository.save(user);</span>
+<span class="nc" id="L196">        return convertToDTO(updatedUser);</span>
+    }
+
+    @Override
+    @Transactional
+    public UserDTO deactivateAccount(Long id, String reason) {
+<span class="nc" id="L202">        User user = userRepository.findById(id)</span>
+<span class="nc" id="L203">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+<span class="nc" id="L204">        user.setIsActive(false);</span>
+<span class="nc" id="L205">        user.setDeactivationReason(reason);</span>
+<span class="nc" id="L206">        user.setDeactivationDate(LocalDateTime.now());</span>
+<span class="nc" id="L207">        User updatedUser = userRepository.save(user);</span>
+<span class="nc" id="L208">        return convertToDTO(updatedUser);</span>
+    }
+
+    @Override
+    @Transactional
+    public MfaSetupResponse setupMfa(String email, String currentPassword) {
+<span class="nc" id="L214">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L215">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+                
+        // Verify the user's password
+<span class="nc bnc" id="L218" title="All 4 branches missed.">        if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {</span>
+<span class="nc" id="L219">            throw new RuntimeException(&quot;Invalid password&quot;);</span>
+        }
+        
+        // Generate MFA secret and QR code
+<span class="nc" id="L223">        String secret = totpService.generateSecret();</span>
+<span class="nc" id="L224">        String qrCodeImageUrl = totpService.generateQrCodeImageUrl(email, secret);</span>
+<span class="nc" id="L225">        String[] recoveryCodes = totpService.generateRecoveryCodes();</span>
+        
+        // Return the setup information without saving to DB yet
+        // Will be saved only after user confirms by verifying a code
+<span class="nc" id="L229">        return new MfaSetupResponse(secret, qrCodeImageUrl, recoveryCodes);</span>
+    }
+    
+    @Override
+    @Transactional
+    public boolean verifyAndEnableMfa(String email, String code, String secret) {
+<span class="nc" id="L235">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L236">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+                
+        // Verify the provided code is valid
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (!totpService.validateCode(code, secret)) {</span>
+<span class="nc" id="L240">            return false;</span>
+        }
+        
+        // Generate recovery codes
+<span class="nc" id="L244">        String[] recoveryCodes = totpService.generateRecoveryCodes();</span>
+        
+        // Save MFA settings to user
+<span class="nc" id="L247">        user.setMfaEnabled(true);</span>
+<span class="nc" id="L248">        user.setMfaSecret(secret);</span>
+<span class="nc" id="L249">        user.setMfaRecoveryCodes(recoveryCodes);</span>
+<span class="nc" id="L250">        userRepository.save(user);</span>
+        
+<span class="nc" id="L252">        return true;</span>
+    }
+    
+    @Override
+    @Transactional
+    public boolean disableMfa(String email, String currentPassword) {
+<span class="nc" id="L258">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L259">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+                
+        // Verify the user's password
+<span class="nc bnc" id="L262" title="All 4 branches missed.">        if (user.getPasswordHash() == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {</span>
+<span class="nc" id="L263">            throw new RuntimeException(&quot;Invalid password&quot;);</span>
+        }
+        
+        // Disable MFA
+<span class="nc" id="L267">        user.setMfaEnabled(false);</span>
+<span class="nc" id="L268">        user.setMfaSecret(null);</span>
+<span class="nc" id="L269">        user.setMfaRecoveryCodes(null);</span>
+<span class="nc" id="L270">        userRepository.save(user);</span>
+        
+<span class="nc" id="L272">        return true;</span>
+    }
+    
+    @Override
+    public boolean validateMfaCode(String email, String code) {
+<span class="nc" id="L277">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L278">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+                
+<span class="nc bnc" id="L280" title="All 4 branches missed.">        if (!user.getMfaEnabled() || user.getMfaSecret() == null) {</span>
+<span class="nc" id="L281">            throw new RuntimeException(&quot;MFA is not enabled for this user&quot;);</span>
+        }
+        
+<span class="nc" id="L284">        return totpService.validateCode(code, user.getMfaSecret());</span>
+    }
+    
+    @Override
+    @Transactional
+    public boolean validateMfaRecoveryCode(String email, String recoveryCode) {
+<span class="nc" id="L290">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L291">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found&quot;));</span>
+                
+<span class="nc bnc" id="L293" title="All 4 branches missed.">        if (!user.getMfaEnabled() || user.getMfaRecoveryCodes() == null) {</span>
+<span class="nc" id="L294">            throw new RuntimeException(&quot;MFA is not enabled for this user&quot;);</span>
+        }
+        
+<span class="nc" id="L297">        String[] updatedCodes = totpService.validateAndRemoveRecoveryCode(recoveryCode, user.getMfaRecoveryCodes());</span>
+        
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        if (updatedCodes != null) {</span>
+<span class="nc" id="L300">            user.setMfaRecoveryCodes(updatedCodes);</span>
+<span class="nc" id="L301">            userRepository.save(user);</span>
+<span class="nc" id="L302">            return true;</span>
+        }
+        
+<span class="nc" id="L305">        return false;</span>
+    }
+
+    private UserDTO convertToDTO(User user) {
+<span class="fc" id="L309">        UserDTO dto = new UserDTO();</span>
+<span class="fc" id="L310">        dto.setId(user.getId());</span>
+<span class="fc" id="L311">        dto.setEmail(user.getEmail());</span>
+<span class="fc" id="L312">        dto.setFirstName(user.getFirstName());</span>
+<span class="fc" id="L313">        dto.setLastName(user.getLastName());</span>
+<span class="fc" id="L314">        dto.setRole(user.getRole());</span>
+<span class="fc" id="L315">        dto.setDepartment(user.getDepartment());</span>
+<span class="fc" id="L316">        dto.setLinkedinId(user.getLinkedinId());</span>
+<span class="fc" id="L317">        dto.setLinkedinProfileUrl(user.getLinkedinProfileUrl());</span>
+<span class="fc" id="L318">        dto.setProfilePictureUrl(user.getProfilePictureUrl());</span>
+<span class="fc" id="L319">        dto.setBirthDate(user.getBirthDate());</span>
+<span class="fc" id="L320">        dto.setPhoneNumber(user.getPhoneNumber());</span>
+<span class="fc" id="L321">        dto.setAddressLine1(user.getAddressLine1());</span>
+<span class="fc" id="L322">        dto.setAddressLine2(user.getAddressLine2());</span>
+<span class="fc" id="L323">        dto.setCity(user.getCity());</span>
+<span class="fc" id="L324">        dto.setState(user.getState());</span>
+<span class="fc" id="L325">        dto.setCountry(user.getCountry());</span>
+<span class="fc" id="L326">        dto.setPostalCode(user.getPostalCode());</span>
+<span class="fc" id="L327">        dto.setBio(user.getBio());</span>
+<span class="fc" id="L328">        dto.setDeactivationReason(user.getDeactivationReason());</span>
+<span class="fc" id="L329">        dto.setDeactivationDate(user.getDeactivationDate());</span>
+<span class="fc" id="L330">        dto.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());</span>
+<span class="fc" id="L331">        dto.setLastLogin(user.getLastLogin());</span>
+<span class="fc" id="L332">        dto.setIsActive(user.getIsActive());</span>
+<span class="fc" id="L333">        dto.setIsEmailVerified(user.getIsEmailVerified());</span>
+<span class="fc" id="L334">        dto.setMfaEnabled(user.getMfaEnabled());</span>
+<span class="fc" id="L335">        return dto;</span>
+    }
+    
+    /**
+     * Check if the current user is an admin
+     */
+    private boolean isCurrentUserAdmin() {
+<span class="nc" id="L342">        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        return authentication != null &amp;&amp; </span>
+<span class="nc" id="L344">               authentication.getAuthorities().stream()</span>
+<span class="nc bnc" id="L345" title="All 2 branches missed.">                   .anyMatch(a -&gt; a.getAuthority().equals(&quot;ROLE_ADMIN&quot;));</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

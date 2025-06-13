@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TokenUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.util</a> &gt; <span class="el_source">TokenUtil.java</span></div><h1>TokenUtil.java</h1><pre class="source lang-java linenums">package com.ats.util;
+
+import com.ats.model.User;
+import com.ats.model.PasswordResetToken;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/**
+ * Utility class for token-related operations
+ */
+<span class="nc" id="L11">public class TokenUtil {</span>
+
+    /**
+     * Generate a verification token for a user and set the token and expiry time
+     * @param user The user to generate and set the token for
+     * @return The generated token
+     */
+    public static String generateVerificationToken(User user) {
+<span class="nc" id="L19">        String verificationToken = UUID.randomUUID().toString();</span>
+<span class="nc" id="L20">        user.setEmailVerificationToken(verificationToken);</span>
+<span class="nc" id="L21">        user.setEmailVerificationTokenExpiry(LocalDateTime.now().plusHours(24));</span>
+<span class="nc" id="L22">        user.setIsEmailVerified(false);</span>
+<span class="nc" id="L23">        return verificationToken;</span>
+    }
+    
+    /**
+     * Create a password reset token for a user
+     * @param user The user to create the token for
+     * @return The PasswordResetToken entity (not yet persisted)
+     */
+    public static PasswordResetToken createPasswordResetToken(User user) {
+<span class="nc" id="L32">        String token = UUID.randomUUID().toString();</span>
+<span class="nc" id="L33">        LocalDateTime expiryDate = LocalDateTime.now().plusHours(24);</span>
+        
+<span class="nc" id="L35">        return PasswordResetToken.builder()</span>
+<span class="nc" id="L36">                .token(token)</span>
+<span class="nc" id="L37">                .user(user)</span>
+<span class="nc" id="L38">                .expiryDate(expiryDate)</span>
+<span class="nc" id="L39">                .isUsed(false)</span>
+<span class="nc" id="L40">                .build();</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

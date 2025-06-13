@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApplicationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">ApplicationController.java</span></div><h1>ApplicationController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.dto.ApplicationDTO;
+import com.ats.exception.AtsCustomExceptions.BadRequestException;
+import com.ats.exception.AtsCustomExceptions.NotFoundException;
+import com.ats.model.ApplicationStatus;
+import com.ats.model.User;
+import com.ats.repository.UserRepository;
+import com.ats.service.ApplicationService;
+import com.ats.service.FileStorageService;
+import com.ats.service.JobCustomQuestionService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@RestController
+@RequestMapping(&quot;/api/applications&quot;)
+@Tag(name = &quot;Applications&quot;, description = &quot;APIs for managing job applications&quot;)
+<span class="fc" id="L45">@Slf4j</span>
+public class ApplicationController {
+
+    private final ApplicationService applicationService;
+    private final JobCustomQuestionService jobCustomQuestionService;
+    private final FileStorageService fileStorageService;
+    private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
+
+    @Autowired
+    public ApplicationController(
+            ApplicationService applicationService,
+            JobCustomQuestionService jobCustomQuestionService,
+            FileStorageService fileStorageService,
+            ObjectMapper objectMapper,
+<span class="fc" id="L60">            UserRepository userRepository) {</span>
+<span class="fc" id="L61">        this.applicationService = applicationService;</span>
+<span class="fc" id="L62">        this.jobCustomQuestionService = jobCustomQuestionService;</span>
+<span class="fc" id="L63">        this.fileStorageService = fileStorageService;</span>
+<span class="fc" id="L64">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L65">        this.userRepository = userRepository;</span>
+<span class="fc" id="L66">    }</span>
+
+    @Operation(summary = &quot;Submit a job application&quot;, 
+               description = &quot;Submit a new job application with answers to custom questions&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;201&quot;, description = &quot;Application submitted successfully&quot;,
+                     content = @Content(schema = @Schema(implementation = ApplicationDTO.class))),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid input data or missing required questions&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Job not found&quot;),
+        @ApiResponse(responseCode = &quot;409&quot;, description = &quot;Already applied to this job&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;)
+    })
+    @PostMapping
+    public ResponseEntity&lt;?&gt; submitApplication(
+            @Valid @RequestBody ApplicationDTO applicationDTO,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        try {
+            // Extract the user ID from the authenticated user
+            // In a real implementation, you would extract the user ID from UserDetails
+            // For now, we'll use a placeholder that would be replaced with actual code
+<span class="nc" id="L87">            Long candidateId = extractUserIdFromUserDetails(userDetails);</span>
+            
+<span class="nc" id="L89">            ApplicationDTO submittedApplication = applicationService.submitApplication(applicationDTO, candidateId);</span>
+<span class="nc" id="L90">            log.info(&quot;Application submitted successfully with ID: {}&quot;, submittedApplication.getId());</span>
+            
+<span class="nc" id="L92">            return new ResponseEntity&lt;&gt;(submittedApplication, HttpStatus.CREATED);</span>
+            
+<span class="nc" id="L94">        } catch (BadRequestException e) {</span>
+<span class="nc" id="L95">            log.warn(&quot;Bad request when submitting application: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L96">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L97">            response.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L98">            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);</span>
+            
+<span class="nc" id="L100">        } catch (NotFoundException e) {</span>
+<span class="nc" id="L101">            log.warn(&quot;Resource not found when submitting application: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L102">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L103">            response.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L104">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            
+<span class="nc" id="L106">        } catch (Exception e) {</span>
+<span class="nc" id="L107">            log.error(&quot;Error submitting application&quot;, e);</span>
+<span class="nc" id="L108">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, </span>
+                    &quot;An error occurred while submitting the application&quot;, e);
+        }
+    }
+
+    @Operation(summary = &quot;Check application status&quot;, 
+               description = &quot;Check if the authenticated user has already applied to a specific job&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Returns application status&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Job not found&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;)
+    })
+    @GetMapping(&quot;/check-status/{jobId}&quot;)
+    public ResponseEntity&lt;?&gt; checkApplicationStatus(
+            @PathVariable Long jobId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        try {
+<span class="nc" id="L126">            Long candidateId = extractUserIdFromUserDetails(userDetails);</span>
+<span class="nc" id="L127">            boolean hasApplied = applicationService.hasApplied(jobId, candidateId);</span>
+            
+<span class="nc" id="L129">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L130">            response.put(&quot;hasApplied&quot;, hasApplied);</span>
+            
+<span class="nc" id="L132">            return ResponseEntity.ok(response);</span>
+            
+<span class="nc" id="L134">        } catch (NotFoundException e) {</span>
+<span class="nc" id="L135">            log.warn(&quot;Resource not found when checking application status: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L136">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L137">            response.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L138">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            
+<span class="nc" id="L140">        } catch (Exception e) {</span>
+<span class="nc" id="L141">            log.error(&quot;Error checking application status&quot;, e);</span>
+<span class="nc" id="L142">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, </span>
+                    &quot;An error occurred while checking application status&quot;, e);
+        }
+    }
+
+    @Operation(summary = &quot;Get candidate's applications&quot;, 
+               description = &quot;Get all applications submitted by the authenticated user&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Returns paginated list of applications&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;)
+    })
+    @GetMapping(&quot;/my-applications&quot;)
+    public ResponseEntity&lt;Page&lt;ApplicationDTO&gt;&gt; getMyApplications(
+            @PageableDefault(size = 10) Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        try {
+<span class="nc" id="L159">            Long candidateId = extractUserIdFromUserDetails(userDetails);</span>
+<span class="nc" id="L160">            Page&lt;ApplicationDTO&gt; applications = applicationService.getApplicationsByCandidateId(candidateId, pageable);</span>
+            
+<span class="nc" id="L162">            return ResponseEntity.ok(applications);</span>
+            
+<span class="nc" id="L164">        } catch (Exception e) {</span>
+<span class="nc" id="L165">            log.error(&quot;Error getting applications for candidate&quot;, e);</span>
+<span class="nc" id="L166">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, </span>
+                    &quot;An error occurred while retrieving applications&quot;, e);
+        }
+    }
+
+    @Operation(summary = &quot;Get application by ID&quot;, 
+               description = &quot;Get details of a specific application by ID&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Returns application details&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Application not found&quot;),
+        @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Forbidden - not authorized to view this application&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;)
+    })
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getApplicationById(
+            @PathVariable(&quot;id&quot;) Long applicationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        try {
+<span class="nc" id="L185">            ApplicationDTO application = applicationService.getApplicationById(applicationId);</span>
+            
+            // Check if the user is authorized to view this application
+            // Either the user is the candidate who submitted the application or an admin
+<span class="nc" id="L189">            Long userId = extractUserIdFromUserDetails(userDetails);</span>
+<span class="nc" id="L190">            boolean isAdmin = userDetails.getAuthorities().stream()</span>
+<span class="nc" id="L191">                    .anyMatch(a -&gt; a.getAuthority().equals(&quot;ROLE_ADMIN&quot;));</span>
+            
+<span class="nc bnc" id="L193" title="All 4 branches missed.">            if (!isAdmin &amp;&amp; !application.getCandidateId().equals(userId)) {</span>
+<span class="nc" id="L194">                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(</span>
+                        &quot;error&quot;, &quot;You are not authorized to view this application&quot;));
+            }
+            
+<span class="nc" id="L198">            return ResponseEntity.ok(application);</span>
+            
+<span class="nc" id="L200">        } catch (NotFoundException e) {</span>
+<span class="nc" id="L201">            log.warn(&quot;Application not found: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L202">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L203">            response.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L204">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            
+<span class="nc" id="L206">        } catch (Exception e) {</span>
+<span class="nc" id="L207">            log.error(&quot;Error getting application by ID&quot;, e);</span>
+<span class="nc" id="L208">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, </span>
+                    &quot;An error occurred while retrieving the application&quot;, e);
+        }
+    }
+
+    @Operation(summary = &quot;Get applications for a job&quot;, 
+               description = &quot;Get all applications for a specific job (admin only)&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Returns paginated list of applications&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Job not found&quot;),
+        @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Forbidden - not authorized&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;)
+    })
+    @GetMapping(&quot;/job/{jobId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; getApplicationsByJobId(
+            @PathVariable Long jobId,
+            @RequestParam(required = false) ApplicationStatus status,
+            @PageableDefault(size = 10) Pageable pageable) {
+        
+        try {
+            Page&lt;ApplicationDTO&gt; applications;
+            
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            if (status != null) {</span>
+<span class="nc" id="L232">                applications = applicationService.getApplicationsByJobIdAndStatus(jobId, status, pageable);</span>
+            } else {
+<span class="nc" id="L234">                applications = applicationService.getApplicationsByJobId(jobId, pageable);</span>
+            }
+            
+<span class="nc" id="L237">            return ResponseEntity.ok(applications);</span>
+            
+<span class="nc" id="L239">        } catch (NotFoundException e) {</span>
+<span class="nc" id="L240">            log.warn(&quot;Job not found: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L241">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L242">            response.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L243">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            
+<span class="nc" id="L245">        } catch (Exception e) {</span>
+<span class="nc" id="L246">            log.error(&quot;Error getting applications for job&quot;, e);</span>
+<span class="nc" id="L247">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, </span>
+                    &quot;An error occurred while retrieving applications&quot;, e);
+        }
+    }
+
+    @Operation(summary = &quot;Update application status&quot;, 
+               description = &quot;Update the status of an application (admin only)&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Status updated successfully&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Application not found&quot;),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid status&quot;),
+        @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Forbidden - not authorized&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;)
+    })
+    @PatchMapping(&quot;/{id}/status&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; updateApplicationStatus(
+            @PathVariable(&quot;id&quot;) Long applicationId,
+            @RequestBody Map&lt;String, String&gt; statusUpdate) {
+        
+        try {
+<span class="nc bnc" id="L268" title="All 2 branches missed.">            if (!statusUpdate.containsKey(&quot;status&quot;)) {</span>
+<span class="nc" id="L269">                return ResponseEntity.badRequest().body(Map.of(</span>
+                        &quot;error&quot;, &quot;Status is required&quot;));
+            }
+            
+<span class="nc" id="L273">            String statusStr = statusUpdate.get(&quot;status&quot;);</span>
+            ApplicationStatus newStatus;
+            
+            try {
+<span class="nc" id="L277">                newStatus = ApplicationStatus.valueOf(statusStr.toUpperCase());</span>
+<span class="nc" id="L278">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L279">                return ResponseEntity.badRequest().body(Map.of(</span>
+                        &quot;error&quot;, &quot;Invalid status value: &quot; + statusStr));
+<span class="nc" id="L281">            }</span>
+            
+<span class="nc" id="L283">            ApplicationDTO updatedApplication = applicationService.updateApplicationStatus(applicationId, newStatus);</span>
+<span class="nc" id="L284">            return ResponseEntity.ok(updatedApplication);</span>
+            
+<span class="nc" id="L286">        } catch (NotFoundException e) {</span>
+<span class="nc" id="L287">            log.warn(&quot;Application not found: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L288">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L289">            response.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L290">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            
+<span class="nc" id="L292">        } catch (Exception e) {</span>
+<span class="nc" id="L293">            log.error(&quot;Error updating application status&quot;, e);</span>
+<span class="nc" id="L294">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, </span>
+                    &quot;An error occurred while updating application status&quot;, e);
+        }
+    }
+
+    @Operation(summary = &quot;Get job application statistics&quot;, 
+               description = &quot;Get statistics about applications for a specific job (admin only)&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Returns application statistics&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Job not found&quot;),
+        @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Forbidden - not authorized&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;)
+    })
+    @GetMapping(&quot;/stats/job/{jobId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;?&gt; getApplicationStatsByJobId(@PathVariable Long jobId) {
+        try {
+<span class="nc" id="L311">            Map&lt;ApplicationStatus, Long&gt; stats = applicationService.getApplicationStatsByJobId(jobId);</span>
+<span class="nc" id="L312">            return ResponseEntity.ok(stats);</span>
+            
+<span class="nc" id="L314">        } catch (NotFoundException e) {</span>
+<span class="nc" id="L315">            log.warn(&quot;Job not found: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L316">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L317">            response.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L318">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            
+<span class="nc" id="L320">        } catch (Exception e) {</span>
+<span class="nc" id="L321">            log.error(&quot;Error getting application statistics&quot;, e);</span>
+<span class="nc" id="L322">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, </span>
+                    &quot;An error occurred while retrieving application statistics&quot;, e);
+        }
+    }
+
+
+    @Operation(summary = &quot;Delete an application&quot;, 
+               description = &quot;Delete an application (can be done by the candidate who submitted it or an admin)&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;204&quot;, description = &quot;Application deleted successfully&quot;),
+        @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Application not found&quot;),
+        @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Forbidden - not authorized to delete this application&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Internal server error&quot;)
+    })
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;?&gt; deleteApplication(
+            @PathVariable(&quot;id&quot;) Long applicationId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        try {
+<span class="nc" id="L342">            ApplicationDTO application = applicationService.getApplicationById(applicationId);</span>
+            
+            // Check if the user is authorized to delete this application
+            // Either the user is the candidate who submitted the application or an admin
+<span class="nc" id="L346">            Long userId = extractUserIdFromUserDetails(userDetails);</span>
+<span class="nc" id="L347">            boolean isAdmin = userDetails.getAuthorities().stream()</span>
+<span class="nc" id="L348">                    .anyMatch(a -&gt; a.getAuthority().equals(&quot;ROLE_ADMIN&quot;));</span>
+            
+<span class="nc bnc" id="L350" title="All 4 branches missed.">            if (!isAdmin &amp;&amp; !application.getCandidateId().equals(userId)) {</span>
+<span class="nc" id="L351">                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(</span>
+                        &quot;error&quot;, &quot;You are not authorized to delete this application&quot;));
+            }
+            
+<span class="nc" id="L355">            boolean deleted = applicationService.deleteApplication(applicationId);</span>
+            
+<span class="nc bnc" id="L357" title="All 2 branches missed.">            if (deleted) {</span>
+<span class="nc" id="L358">                return ResponseEntity.noContent().build();</span>
+            } else {
+<span class="nc" id="L360">                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(</span>
+                        &quot;error&quot;, &quot;Failed to delete application&quot;));
+            }
+            
+<span class="nc" id="L364">        } catch (NotFoundException e) {</span>
+<span class="nc" id="L365">            log.warn(&quot;Application not found: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L366">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L367">            response.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L368">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);</span>
+            
+<span class="nc" id="L370">        } catch (Exception e) {</span>
+<span class="nc" id="L371">            log.error(&quot;Error deleting application&quot;, e);</span>
+<span class="nc" id="L372">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, </span>
+                    &quot;An error occurred while deleting the application&quot;, e);
+        }
+    }
+    
+    /**
+     * Extract user ID from the UserDetails object
+     * 
+     * @param userDetails the authenticated user details
+     * @return the user ID
+     */
+    private Long extractUserIdFromUserDetails(UserDetails userDetails) {
+        // Get the email from UserDetails (which is used as the username)
+<span class="nc" id="L385">        String email = userDetails.getUsername();</span>
+        
+        // Find the user by email and return their ID
+<span class="nc" id="L388">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L389">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found with email: &quot; + email));</span>
+                
+<span class="nc" id="L391">        return user.getId();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

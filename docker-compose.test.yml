@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # Test Database
+  postgres-test:
+    image: postgres:15
+    container_name: ats-postgres-test
+    environment:
+      POSTGRES_DB: ats_test
+      POSTGRES_USER: ats_test_user
+      POSTGRES_PASSWORD: ats_test_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    networks:
+      - ats-test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ats_test_user -d ats_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend Test Service
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.test
+    container_name: ats-backend-test
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: test
+      
+      # Database Configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-test:5432/ats_test
+      SPRING_DATASOURCE_USERNAME: ats_test_user
+      SPRING_DATASOURCE_PASSWORD: ats_test_password
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      
+      # JPA Configuration
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_JPA_SHOW_SQL: false
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: false
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      
+      # JWT Configuration
+      JWT_SECRET: test-jwt-secret-key-for-testing-only-not-secure
+      JWT_EXPIRATION: 3600000
+      
+      # Spring Security Configuration
+      SPRING_SECURITY_USER_NAME: test-admin
+      SPRING_SECURITY_USER_PASSWORD: test-admin-password
+      SPRING_SECURITY_USER_ROLES: ADMIN
+      
+      # Email Configuration (disabled for tests)
+      SPRING_MAIL_HOST: localhost
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_USERNAME: test
+      SPRING_MAIL_PASSWORD: test
+      
+      # File Upload Configuration
+      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 1MB
+      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 1MB
+      FILE_UPLOAD_DIR: /app/test-uploads
+      
+      # Application Configuration
+      APP_FRONTEND_URL: http://localhost:3000
+      APP_ADMIN_EMAIL: test-admin@ats.test
+      APP_ADMIN_PASSWORD: test-admin-password
+      
+      # OAuth2 Configuration (disabled for tests)
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_LINKEDIN_CLIENT_ID: test-client-id
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_LINKEDIN_CLIENT_SECRET: test-client-secret
+      
+      # Logging Configuration
+      LOGGING_LEVEL_ROOT: WARN
+      LOGGING_LEVEL_COM_ATS: INFO
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: WARN
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: WARN
+      
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - ats-test-network
+    volumes:
+      - test_uploads:/app/test-uploads
+
+volumes:
+  postgres_test_data:
+  test_uploads:
+
+networks:
+  ats-test-network:
+    driver: bridge 

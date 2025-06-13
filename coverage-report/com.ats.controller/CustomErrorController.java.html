@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomErrorController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">CustomErrorController.java</span></div><h1>CustomErrorController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.boot.web.servlet.error.ErrorController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+<span class="fc" id="L19">public class CustomErrorController implements ErrorController {</span>
+
+    @RequestMapping(&quot;/error&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; handleError(HttpServletRequest request) {
+<span class="nc" id="L23">        Map&lt;String, Object&gt; errorDetails = new HashMap&lt;&gt;();</span>
+        
+<span class="nc" id="L25">        Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);</span>
+<span class="nc" id="L26">        Object message = request.getAttribute(RequestDispatcher.ERROR_MESSAGE);</span>
+<span class="nc" id="L27">        Object exception = request.getAttribute(RequestDispatcher.ERROR_EXCEPTION);</span>
+<span class="nc" id="L28">        Object path = request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);</span>
+        
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        errorDetails.put(&quot;status&quot;, status != null ? status : HttpStatus.INTERNAL_SERVER_ERROR.value());</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        errorDetails.put(&quot;message&quot;, message != null ? message : &quot;Unknown error&quot;);</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        errorDetails.put(&quot;path&quot;, path != null ? path : request.getRequestURI());</span>
+        
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (exception != null) {</span>
+<span class="nc" id="L35">            errorDetails.put(&quot;exception&quot;, exception.toString());</span>
+<span class="nc" id="L36">            System.out.println(&quot;[DEBUG] Exception: &quot; + exception);</span>
+        }
+        
+<span class="nc" id="L39">        return ResponseEntity.status(</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                status != null ? Integer.parseInt(status.toString()) : HttpStatus.INTERNAL_SERVER_ERROR.value()</span>
+<span class="nc" id="L41">            ).body(errorDetails);</span>
+    }
+
+    @ControllerAdvice
+<span class="fc" id="L45">    public static class GlobalExceptionHandler {</span>
+        // ✅ Handle validation errors on DTOs
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleValidationExceptions(MethodArgumentNotValidException ex) {
+<span class="nc" id="L49">        Map&lt;String, String&gt; errors = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L51">        ex.getBindingResult().getFieldErrors().forEach(error -&gt; </span>
+<span class="nc" id="L52">            errors.put(error.getField(), error.getDefaultMessage())</span>
+        );
+
+<span class="nc" id="L55">        return ResponseEntity.badRequest().body(errors);</span>
+    }
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; handleException(Exception ex) {
+<span class="nc" id="L59">            Map&lt;String, Object&gt; errorDetails = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L60">            errorDetails.put(&quot;status&quot;, HttpStatus.INTERNAL_SERVER_ERROR.value());</span>
+<span class="nc" id="L61">            errorDetails.put(&quot;message&quot;, ex.getMessage());</span>
+<span class="nc" id="L62">            errorDetails.put(&quot;exception&quot;, ex.getClass().getName());</span>
+            
+<span class="nc" id="L64">            System.out.println(&quot;[DEBUG] Global exception: &quot; + ex);</span>
+<span class="nc" id="L65">            ex.printStackTrace();</span>
+            
+<span class="nc" id="L67">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorDetails);</span>
+        }
+        
+        @ExceptionHandler(NoHandlerFoundException.class)
+        public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; handleNotFoundException(NoHandlerFoundException ex) {
+<span class="nc" id="L72">            Map&lt;String, Object&gt; errorDetails = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L73">            errorDetails.put(&quot;status&quot;, HttpStatus.NOT_FOUND.value());</span>
+<span class="nc" id="L74">            errorDetails.put(&quot;message&quot;, &quot;Resource not found&quot;);</span>
+<span class="nc" id="L75">            errorDetails.put(&quot;path&quot;, ex.getRequestURL());</span>
+            
+<span class="nc" id="L77">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorDetails);</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

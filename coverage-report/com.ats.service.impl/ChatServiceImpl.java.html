@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">ChatServiceImpl.java</span></div><h1>ChatServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import com.ats.model.Chat;
+import com.ats.model.Conversation;
+import com.ats.model.User;
+import com.ats.repository.ChatRepository;
+import com.ats.repository.ConversationRepository;
+import com.ats.repository.UserRepository;
+import com.ats.service.ChatService;
+import com.ats.exception.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@Transactional
+<span class="fc" id="L24">@Slf4j</span>
+public class ChatServiceImpl implements ChatService {
+
+    private final ChatRepository chatRepository;
+    private final ConversationRepository conversationRepository;
+    private final UserRepository userRepository;
+
+    @Autowired
+    public ChatServiceImpl(ChatRepository chatRepository, 
+                          ConversationRepository conversationRepository,
+<span class="fc" id="L34">                          UserRepository userRepository) {</span>
+<span class="fc" id="L35">        this.chatRepository = chatRepository;</span>
+<span class="fc" id="L36">        this.conversationRepository = conversationRepository;</span>
+<span class="fc" id="L37">        this.userRepository = userRepository;</span>
+<span class="fc" id="L38">    }</span>
+
+    @Override
+    public Chat sendMessage(Long conversationId, Long senderId, String content) {
+<span class="nc" id="L42">        log.info(&quot;Sending message from user {} to conversation {}&quot;, senderId, conversationId);</span>
+        
+        // Validate conversation exists
+<span class="nc" id="L45">        Conversation conversation = conversationRepository.findById(conversationId)</span>
+<span class="nc" id="L46">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Conversation not found with ID: &quot; + conversationId));</span>
+        
+        // Validate sender exists
+<span class="nc" id="L49">        User sender = userRepository.findById(senderId)</span>
+<span class="nc" id="L50">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found with ID: &quot; + senderId));</span>
+        
+        // Validate sender is part of the conversation
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (!conversation.getCandidate().getId().equals(senderId) &amp;&amp; </span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">            (conversation.getAdmin() == null || !conversation.getAdmin().getId().equals(senderId))) {</span>
+<span class="nc" id="L55">            throw new IllegalArgumentException(&quot;User is not authorized to send messages in this conversation&quot;);</span>
+        }
+        
+        // Create and save the chat message
+<span class="nc" id="L59">        Chat chat = new Chat();</span>
+<span class="nc" id="L60">        chat.setConversation(conversation);</span>
+<span class="nc" id="L61">        chat.setSender(sender);</span>
+<span class="nc" id="L62">        chat.setContent(content);</span>
+        
+<span class="nc" id="L64">        Chat savedChat = chatRepository.save(chat);</span>
+<span class="nc" id="L65">        log.info(&quot;Message sent successfully with ID: {}&quot;, savedChat.getId());</span>
+        
+<span class="nc" id="L67">        return savedChat;</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Chat&gt; getMessagesByConversation(Long conversationId) {
+<span class="nc" id="L73">        log.debug(&quot;Fetching messages for conversation ID: {}&quot;, conversationId);</span>
+        
+        // Validate conversation exists
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (!conversationRepository.existsById(conversationId)) {</span>
+<span class="nc" id="L77">            throw new ResourceNotFoundException(&quot;Conversation not found with ID: &quot; + conversationId);</span>
+        }
+        
+<span class="nc" id="L80">        return chatRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Chat&gt; getMessagesBySender(Long senderId) {
+<span class="nc" id="L86">        log.debug(&quot;Fetching messages for sender ID: {}&quot;, senderId);</span>
+        
+        // Validate sender exists
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (!userRepository.existsById(senderId)) {</span>
+<span class="nc" id="L90">            throw new ResourceNotFoundException(&quot;User not found with ID: &quot; + senderId);</span>
+        }
+        
+<span class="nc" id="L93">        return chatRepository.findBySenderId(senderId);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional&lt;Chat&gt; getChatById(Long chatId) {
+<span class="nc" id="L99">        log.debug(&quot;Fetching chat message with ID: {}&quot;, chatId);</span>
+<span class="nc" id="L100">        return chatRepository.findById(chatId);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Chat&gt; getMessagesByConversationAndSender(Long conversationId, Long senderId) {
+<span class="nc" id="L106">        log.debug(&quot;Fetching messages for conversation {} and sender {}&quot;, conversationId, senderId);</span>
+        
+        // Validate inputs
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (!conversationRepository.existsById(conversationId)) {</span>
+<span class="nc" id="L110">            throw new ResourceNotFoundException(&quot;Conversation not found with ID: &quot; + conversationId);</span>
+        }
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (!userRepository.existsById(senderId)) {</span>
+<span class="nc" id="L113">            throw new ResourceNotFoundException(&quot;User not found with ID: &quot; + senderId);</span>
+        }
+        
+<span class="nc" id="L116">        return chatRepository.findByConversationIdAndSenderId(conversationId, senderId);</span>
+    }
+
+    @Override
+    public boolean deleteMessage(Long chatId) {
+<span class="nc" id="L121">        log.info(&quot;Deleting chat message with ID: {}&quot;, chatId);</span>
+        
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (!chatRepository.existsById(chatId)) {</span>
+<span class="nc" id="L124">            throw new ResourceNotFoundException(&quot;Chat message not found with ID: &quot; + chatId);</span>
+        }
+        
+<span class="nc" id="L127">        chatRepository.deleteById(chatId);</span>
+<span class="nc" id="L128">        log.info(&quot;Chat message deleted successfully with ID: {}&quot;, chatId);</span>
+        
+<span class="nc" id="L130">        return true;</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Chat&gt; getRecentMessages(Long conversationId, int limit, int offset) {
+<span class="nc" id="L136">        log.debug(&quot;Fetching recent messages for conversation {} with limit {} and offset {}&quot;, </span>
+<span class="nc" id="L137">                  conversationId, limit, offset);</span>
+        
+        // Validate conversation exists
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        if (!conversationRepository.existsById(conversationId)) {</span>
+<span class="nc" id="L141">            throw new ResourceNotFoundException(&quot;Conversation not found with ID: &quot; + conversationId);</span>
+        }
+        
+        // Create pageable with descending order to get most recent first
+<span class="nc" id="L145">        Pageable pageable = PageRequest.of(offset / limit, limit, </span>
+<span class="nc" id="L146">                                         Sort.by(Sort.Direction.DESC, &quot;createdAt&quot;));</span>
+        
+<span class="nc" id="L148">        return chatRepository.findByConversationId(conversationId, pageable).getContent();</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TotpServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">TotpServiceImpl.java</span></div><h1>TotpServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import com.ats.service.TotpService;
+import dev.samstevens.totp.code.*;
+import dev.samstevens.totp.exceptions.QrGenerationException;
+import dev.samstevens.totp.qr.*;
+import dev.samstevens.totp.secret.SecretGenerator;
+import dev.samstevens.totp.secret.DefaultSecretGenerator;
+import dev.samstevens.totp.time.SystemTimeProvider;
+import dev.samstevens.totp.time.TimeProvider;
+import org.springframework.stereotype.Service;
+
+import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+<span class="fc" id="L19">public class TotpServiceImpl implements TotpService {</span>
+
+    private static final int RECOVERY_CODE_COUNT = 10;
+    private static final int RECOVERY_CODE_LENGTH = 10;
+    private static final String ISSUER = &quot;ATS System&quot;;
+    private static final String RECOVERY_CODE_CHARS = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&quot;;
+
+<span class="fc" id="L26">    private final SecretGenerator secretGenerator = new DefaultSecretGenerator();</span>
+<span class="fc" id="L27">    private final TimeProvider timeProvider = new SystemTimeProvider();</span>
+<span class="fc" id="L28">    private final CodeGenerator codeGenerator = new DefaultCodeGenerator();</span>
+<span class="fc" id="L29">    private final CodeVerifier codeVerifier = new DefaultCodeVerifier(codeGenerator, timeProvider);</span>
+<span class="fc" id="L30">    private final QrGenerator qrGenerator = new ZxingPngQrGenerator();</span>
+<span class="fc" id="L31">    private final SecureRandom random = new SecureRandom();</span>
+    
+    @Override
+    public String generateSecret() {
+<span class="nc" id="L35">        return secretGenerator.generate();</span>
+    }
+    
+    @Override
+    public String generateQrCodeImageUrl(String email, String secret) {
+<span class="nc" id="L40">        QrData qrData = new QrData.Builder()</span>
+<span class="nc" id="L41">                .label(email)</span>
+<span class="nc" id="L42">                .secret(secret)</span>
+<span class="nc" id="L43">                .issuer(ISSUER)</span>
+<span class="nc" id="L44">                .algorithm(HashingAlgorithm.SHA1) // Google Authenticator default</span>
+<span class="nc" id="L45">                .digits(6)</span>
+<span class="nc" id="L46">                .period(30)</span>
+<span class="nc" id="L47">                .build();</span>
+        
+        try {
+<span class="nc" id="L50">            byte[] imageData = qrGenerator.generate(qrData);</span>
+<span class="nc" id="L51">            String mimeType = qrGenerator.getImageMimeType();</span>
+<span class="nc" id="L52">            return &quot;data:&quot; + mimeType + &quot;;base64,&quot; + java.util.Base64.getEncoder().encodeToString(imageData);</span>
+<span class="nc" id="L53">        } catch (QrGenerationException e) {</span>
+<span class="nc" id="L54">            throw new RuntimeException(&quot;Failed to generate QR code&quot;, e);</span>
+        }
+    }
+    
+    @Override
+    public boolean validateCode(String code, String secret) {
+<span class="nc" id="L60">        return codeVerifier.isValidCode(secret, code);</span>
+    }
+    
+    @Override
+    public String[] generateRecoveryCodes() {
+<span class="nc" id="L65">        String[] recoveryCodes = new String[RECOVERY_CODE_COUNT];</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        for (int i = 0; i &lt; RECOVERY_CODE_COUNT; i++) {</span>
+<span class="nc" id="L67">            recoveryCodes[i] = generateRandomString(RECOVERY_CODE_LENGTH);</span>
+        }
+<span class="nc" id="L69">        return recoveryCodes;</span>
+    }
+    
+    @Override
+    public String[] validateAndRemoveRecoveryCode(String providedCode, String[] storedCodes) {
+<span class="nc bnc" id="L74" title="All 4 branches missed.">        if (storedCodes == null || providedCode == null) {</span>
+<span class="nc" id="L75">            return null;</span>
+        }
+        
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        for (int i = 0; i &lt; storedCodes.length; i++) {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (providedCode.equals(storedCodes[i])) {</span>
+                // Recovery code is valid, remove it from the array
+<span class="nc" id="L81">                String[] updatedCodes = new String[storedCodes.length - 1];</span>
+<span class="nc" id="L82">                System.arraycopy(storedCodes, 0, updatedCodes, 0, i);</span>
+<span class="nc" id="L83">                System.arraycopy(storedCodes, i + 1, updatedCodes, i, storedCodes.length - i - 1);</span>
+<span class="nc" id="L84">                return updatedCodes;</span>
+            }
+        }
+        
+        // No matching recovery code found
+<span class="nc" id="L89">        return null;</span>
+    }
+    
+    private String generateRandomString(int length) {
+<span class="nc" id="L93">        StringBuilder sb = new StringBuilder(length);</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L95">            int randomIndex = random.nextInt(RECOVERY_CODE_CHARS.length());</span>
+<span class="nc" id="L96">            sb.append(RECOVERY_CODE_CHARS.charAt(randomIndex));</span>
+        }
+<span class="nc" id="L98">        return sb.toString();</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResumeAnalysisController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">ResumeAnalysisController.java</span></div><h1>ResumeAnalysisController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.dto.ResumeAnalysisDTO;
+import com.ats.model.Application;
+import com.ats.model.Job;
+import com.ats.repository.ApplicationRepository;
+import com.ats.repository.JobRepository;
+import com.ats.service.ResumeAnalysisService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.concurrent.CompletableFuture;
+
+@RestController
+@RequestMapping(&quot;/api/resume-analysis&quot;)
+<span class="fc" id="L25">@RequiredArgsConstructor</span>
+<span class="fc" id="L26">@Slf4j</span>
+@Tag(name = &quot;Resume Analysis&quot;, description = &quot;AI-powered resume analysis and scoring&quot;)
+public class ResumeAnalysisController {
+
+    private final ResumeAnalysisService resumeAnalysisService;
+    private final ApplicationRepository applicationRepository;
+    private final JobRepository jobRepository;
+
+    @PostMapping(&quot;/analyze&quot;)
+    @Operation(summary = &quot;Analyze a resume file&quot;, description = &quot;Upload and analyze a resume file using AI&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Resume analyzed successfully&quot;),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid file format or missing parameters&quot;),
+            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Analysis failed&quot;)
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('HR')&quot;)
+    public ResponseEntity&lt;ResumeAnalysisDTO&gt; analyzeResume(
+            @Parameter(description = &quot;Resume file to analyze&quot;, required = true)
+            @RequestParam(&quot;file&quot;) MultipartFile file,
+            @Parameter(description = &quot;Job ID for scoring context&quot;, required = true)
+            @RequestParam(&quot;jobId&quot;) Long jobId) {
+        
+<span class="nc" id="L48">        log.info(&quot;Analyzing resume file: {} for job ID: {}&quot;, file.getOriginalFilename(), jobId);</span>
+        
+        try {
+            // Validate file format
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            if (!resumeAnalysisService.isSupportedResumeFormat(file)) {</span>
+<span class="nc" id="L53">                return ResponseEntity.badRequest().build();</span>
+            }
+            
+            // Get job for context
+<span class="nc" id="L57">            Job job = jobRepository.findById(jobId)</span>
+<span class="nc" id="L58">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Job not found&quot;));</span>
+            
+            // Analyze resume
+<span class="nc" id="L61">            ResumeAnalysisDTO analysis = resumeAnalysisService.analyzeResume(file, job);</span>
+            
+<span class="nc" id="L63">            return ResponseEntity.ok(analysis);</span>
+            
+<span class="nc" id="L65">        } catch (Exception e) {</span>
+<span class="nc" id="L66">            log.error(&quot;Error analyzing resume: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L67">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @PostMapping(&quot;/analyze-async&quot;)
+    @Operation(summary = &quot;Analyze a resume file asynchronously&quot;, description = &quot;Upload and analyze a resume file using AI (async)&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;202&quot;, description = &quot;Analysis started&quot;),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid file format or missing parameters&quot;),
+            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Analysis failed to start&quot;)
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('HR')&quot;)
+    public ResponseEntity&lt;String&gt; analyzeResumeAsync(
+            @Parameter(description = &quot;Resume file path&quot;, required = true)
+            @RequestParam(&quot;filePath&quot;) String filePath,
+            @Parameter(description = &quot;Job ID for scoring context&quot;, required = true)
+            @RequestParam(&quot;jobId&quot;) Long jobId) {
+        
+<span class="nc" id="L85">        log.info(&quot;Starting async analysis for file: {} and job ID: {}&quot;, filePath, jobId);</span>
+        
+        try {
+            // Get job for context
+<span class="nc" id="L89">            Job job = jobRepository.findById(jobId)</span>
+<span class="nc" id="L90">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Job not found&quot;));</span>
+            
+            // Start async analysis
+<span class="nc" id="L93">            CompletableFuture&lt;ResumeAnalysisDTO&gt; future = resumeAnalysisService.analyzeResumeAsync(filePath, job);</span>
+            
+<span class="nc" id="L95">            return ResponseEntity.accepted().body(&quot;Analysis started&quot;);</span>
+            
+<span class="nc" id="L97">        } catch (Exception e) {</span>
+<span class="nc" id="L98">            log.error(&quot;Error starting async analysis: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L99">            return ResponseEntity.internalServerError().body(&quot;Failed to start analysis&quot;);</span>
+        }
+    }
+
+    @PostMapping(&quot;/applications/{applicationId}/analyze&quot;)
+    @Operation(summary = &quot;Analyze resume for an application&quot;, description = &quot;Trigger resume analysis for a specific application&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;202&quot;, description = &quot;Analysis started&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Application not found&quot;),
+            @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Analysis failed to start&quot;)
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('HR')&quot;)
+    public ResponseEntity&lt;String&gt; analyzeApplicationResume(
+            @Parameter(description = &quot;Application ID&quot;, required = true)
+            @PathVariable Long applicationId) {
+        
+<span class="nc" id="L115">        log.info(&quot;Analyzing resume for application ID: {}&quot;, applicationId);</span>
+        
+        try {
+            // Get application
+<span class="nc" id="L119">            Application application = applicationRepository.findById(applicationId)</span>
+<span class="nc" id="L120">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Application not found&quot;));</span>
+            
+            // Check if resume URL exists
+<span class="nc bnc" id="L123" title="All 4 branches missed.">            if (application.getResumeUrl() == null || application.getResumeUrl().trim().isEmpty()) {</span>
+<span class="nc" id="L124">                return ResponseEntity.badRequest().body(&quot;No resume URL found for this application&quot;);</span>
+            }
+            
+            // Start analysis
+<span class="nc" id="L128">            CompletableFuture&lt;Application&gt; future = resumeAnalysisService.analyzeAndUpdateApplication(application, application.getJob());</span>
+            
+<span class="nc" id="L130">            return ResponseEntity.accepted().body(&quot;Resume analysis started for application &quot; + applicationId);</span>
+            
+<span class="nc" id="L132">        } catch (Exception e) {</span>
+<span class="nc" id="L133">            log.error(&quot;Error analyzing application resume: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L134">            return ResponseEntity.internalServerError().body(&quot;Failed to start analysis&quot;);</span>
+        }
+    }
+
+    @GetMapping(&quot;/applications/{applicationId}&quot;)
+    @Operation(summary = &quot;Get resume analysis for an application&quot;, description = &quot;Retrieve the resume analysis results for a specific application&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Analysis retrieved successfully&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Application not found or no analysis available&quot;),
+            @ApiResponse(responseCode = &quot;403&quot;, description = &quot;Access denied&quot;)
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('HR') or (hasRole('CANDIDATE') and @applicationRepository.findById(#applicationId).orElse(null)?.candidate?.id == authentication.principal.id)&quot;)
+    public ResponseEntity&lt;ResumeAnalysisDTO&gt; getApplicationAnalysis(
+            @Parameter(description = &quot;Application ID&quot;, required = true)
+            @PathVariable Long applicationId) {
+        
+<span class="nc" id="L150">        log.info(&quot;Getting resume analysis for application ID: {}&quot;, applicationId);</span>
+        
+        try {
+            // Get application
+<span class="nc" id="L154">            Application application = applicationRepository.findById(applicationId)</span>
+<span class="nc" id="L155">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Application not found&quot;));</span>
+            
+            // Check if analysis exists
+<span class="nc bnc" id="L158" title="All 2 branches missed.">            if (application.getResumeAnalysis() == null) {</span>
+<span class="nc" id="L159">                return ResponseEntity.notFound().build();</span>
+            }
+            
+<span class="nc" id="L162">            return ResponseEntity.ok(application.getResumeAnalysis());</span>
+            
+<span class="nc" id="L164">        } catch (Exception e) {</span>
+<span class="nc" id="L165">            log.error(&quot;Error getting application analysis: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L166">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+
+    @PostMapping(&quot;/rescore&quot;)
+    @Operation(summary = &quot;Re-score resume analysis for a different job&quot;, description = &quot;Re-calculate scoring for existing analysis against a different job&quot;)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = &quot;200&quot;, description = &quot;Re-scoring completed&quot;),
+            @ApiResponse(responseCode = &quot;404&quot;, description = &quot;Application or job not found&quot;),
+            @ApiResponse(responseCode = &quot;400&quot;, description = &quot;No existing analysis found&quot;)
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('HR')&quot;)
+    public ResponseEntity&lt;ResumeAnalysisDTO&gt; rescoreAnalysis(
+            @Parameter(description = &quot;Application ID&quot;, required = true)
+            @RequestParam(&quot;applicationId&quot;) Long applicationId,
+            @Parameter(description = &quot;New Job ID for re-scoring&quot;, required = true)
+            @RequestParam(&quot;newJobId&quot;) Long newJobId) {
+        
+<span class="nc" id="L184">        log.info(&quot;Re-scoring analysis for application {} against job {}&quot;, applicationId, newJobId);</span>
+        
+        try {
+            // Get application
+<span class="nc" id="L188">            Application application = applicationRepository.findById(applicationId)</span>
+<span class="nc" id="L189">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Application not found&quot;));</span>
+            
+            // Check if analysis exists
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            if (application.getResumeAnalysis() == null) {</span>
+<span class="nc" id="L193">                return ResponseEntity.badRequest().build();</span>
+            }
+            
+            // Get new job
+<span class="nc" id="L197">            Job newJob = jobRepository.findById(newJobId)</span>
+<span class="nc" id="L198">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Job not found&quot;));</span>
+            
+            // Re-score
+<span class="nc" id="L201">            ResumeAnalysisDTO rescored = resumeAnalysisService.rescoreForJob(application.getResumeAnalysis(), newJob);</span>
+            
+<span class="nc" id="L203">            return ResponseEntity.ok(rescored);</span>
+            
+<span class="nc" id="L205">        } catch (Exception e) {</span>
+<span class="nc" id="L206">            log.error(&quot;Error re-scoring analysis: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L207">            return ResponseEntity.internalServerError().build();</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

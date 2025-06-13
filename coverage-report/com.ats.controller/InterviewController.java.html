@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InterviewController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">InterviewController.java</span></div><h1>InterviewController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.dto.*;
+import com.ats.model.InterviewStatus;
+import com.ats.model.User;
+import com.ats.repository.UserRepository;
+import com.ats.service.InterviewService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping(&quot;/api/interviews&quot;)
+<span class="fc" id="L22">@Slf4j</span>
+public class InterviewController {
+
+    private final InterviewService interviewService;
+    private final UserRepository userRepository;
+
+    @Autowired
+<span class="fc" id="L29">    public InterviewController(InterviewService interviewService, UserRepository userRepository) {</span>
+<span class="fc" id="L30">        this.interviewService = interviewService;</span>
+<span class="fc" id="L31">        this.userRepository = userRepository;</span>
+<span class="fc" id="L32">    }</span>
+
+    /**
+     * Assign an interview to an interviewer
+     * Admin only
+     */
+    @PostMapping(&quot;/assign&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;InterviewDTO&gt; assignInterview(
+            @Valid @RequestBody AssignInterviewRequest request,
+            Authentication authentication) {
+        
+        try {
+<span class="nc" id="L45">            String email = authentication.getName();</span>
+<span class="nc" id="L46">            User admin = userRepository.findByEmail(email)</span>
+<span class="nc" id="L47">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Admin not found&quot;));</span>
+            
+<span class="nc" id="L49">            InterviewDTO interview = interviewService.assignInterview(request, admin.getId());</span>
+<span class="nc" id="L50">            return new ResponseEntity&lt;&gt;(interview, HttpStatus.CREATED);</span>
+            
+<span class="nc" id="L52">        } catch (Exception e) {</span>
+<span class="nc" id="L53">            log.error(&quot;Error assigning interview: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L54">            throw e;</span>
+        }
+    }
+
+    /**
+     * Start an interview (change status to IN_PROGRESS)
+     * Interviewer only (for their own interviews)
+     */
+    @PostMapping(&quot;/{interviewId}/start&quot;)
+    @PreAuthorize(&quot;hasRole('INTERVIEWER')&quot;)
+    public ResponseEntity&lt;InterviewDTO&gt; startInterview(
+            @PathVariable Long interviewId,
+            Authentication authentication) {
+        
+        try {
+<span class="nc" id="L69">            String email = authentication.getName(); // get the email of the interviewer</span>
+<span class="nc" id="L70">            User interviewer = userRepository.findByEmail(email)</span>
+<span class="nc" id="L71">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Interviewer not found&quot;));</span>
+            
+<span class="nc" id="L73">            InterviewDTO interview = interviewService.startInterview(interviewId, interviewer.getId());</span>
+<span class="nc" id="L74">            return ResponseEntity.ok(interview);</span>
+            
+<span class="nc" id="L76">        } catch (Exception e) {</span>
+<span class="nc" id="L77">            log.error(&quot;Error starting interview: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L78">            throw e;</span>
+        }
+    }
+
+    /**
+     * Submit interview responses
+     * Interviewer only (for their own interviews)
+     */
+    @PostMapping(&quot;/{interviewId}/submit&quot;)
+    @PreAuthorize(&quot;hasRole('INTERVIEWER')&quot;)
+    public ResponseEntity&lt;InterviewDTO&gt; submitInterview(
+            @PathVariable Long interviewId,
+            @Valid @RequestBody SubmitInterviewRequest request,
+            Authentication authentication) {
+        
+        try {
+<span class="nc" id="L94">            String email = authentication.getName();</span>
+<span class="nc" id="L95">            User interviewer = userRepository.findByEmail(email)</span>
+<span class="nc" id="L96">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Interviewer not found&quot;));</span>
+            
+<span class="nc" id="L98">            InterviewDTO interview = interviewService.submitInterview(interviewId, request, interviewer.getId());</span>
+<span class="nc" id="L99">            return ResponseEntity.ok(interview);</span>
+            
+<span class="nc" id="L101">        } catch (Exception e) {</span>
+<span class="nc" id="L102">            log.error(&quot;Error submitting interview: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L103">            throw e;</span>
+        }
+    }
+
+    /**
+     * Get interview by ID
+     * Admin and Interviewer access (interviewer only for their own interviews)
+     */
+    @GetMapping(&quot;/{interviewId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('INTERVIEWER')&quot;)
+    public ResponseEntity&lt;InterviewDTO&gt; getInterviewById(
+            @PathVariable Long interviewId,
+            Authentication authentication) {
+        
+<span class="nc" id="L117">        Optional&lt;InterviewDTO&gt; interviewOpt = interviewService.getInterviewById(interviewId);</span>
+        
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (interviewOpt.isEmpty()) {</span>
+<span class="nc" id="L120">            return ResponseEntity.notFound().build();</span>
+        }
+        
+<span class="nc" id="L123">        InterviewDTO interview = interviewOpt.get();</span>
+        
+        // Check if interviewer is trying to access their own interview
+<span class="nc" id="L126">        String email = authentication.getName();</span>
+<span class="nc" id="L127">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L128">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+        
+<span class="nc" id="L130">        boolean isAdmin = authentication.getAuthorities().stream()</span>
+<span class="nc" id="L131">                .anyMatch(a -&gt; a.getAuthority().equals(&quot;ROLE_ADMIN&quot;));</span>
+        
+<span class="nc bnc" id="L133" title="All 4 branches missed.">        if (!isAdmin &amp;&amp; !interview.getInterviewerId().equals(user.getId())) {</span>
+<span class="nc" id="L134">            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();</span>
+        }
+        
+<span class="nc" id="L137">        return ResponseEntity.ok(interview);</span>
+    }
+
+    /**
+     * Get all interviews for current interviewer
+     * Interviewer only
+     */
+    @GetMapping(&quot;/my-interviews&quot;)
+    @PreAuthorize(&quot;hasRole('INTERVIEWER')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewDTO&gt;&gt; getMyInterviews(Authentication authentication) {
+        
+        try {
+<span class="nc" id="L149">            String email = authentication.getName();</span>
+<span class="nc" id="L150">            User interviewer = userRepository.findByEmail(email)</span>
+<span class="nc" id="L151">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Interviewer not found&quot;));</span>
+            
+<span class="nc" id="L153">            List&lt;InterviewDTO&gt; interviews = interviewService.getInterviewsByInterviewer(interviewer.getId());</span>
+<span class="nc" id="L154">            return ResponseEntity.ok(interviews);</span>
+            
+<span class="nc" id="L156">        } catch (Exception e) {</span>
+<span class="nc" id="L157">            log.error(&quot;Error fetching interviews: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L158">            throw e;</span>
+        }
+    }
+
+    /**
+     * Get interviews for current interviewer by status
+     * Interviewer only
+     */
+    @GetMapping(&quot;/my-interviews/status/{status}&quot;)
+    @PreAuthorize(&quot;hasRole('INTERVIEWER')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewDTO&gt;&gt; getMyInterviewsByStatus(
+            @PathVariable InterviewStatus status,
+            Authentication authentication) {
+        
+<span class="nc" id="L172">        log.debug(&quot;Fetching interviews for current interviewer with status: {}&quot;, status);</span>
+        
+        try {
+<span class="nc" id="L175">            String email = authentication.getName();</span>
+<span class="nc" id="L176">            User interviewer = userRepository.findByEmail(email)</span>
+<span class="nc" id="L177">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Interviewer not found&quot;));</span>
+            
+<span class="nc" id="L179">            List&lt;InterviewDTO&gt; interviews = interviewService.getInterviewsByInterviewerAndStatus(</span>
+<span class="nc" id="L180">                    interviewer.getId(), status);</span>
+<span class="nc" id="L181">            return ResponseEntity.ok(interviews);</span>
+            
+<span class="nc" id="L183">        } catch (Exception e) {</span>
+<span class="nc" id="L184">            log.error(&quot;Error fetching interviewer's interviews by status: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L185">            throw e;</span>
+        }
+    }
+
+    /**
+     * Get all interviews for an application
+     * Admin only
+     */
+    @GetMapping(&quot;/application/{applicationId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewDTO&gt;&gt; getInterviewsByApplication(@PathVariable Long applicationId) {
+        
+<span class="nc" id="L197">        List&lt;InterviewDTO&gt; interviews = interviewService.getInterviewsByApplication(applicationId);</span>
+<span class="nc" id="L198">        return ResponseEntity.ok(interviews);</span>
+    }
+
+    /**
+     * Get all interviews for a job
+     * Admin only
+     */
+    @GetMapping(&quot;/job/{jobId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewDTO&gt;&gt; getInterviewsByJob(@PathVariable Long jobId) {
+        
+<span class="nc" id="L209">        List&lt;InterviewDTO&gt; interviews = interviewService.getInterviewsByJob(jobId);</span>
+<span class="nc" id="L210">        return ResponseEntity.ok(interviews);</span>
+    }
+
+    /**
+     * Get all interviews assigned by current admin
+     * Admin only
+     */
+    @GetMapping(&quot;/assigned-by-me&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewDTO&gt;&gt; getInterviewsAssignedByMe(Authentication authentication) {
+        
+<span class="nc" id="L221">        log.debug(&quot;Fetching interviews assigned by current admin&quot;);</span>
+        
+        try {
+<span class="nc" id="L224">            String email = authentication.getName();</span>
+<span class="nc" id="L225">            User admin = userRepository.findByEmail(email)</span>
+<span class="nc" id="L226">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Admin not found&quot;));</span>
+            
+<span class="nc" id="L228">            List&lt;InterviewDTO&gt; interviews = interviewService.getInterviewsAssignedBy(admin.getId());</span>
+<span class="nc" id="L229">            return ResponseEntity.ok(interviews);</span>
+            
+<span class="nc" id="L231">        } catch (Exception e) {</span>
+<span class="nc" id="L232">            log.error(&quot;Error fetching admin's assigned interviews: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L233">            throw e;</span>
+        }
+    }
+
+    /**
+     * Shortlist an application
+     * Admin only
+     */
+    @PostMapping(&quot;/applications/{applicationId}/shortlist&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;Void&gt; shortlistApplication(
+            @PathVariable Long applicationId,
+            Authentication authentication) {
+        
+        try {
+<span class="nc" id="L248">            String email = authentication.getName();</span>
+<span class="nc" id="L249">            User admin = userRepository.findByEmail(email)</span>
+<span class="nc" id="L250">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Admin not found&quot;));</span>
+            
+<span class="nc" id="L252">            interviewService.shortlistApplication(applicationId, admin.getId());</span>
+<span class="nc" id="L253">            return ResponseEntity.ok().build();</span>
+            
+<span class="nc" id="L255">        } catch (Exception e) {</span>
+<span class="nc" id="L256">            log.error(&quot;Error shortlisting application: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L257">            throw e;</span>
+        }
+    }
+
+    /**
+     * Get shortlisted applications for a job
+     * Admin only
+     */
+    @GetMapping(&quot;/applications/shortlisted/{jobId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewDTO.ApplicationSummaryDTO&gt;&gt; getShortlistedApplications(
+            @PathVariable Long jobId) {
+        
+<span class="nc" id="L270">        List&lt;InterviewDTO.ApplicationSummaryDTO&gt; applications = interviewService.getShortlistedApplications(jobId);</span>
+<span class="nc" id="L271">        return ResponseEntity.ok(applications);</span>
+    }
+
+    /**
+     * Get all shortlisted applications across all jobs
+     * Admin only
+     */
+    @GetMapping(&quot;/applications/shortlisted&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewDTO.ApplicationSummaryDTO&gt;&gt; getAllShortlistedApplications() {
+        
+<span class="nc" id="L282">        List&lt;InterviewDTO.ApplicationSummaryDTO&gt; applications = interviewService.getAllShortlistedApplications();</span>
+<span class="nc" id="L283">        return ResponseEntity.ok(applications);</span>
+    }
+
+    /**
+     * Get available interviewers
+     * Admin only
+     */
+    @GetMapping(&quot;/interviewers&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;UserDTO&gt;&gt; getAvailableInterviewers() {
+        
+<span class="nc" id="L294">        List&lt;UserDTO&gt; interviewers = interviewService.getAvailableInterviewers();</span>
+<span class="nc" id="L295">        return ResponseEntity.ok(interviewers);</span>
+    }
+
+    /**
+     * Get interviews for current candidate (by their applications)
+     * Candidate only
+     */
+    @GetMapping(&quot;/my-candidate-interviews&quot;)
+    @PreAuthorize(&quot;hasRole('CANDIDATE')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewDTO&gt;&gt; getMyCandidateInterviews(Authentication authentication) {
+        
+        try {
+<span class="nc" id="L307">            String email = authentication.getName();</span>
+<span class="nc" id="L308">            User candidate = userRepository.findByEmail(email)</span>
+<span class="nc" id="L309">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Candidate not found&quot;));</span>
+            
+<span class="nc" id="L311">            List&lt;InterviewDTO&gt; interviews = interviewService.getInterviewsForCandidate(candidate.getId());</span>
+<span class="nc" id="L312">            return ResponseEntity.ok(interviews);</span>
+            
+<span class="nc" id="L314">        } catch (Exception e) {</span>
+<span class="nc" id="L315">            log.error(&quot;Error fetching candidate interviews: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L316">            throw e;</span>
+        }
+    }
+
+    /**
+     * Cancel an interview assignment
+     * Admin only
+     */
+    @DeleteMapping(&quot;/{interviewId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;Void&gt; cancelInterview(
+            @PathVariable Long interviewId,
+            Authentication authentication) {
+        
+        try {
+<span class="nc" id="L331">            String email = authentication.getName();</span>
+<span class="nc" id="L332">            User admin = userRepository.findByEmail(email)</span>
+<span class="nc" id="L333">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Admin not found&quot;));</span>
+            
+<span class="nc" id="L335">            interviewService.cancelInterview(interviewId, admin.getId());</span>
+<span class="nc" id="L336">            return ResponseEntity.ok().build();</span>
+            
+<span class="nc" id="L338">        } catch (Exception e) {</span>
+<span class="nc" id="L339">            log.error(&quot;Error cancelling interview: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L340">            throw e;</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

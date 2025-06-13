@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InterviewServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">InterviewServiceImpl.java</span></div><h1>InterviewServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import com.ats.dto.AssignInterviewRequest;
+import com.ats.dto.InterviewDTO;
+import com.ats.dto.SubmitInterviewRequest;
+import com.ats.dto.UserDTO;
+import com.ats.exception.ResourceNotFoundException;
+import com.ats.model.*;
+import com.ats.repository.*;
+import com.ats.service.InterviewService;
+import com.ats.service.EmailService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+<span class="fc" id="L24">@Slf4j</span>
+public class InterviewServiceImpl implements InterviewService {
+
+    private final InterviewRepository interviewRepository;
+    private final ApplicationRepository applicationRepository;
+    private final UserRepository userRepository;
+    private final InterviewSkeletonRepository interviewSkeletonRepository;
+    private final JobRepository jobRepository;
+    private final EmailService emailService;
+
+    @Autowired
+    public InterviewServiceImpl(
+            InterviewRepository interviewRepository,
+            ApplicationRepository applicationRepository,
+            UserRepository userRepository,
+            InterviewSkeletonRepository interviewSkeletonRepository,
+            JobRepository jobRepository,
+<span class="fc" id="L41">            EmailService emailService) {</span>
+<span class="fc" id="L42">        this.interviewRepository = interviewRepository;</span>
+<span class="fc" id="L43">        this.applicationRepository = applicationRepository;</span>
+<span class="fc" id="L44">        this.userRepository = userRepository;</span>
+<span class="fc" id="L45">        this.interviewSkeletonRepository = interviewSkeletonRepository;</span>
+<span class="fc" id="L46">        this.jobRepository = jobRepository;</span>
+<span class="fc" id="L47">        this.emailService = emailService;</span>
+<span class="fc" id="L48">    }</span>
+
+    @Override
+    public InterviewDTO assignInterview(AssignInterviewRequest request, Long assignedById) {
+<span class="nc" id="L52">        log.info(&quot;Assigning interview for application {} to interviewer {} by admin {}&quot;, </span>
+<span class="nc" id="L53">                request.getApplicationId(), request.getInterviewerId(), assignedById);</span>
+
+        // Validate application exists and is shortlisted
+<span class="nc" id="L56">        Application application = applicationRepository.findById(request.getApplicationId())</span>
+<span class="nc" id="L57">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Application not found with ID: &quot; + request.getApplicationId()));</span>
+        
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (!Boolean.TRUE.equals(application.getIsShortlisted())) {</span>
+<span class="nc" id="L60">            throw new IllegalStateException(&quot;Application must be shortlisted before assigning interview&quot;);</span>
+        }
+
+        // Validate interviewer exists and has INTERVIEWER role
+<span class="nc" id="L64">        User interviewer = userRepository.findById(request.getInterviewerId())</span>
+<span class="nc" id="L65">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Interviewer not found with ID: &quot; + request.getInterviewerId()));</span>
+        
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (interviewer.getRole() != Role.INTERVIEWER) {</span>
+<span class="nc" id="L68">            throw new IllegalStateException(&quot;User must have INTERVIEWER role to be assigned an interview&quot;);</span>
+        }
+
+        // Validate skeleton exists
+<span class="nc" id="L72">        InterviewSkeleton skeleton = interviewSkeletonRepository.findById(request.getSkeletonId())</span>
+<span class="nc" id="L73">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Interview skeleton not found with ID: &quot; + request.getSkeletonId()));</span>
+
+        // Validate admin exists
+<span class="nc" id="L76">        User admin = userRepository.findById(assignedById)</span>
+<span class="nc" id="L77">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Admin not found with ID: &quot; + assignedById));</span>
+
+        // Check if interview already exists for this application-interviewer-skeleton combination
+<span class="nc" id="L80">        Optional&lt;Interview&gt; existingInterview = interviewRepository</span>
+<span class="nc" id="L81">                .findByApplicationIdAndInterviewerIdAndSkeletonId(</span>
+<span class="nc" id="L82">                        request.getApplicationId(), </span>
+<span class="nc" id="L83">                        request.getInterviewerId(), </span>
+<span class="nc" id="L84">                        request.getSkeletonId());</span>
+        
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (existingInterview.isPresent()) {</span>
+<span class="nc" id="L87">            throw new IllegalStateException(&quot;Interview already assigned for this combination&quot;);</span>
+        }
+
+        // Create interview
+<span class="nc" id="L91">        Interview interview = new Interview();</span>
+<span class="nc" id="L92">        interview.setApplication(application);</span>
+<span class="nc" id="L93">        interview.setInterviewer(interviewer);</span>
+<span class="nc" id="L94">        interview.setSkeleton(skeleton);</span>
+<span class="nc" id="L95">        interview.setStatus(InterviewStatus.ASSIGNED);</span>
+<span class="nc" id="L96">        interview.setScheduledAt(request.getScheduledAt());</span>
+<span class="nc" id="L97">        interview.setAssignedBy(admin);</span>
+
+        // Initialize empty responses based on skeleton focus areas
+<span class="nc" id="L100">        List&lt;Interview.InterviewResponse&gt; responses = skeleton.getFocusAreas().stream()</span>
+<span class="nc" id="L101">                .map(fa -&gt; new Interview.InterviewResponse(fa.getTitle(), &quot;&quot;, 0))</span>
+<span class="nc" id="L102">                .collect(Collectors.toList());</span>
+<span class="nc" id="L103">        interview.setResponses(responses);</span>
+
+        // Save and return DTO
+<span class="nc" id="L106">        Interview savedInterview = interviewRepository.save(interview);</span>
+<span class="nc" id="L107">        log.info(&quot;Interview assigned with ID: {}&quot;, savedInterview.getId());</span>
+
+        // Send email notifications using event-based system
+        try {
+            // Send email to interviewer
+<span class="nc" id="L112">            emailService.sendInterviewEmail(savedInterview, EmailEvent.INTERVIEW_ASSIGNED_TO_INTERVIEWER);</span>
+<span class="nc" id="L113">            log.info(&quot;Interview assignment email sent to interviewer for interview ID: {}&quot;, savedInterview.getId());</span>
+<span class="nc" id="L114">        } catch (Exception e) {</span>
+<span class="nc" id="L115">            log.error(&quot;Failed to send interview assignment email to interviewer for interview ID: {}: {}&quot;, </span>
+<span class="nc" id="L116">                     savedInterview.getId(), e.getMessage());</span>
+            // Don't fail the entire operation if email fails - email is saved with FAILED status
+<span class="nc" id="L118">        }</span>
+        
+        try {
+            // Send email to candidate
+<span class="nc" id="L122">            emailService.sendInterviewEmail(savedInterview, EmailEvent.INTERVIEW_ASSIGNED_TO_CANDIDATE);</span>
+<span class="nc" id="L123">            log.info(&quot;Interview assignment email sent to candidate for interview ID: {}&quot;, savedInterview.getId());</span>
+<span class="nc" id="L124">        } catch (Exception e) {</span>
+<span class="nc" id="L125">            log.error(&quot;Failed to send interview assignment email to candidate for interview ID: {}: {}&quot;, </span>
+<span class="nc" id="L126">                     savedInterview.getId(), e.getMessage());</span>
+            // Don't fail the entire operation if email fails - email is saved with FAILED status
+<span class="nc" id="L128">        }</span>
+
+<span class="nc" id="L130">        return mapToDTO(savedInterview);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional&lt;InterviewDTO&gt; getInterviewById(Long interviewId) {
+<span class="nc" id="L136">        log.debug(&quot;Fetching interview with ID: {}&quot;, interviewId);</span>
+<span class="nc" id="L137">        return interviewRepository.findById(interviewId)</span>
+<span class="nc" id="L138">                .map(this::mapToDTO);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InterviewDTO&gt; getInterviewsByInterviewer(Long interviewerId) {
+<span class="nc" id="L144">        log.debug(&quot;Fetching interviews for interviewer ID: {}&quot;, interviewerId);</span>
+<span class="nc" id="L145">        return interviewRepository.findByInterviewerId(interviewerId).stream()</span>
+<span class="nc" id="L146">                .map(this::mapToDTO)</span>
+<span class="nc" id="L147">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InterviewDTO&gt; getInterviewsByInterviewerAndStatus(Long interviewerId, InterviewStatus status) {
+<span class="nc" id="L153">        log.debug(&quot;Fetching interviews for interviewer {} with status {}&quot;, interviewerId, status);</span>
+<span class="nc" id="L154">        return interviewRepository.findByInterviewerIdAndStatus(interviewerId, status).stream()</span>
+<span class="nc" id="L155">                .map(this::mapToDTO)</span>
+<span class="nc" id="L156">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InterviewDTO&gt; getInterviewsByApplication(Long applicationId) {
+<span class="nc" id="L162">        log.debug(&quot;Fetching interviews for application ID: {}&quot;, applicationId);</span>
+<span class="nc" id="L163">        return interviewRepository.findByApplicationId(applicationId).stream()</span>
+<span class="nc" id="L164">                .map(this::mapToDTO)</span>
+<span class="nc" id="L165">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InterviewDTO&gt; getInterviewsByJob(Long jobId) {
+<span class="nc" id="L171">        log.debug(&quot;Fetching interviews for job ID: {}&quot;, jobId);</span>
+<span class="nc" id="L172">        return interviewRepository.findByJobId(jobId).stream()</span>
+<span class="nc" id="L173">                .map(this::mapToDTO)</span>
+<span class="nc" id="L174">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public InterviewDTO submitInterview(Long interviewId, SubmitInterviewRequest request, Long interviewerId) {
+<span class="nc" id="L179">        log.info(&quot;Submitting interview {} by interviewer {}&quot;, interviewId, interviewerId);</span>
+
+        // Validate interview exists and belongs to interviewer
+<span class="nc" id="L182">        Interview interview = interviewRepository.findById(interviewId)</span>
+<span class="nc" id="L183">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Interview not found with ID: &quot; + interviewId));</span>
+
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        if (!interview.getInterviewer().getId().equals(interviewerId)) {</span>
+<span class="nc" id="L186">            throw new IllegalStateException(&quot;Interview does not belong to this interviewer&quot;);</span>
+        }
+
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if (interview.getStatus() != InterviewStatus.IN_PROGRESS) {</span>
+<span class="nc" id="L190">            throw new IllegalStateException(&quot;Interview must be in progress to submit responses&quot;);</span>
+        }
+
+        // Update responses
+<span class="nc" id="L194">        List&lt;Interview.InterviewResponse&gt; responses = request.getResponses().stream()</span>
+<span class="nc" id="L195">                .map(r -&gt; new Interview.InterviewResponse(r.getTitle(), r.getFeedback(), r.getRating()))</span>
+<span class="nc" id="L196">                .collect(Collectors.toList());</span>
+<span class="nc" id="L197">        interview.setResponses(responses);</span>
+
+        // Update status and completion time
+<span class="nc" id="L200">        interview.setStatus(InterviewStatus.COMPLETED);</span>
+<span class="nc" id="L201">        interview.setCompletedAt(LocalDateTime.now());</span>
+
+        // Save and return DTO
+<span class="nc" id="L204">        Interview updatedInterview = interviewRepository.save(interview);</span>
+<span class="nc" id="L205">        log.info(&quot;Interview {} submitted successfully&quot;, interviewId);</span>
+
+<span class="nc" id="L207">        return mapToDTO(updatedInterview);</span>
+    }
+
+    @Override
+    public InterviewDTO startInterview(Long interviewId, Long interviewerId) {
+<span class="nc" id="L212">        log.info(&quot;Starting interview {} by interviewer {}&quot;, interviewId, interviewerId);</span>
+
+        // Validate interview exists and belongs to interviewer
+<span class="nc" id="L215">        Interview interview = interviewRepository.findById(interviewId)</span>
+<span class="nc" id="L216">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Interview not found with ID: &quot; + interviewId));</span>
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (!interview.getInterviewer().getId().equals(interviewerId)) {</span>
+<span class="nc" id="L219">            throw new IllegalStateException(&quot;Interview does not belong to this interviewer&quot;);</span>
+        }
+
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (interview.getStatus() != InterviewStatus.ASSIGNED) {</span>
+<span class="nc" id="L223">            throw new IllegalStateException(&quot;Interview must be in ASSIGNED status to start&quot;);</span>
+        }
+
+        // Update status
+<span class="nc" id="L227">        interview.setStatus(InterviewStatus.IN_PROGRESS);</span>
+
+        // Save and return DTO
+<span class="nc" id="L230">        Interview updatedInterview = interviewRepository.save(interview);</span>
+<span class="nc" id="L231">        log.info(&quot;Interview {} started successfully&quot;, interviewId);</span>
+
+<span class="nc" id="L233">        return mapToDTO(updatedInterview);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InterviewDTO&gt; getInterviewsAssignedBy(Long assignedById) {
+<span class="nc" id="L239">        log.debug(&quot;Fetching interviews assigned by admin ID: {}&quot;, assignedById);</span>
+<span class="nc" id="L240">        return interviewRepository.findByAssignedById(assignedById).stream()</span>
+<span class="nc" id="L241">                .map(this::mapToDTO)</span>
+<span class="nc" id="L242">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public void shortlistApplication(Long applicationId, Long adminId) {
+<span class="nc" id="L247">        log.info(&quot;Shortlisting application {} by admin {}&quot;, applicationId, adminId);</span>
+
+        // Validate application exists
+<span class="nc" id="L250">        Application application = applicationRepository.findById(applicationId)</span>
+<span class="nc" id="L251">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Application not found with ID: &quot; + applicationId));</span>
+
+        // Validate admin exists
+<span class="nc" id="L254">        User admin = userRepository.findById(adminId)</span>
+<span class="nc" id="L255">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Admin not found with ID: &quot; + adminId));</span>
+
+        // Update application
+<span class="nc" id="L258">        application.setIsShortlisted(true);</span>
+<span class="nc" id="L259">        application.setShortlistedAt(java.time.ZonedDateTime.now());</span>
+<span class="nc" id="L260">        application.setShortlistedBy(admin);</span>
+
+<span class="nc" id="L262">        applicationRepository.save(application);</span>
+<span class="nc" id="L263">        log.info(&quot;Application {} shortlisted successfully&quot;, applicationId);</span>
+<span class="nc" id="L264">    }</span>
+
+    @Override
+    public void shortlistApplicationById(Long applicationId, Long adminId) {
+<span class="nc" id="L268">        log.info(&quot;Shortlisting application {} by admin {} (setting status and flag)&quot;, applicationId, adminId);</span>
+
+        // Validate application exists
+<span class="nc" id="L271">        Application application = applicationRepository.findById(applicationId)</span>
+<span class="nc" id="L272">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Application not found with ID: &quot; + applicationId));</span>
+
+        // Validate admin exists
+<span class="nc" id="L275">        User admin = userRepository.findById(adminId)</span>
+<span class="nc" id="L276">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Admin not found with ID: &quot; + adminId));</span>
+
+        // Update application - set both status and shortlisted flag
+<span class="nc" id="L279">        application.setStatus(ApplicationStatus.SHORTLISTED);</span>
+<span class="nc" id="L280">        application.setIsShortlisted(true);</span>
+<span class="nc" id="L281">        application.setShortlistedAt(java.time.ZonedDateTime.now());</span>
+<span class="nc" id="L282">        application.setShortlistedBy(admin);</span>
+<span class="nc" id="L283">        application.setUpdatedAt(java.time.ZonedDateTime.now());</span>
+
+<span class="nc" id="L285">        applicationRepository.save(application);</span>
+<span class="nc" id="L286">        log.info(&quot;Application {} shortlisted successfully with status and flag&quot;, applicationId);</span>
+<span class="nc" id="L287">    }</span>
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InterviewDTO.ApplicationSummaryDTO&gt; getShortlistedApplications(Long jobId) {
+<span class="nc" id="L292">        log.debug(&quot;Fetching shortlisted applications for job ID: {}&quot;, jobId);</span>
+<span class="nc" id="L293">        return applicationRepository.findByJobIdAndIsShortlisted(jobId, true).stream()</span>
+<span class="nc" id="L294">                .map(this::mapToApplicationSummaryDTO)</span>
+<span class="nc" id="L295">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InterviewDTO.ApplicationSummaryDTO&gt; getAllShortlistedApplications() {
+<span class="nc" id="L301">        log.debug(&quot;Fetching all shortlisted applications across all jobs&quot;);</span>
+<span class="nc" id="L302">        return applicationRepository.findByIsShortlisted(true).stream()</span>
+<span class="nc" id="L303">                .map(this::mapToApplicationSummaryDTO)</span>
+<span class="nc" id="L304">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;UserDTO&gt; getAvailableInterviewers() {
+<span class="nc" id="L310">        log.debug(&quot;Fetching available interviewers&quot;);</span>
+<span class="nc" id="L311">        return userRepository.findByRole(Role.INTERVIEWER).stream()</span>
+<span class="nc" id="L312">                .map(this::mapToUserDTO)</span>
+<span class="nc" id="L313">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;InterviewDTO&gt; getInterviewsForCandidate(Long candidateId) {
+<span class="nc" id="L319">        log.debug(&quot;Fetching interviews for candidate ID: {}&quot;, candidateId);</span>
+<span class="nc" id="L320">        return interviewRepository.findByCandidateId(candidateId).stream()</span>
+<span class="nc" id="L321">                .map(this::mapToDTO)</span>
+<span class="nc" id="L322">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional
+    public void cancelInterview(Long interviewId, Long adminId) {
+<span class="nc" id="L328">        log.info(&quot;Cancelling interview {} by admin {}&quot;, interviewId, adminId);</span>
+
+        // Validate interview exists
+<span class="nc" id="L331">        Interview interview = interviewRepository.findById(interviewId)</span>
+<span class="nc" id="L332">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Interview not found with ID: &quot; + interviewId));</span>
+
+        // Validate admin exists
+<span class="nc" id="L335">        User admin = userRepository.findById(adminId)</span>
+<span class="nc" id="L336">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Admin not found with ID: &quot; + adminId));</span>
+
+        // Only allow cancellation if interview is not yet completed
+<span class="nc bnc" id="L339" title="All 2 branches missed.">        if (interview.getStatus() == InterviewStatus.COMPLETED) {</span>
+<span class="nc" id="L340">            throw new IllegalStateException(&quot;Cannot cancel a completed interview&quot;);</span>
+        }
+
+        // Delete the interview
+<span class="nc" id="L344">        interviewRepository.delete(interview);</span>
+<span class="nc" id="L345">        log.info(&quot;Interview {} cancelled successfully by admin {}&quot;, interviewId, adminId);</span>
+<span class="nc" id="L346">    }</span>
+
+    private InterviewDTO mapToDTO(Interview interview) {
+<span class="nc" id="L349">        InterviewDTO dto = new InterviewDTO();</span>
+<span class="nc" id="L350">        dto.setId(interview.getId());</span>
+<span class="nc" id="L351">        dto.setApplicationId(interview.getApplication().getId());</span>
+<span class="nc" id="L352">        dto.setInterviewerId(interview.getInterviewer().getId());</span>
+<span class="nc" id="L353">        dto.setInterviewerName(interview.getInterviewer().getFirstName() + &quot; &quot; + interview.getInterviewer().getLastName());</span>
+<span class="nc" id="L354">        dto.setInterviewerEmail(interview.getInterviewer().getEmail());</span>
+<span class="nc" id="L355">        dto.setSkeletonId(interview.getSkeleton().getId());</span>
+<span class="nc" id="L356">        dto.setSkeletonName(interview.getSkeleton().getName());</span>
+<span class="nc" id="L357">        dto.setStatus(interview.getStatus());</span>
+<span class="nc" id="L358">        dto.setScheduledAt(interview.getScheduledAt());</span>
+<span class="nc" id="L359">        dto.setCompletedAt(interview.getCompletedAt());</span>
+<span class="nc" id="L360">        dto.setAssignedById(interview.getAssignedBy().getId());</span>
+<span class="nc" id="L361">        dto.setAssignedByName(interview.getAssignedBy().getFirstName() + &quot; &quot; + interview.getAssignedBy().getLastName());</span>
+<span class="nc" id="L362">        dto.setCreatedAt(interview.getCreatedAt().atZone(java.time.ZoneId.systemDefault()));</span>
+<span class="nc" id="L363">        dto.setUpdatedAt(interview.getUpdatedAt().atZone(java.time.ZoneId.systemDefault()));</span>
+
+        // Map responses
+<span class="nc" id="L366">        List&lt;InterviewDTO.InterviewResponseDTO&gt; responseDTOs = interview.getResponses().stream()</span>
+<span class="nc" id="L367">                .map(r -&gt; new InterviewDTO.InterviewResponseDTO(r.getTitle(), r.getFeedback(), r.getRating()))</span>
+<span class="nc" id="L368">                .collect(Collectors.toList());</span>
+<span class="nc" id="L369">        dto.setResponses(responseDTOs);</span>
+
+        // Map application summary
+<span class="nc" id="L372">        dto.setApplication(mapToApplicationSummaryDTO(interview.getApplication()));</span>
+
+        // Map skeleton info
+<span class="nc" id="L375">        dto.setSkeleton(mapSkeletonToDTO(interview.getSkeleton()));</span>
+
+<span class="nc" id="L377">        return dto;</span>
+    }
+
+    private InterviewDTO.ApplicationSummaryDTO mapToApplicationSummaryDTO(Application application) {
+<span class="nc" id="L381">        InterviewDTO.ApplicationSummaryDTO dto = new InterviewDTO.ApplicationSummaryDTO();</span>
+<span class="nc" id="L382">        dto.setId(application.getId());</span>
+<span class="nc" id="L383">        dto.setCandidateName(application.getCandidate().getFirstName() + &quot; &quot; + application.getCandidate().getLastName());</span>
+<span class="nc" id="L384">        dto.setCandidateEmail(application.getCandidate().getEmail());</span>
+<span class="nc" id="L385">        dto.setJobId(application.getJob().getId());</span>
+<span class="nc" id="L386">        dto.setJobTitle(application.getJob().getTitle());</span>
+<span class="nc" id="L387">        dto.setResumeUrl(application.getResumeUrl());</span>
+<span class="nc" id="L388">        dto.setAppliedAt(application.getCreatedAt());</span>
+<span class="nc" id="L389">        return dto;</span>
+    }
+
+    private com.ats.dto.InterviewSkeletonDTO mapSkeletonToDTO(InterviewSkeleton skeleton) {
+<span class="nc" id="L393">        com.ats.dto.InterviewSkeletonDTO dto = new com.ats.dto.InterviewSkeletonDTO();</span>
+<span class="nc" id="L394">        dto.setId(skeleton.getId());</span>
+<span class="nc" id="L395">        dto.setName(skeleton.getName());</span>
+<span class="nc" id="L396">        dto.setDescription(skeleton.getDescription());</span>
+        
+        // Map focus areas
+<span class="nc" id="L399">        List&lt;com.ats.dto.InterviewSkeletonDTO.FocusAreaDTO&gt; focusAreaDTOs = skeleton.getFocusAreas().stream()</span>
+<span class="nc" id="L400">                .map(fa -&gt; new com.ats.dto.InterviewSkeletonDTO.FocusAreaDTO(fa.getTitle(), fa.getDescription()))</span>
+<span class="nc" id="L401">                .collect(Collectors.toList());</span>
+<span class="nc" id="L402">        dto.setFocusAreas(focusAreaDTOs);</span>
+        
+<span class="nc" id="L404">        return dto;</span>
+    }
+
+    private UserDTO mapToUserDTO(User user) {
+<span class="nc" id="L408">        UserDTO dto = new UserDTO();</span>
+<span class="nc" id="L409">        dto.setId(user.getId());</span>
+<span class="nc" id="L410">        dto.setFirstName(user.getFirstName());</span>
+<span class="nc" id="L411">        dto.setLastName(user.getLastName());</span>
+<span class="nc" id="L412">        dto.setEmail(user.getEmail());</span>
+<span class="nc" id="L413">        dto.setRole(user.getRole());</span>
+<span class="nc" id="L414">        return dto;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

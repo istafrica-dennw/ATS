@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JobCustomQuestionServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">JobCustomQuestionServiceImpl.java</span></div><h1>JobCustomQuestionServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ats.dto.JobCustomQuestionDTO;
+import com.ats.model.Job;
+import com.ats.model.JobCustomQuestion;
+import com.ats.repository.JobCustomQuestionRepository;
+import com.ats.repository.JobRepository;
+import com.ats.service.JobCustomQuestionService;
+import com.ats.exception.ResourceNotFoundException;
+
+import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@Service
+public class JobCustomQuestionServiceImpl implements JobCustomQuestionService {
+
+<span class="fc" id="L25">    private static final Logger logger = LoggerFactory.getLogger(JobCustomQuestionServiceImpl.class);</span>
+    
+    private final JobCustomQuestionRepository jobCustomQuestionRepository;
+    private final JobRepository jobRepository;
+    private final ModelMapper modelMapper;
+    
+    public JobCustomQuestionServiceImpl(
+            JobCustomQuestionRepository jobCustomQuestionRepository,
+            JobRepository jobRepository,
+<span class="fc" id="L34">            ModelMapper modelMapper) {</span>
+<span class="fc" id="L35">        this.jobCustomQuestionRepository = jobCustomQuestionRepository;</span>
+<span class="fc" id="L36">        this.jobRepository = jobRepository;</span>
+<span class="fc" id="L37">        this.modelMapper = modelMapper;</span>
+<span class="fc" id="L38">    }</span>
+    
+    @Override
+    @Transactional
+    public JobCustomQuestionDTO createCustomQuestion(JobCustomQuestionDTO customQuestionDTO) {
+<span class="nc" id="L43">        logger.info(&quot;Creating custom question for job ID: {}&quot;, customQuestionDTO.getJobId());</span>
+        
+        // Find the job
+<span class="nc" id="L46">        Job job = jobRepository.findById(customQuestionDTO.getJobId())</span>
+<span class="nc" id="L47">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Job not found with id: &quot; + customQuestionDTO.getJobId()));</span>
+        
+        // Create and save the custom question
+<span class="nc" id="L50">        JobCustomQuestion customQuestion = new JobCustomQuestion();</span>
+<span class="nc" id="L51">        customQuestion.setJob(job);</span>
+<span class="nc" id="L52">        customQuestion.setQuestionText(customQuestionDTO.getQuestionText());</span>
+<span class="nc" id="L53">        customQuestion.setQuestionType(customQuestionDTO.getQuestionType());</span>
+<span class="nc" id="L54">        customQuestion.setOptions(customQuestionDTO.getOptions()); // Set the options field</span>
+<span class="nc" id="L55">        customQuestion.setIsRequired(customQuestionDTO.getRequired());</span>
+<span class="nc" id="L56">        customQuestion.setIsVisible(true); // Default to visible</span>
+        
+<span class="nc" id="L58">        JobCustomQuestion savedQuestion = jobCustomQuestionRepository.save(customQuestion);</span>
+        
+<span class="nc" id="L60">        return mapToDTO(savedQuestion);</span>
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteCustomQuestionById(Long customQuestionId) {
+<span class="nc" id="L66">        logger.info(&quot;Deleting custom question with ID: {}&quot;, customQuestionId);</span>
+        
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (!jobCustomQuestionRepository.existsById(customQuestionId)) {</span>
+<span class="nc" id="L69">            logger.warn(&quot;Custom question not found with ID: {}&quot;, customQuestionId);</span>
+<span class="nc" id="L70">            return false;</span>
+        }
+        
+<span class="nc" id="L73">        jobCustomQuestionRepository.deleteById(customQuestionId);</span>
+<span class="nc" id="L74">        return true;</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;JobCustomQuestionDTO&gt; getAllCustomQuestionsbyJobId(Long jobId) {
+<span class="nc" id="L80">        logger.info(&quot;Getting all custom questions for job ID: {}&quot;, jobId);</span>
+        
+        // Verify job exists
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (!jobRepository.existsById(jobId)) {</span>
+<span class="nc" id="L84">            throw new ResourceNotFoundException(&quot;Job not found with id: &quot; + jobId);</span>
+        }
+        
+<span class="nc" id="L87">        List&lt;JobCustomQuestion&gt; questions = jobCustomQuestionRepository.findByJobId(jobId);</span>
+        
+<span class="nc" id="L89">        return questions.stream()</span>
+<span class="nc" id="L90">                .map(this::mapToDTO)</span>
+<span class="nc" id="L91">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public JobCustomQuestionDTO getCustomQuestionbyId(Long customQuestionId) {
+<span class="nc" id="L97">        logger.info(&quot;Getting custom question with ID: {}&quot;, customQuestionId);</span>
+        
+<span class="nc" id="L99">        JobCustomQuestion question = jobCustomQuestionRepository.findById(customQuestionId)</span>
+<span class="nc" id="L100">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Custom question not found with id: &quot; + customQuestionId));</span>
+        
+<span class="nc" id="L102">        return mapToDTO(question);</span>
+    }
+
+    @Override
+    @Transactional
+    public JobCustomQuestionDTO associateQuestionWithJob(Long customQuestionId, Long jobId) {
+<span class="nc" id="L108">        logger.info(&quot;Associating custom question ID: {} with job ID: {}&quot;, customQuestionId, jobId);</span>
+        
+        // Find the job
+<span class="nc" id="L111">        Job job = jobRepository.findById(jobId)</span>
+<span class="nc" id="L112">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Job not found with id: &quot; + jobId));</span>
+        
+        // Find the custom question
+<span class="nc" id="L115">        JobCustomQuestion question = jobCustomQuestionRepository.findById(customQuestionId)</span>
+<span class="nc" id="L116">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Custom question not found with id: &quot; + customQuestionId));</span>
+        
+        // Update the association
+<span class="nc" id="L119">        question.setJob(job);</span>
+<span class="nc" id="L120">        JobCustomQuestion updatedQuestion = jobCustomQuestionRepository.save(question);</span>
+        
+<span class="nc" id="L122">        return mapToDTO(updatedQuestion);</span>
+    }
+    
+    @Override
+    @Transactional
+    public boolean disassociateQuestionFromJob(Long customQuestionId, Long jobId) {
+<span class="nc" id="L128">        logger.info(&quot;Disassociating custom question ID: {} from job ID: {}&quot;, customQuestionId, jobId);</span>
+        
+        // Check if the question exists and is associated with the job
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (!jobCustomQuestionRepository.existsByJobIdAndId(jobId, customQuestionId)) {</span>
+<span class="nc" id="L132">            logger.warn(&quot;Custom question ID: {} is not associated with job ID: {}&quot;, customQuestionId, jobId);</span>
+<span class="nc" id="L133">            return false;</span>
+        }
+        
+        // Instead of removing the association, we'll delete the question
+        // This is because in our current model, a question must be associated with a job
+<span class="nc" id="L138">        jobCustomQuestionRepository.deleteById(customQuestionId);</span>
+        
+<span class="nc" id="L140">        return true;</span>
+    }
+    
+    /**
+     * Maps a JobCustomQuestion entity to a JobCustomQuestionDTO
+     * 
+     * @param question The entity to map
+     * @return The mapped DTO
+     */
+    private JobCustomQuestionDTO mapToDTO(JobCustomQuestion question) {
+<span class="nc" id="L150">        JobCustomQuestionDTO dto = modelMapper.map(question, JobCustomQuestionDTO.class);</span>
+        
+        // Handle specific mapping needs
+<span class="nc" id="L153">        dto.setJobId(question.getJob().getId());</span>
+<span class="nc" id="L154">        dto.setRequired(question.getIsRequired());</span>
+<span class="nc" id="L155">        dto.setActive(question.getIsVisible());</span>
+        
+<span class="nc" id="L157">        return dto;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

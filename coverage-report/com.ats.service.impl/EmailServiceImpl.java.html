@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmailServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">EmailServiceImpl.java</span></div><h1>EmailServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import com.ats.model.EmailNotification;
+import com.ats.model.User;
+import com.ats.model.Application;
+import com.ats.model.EmailEvent;
+import com.ats.model.Interview;
+import com.ats.model.RecipientType;
+import com.ats.repository.EmailNotificationRepository;
+import com.ats.service.EmailService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
+import java.util.HashMap;
+
+@Service
+<span class="nc" id="L27">@RequiredArgsConstructor</span>
+public class EmailServiceImpl implements EmailService {
+    private final JavaMailSender mailSender;
+    private final TemplateEngine templateEngine;
+    private final EmailNotificationRepository emailNotificationRepository;
+
+    @Value(&quot;${app.frontend.url}&quot;)
+    private String frontendUrl;
+
+    /**
+     * Email event configuration
+     */
+    private static class EventConfig {
+        final RecipientType recipientType;
+        final String subjectTemplate;
+
+        EventConfig(RecipientType recipientType, String subjectTemplate) {
+            this.recipientType = recipientType;
+            this.subjectTemplate = subjectTemplate;
+        }
+    }
+
+    // Event configuration mapping
+<span class="nc" id="L50">    private final Map&lt;EmailEvent, EventConfig&gt; eventConfigs = Map.of(</span>
+        EmailEvent.APPLICATION_RECEIVED, new EventConfig(RecipientType.CANDIDATE, &quot;Application Received - %s&quot;),
+        EmailEvent.APPLICATION_REVIEWED, new EventConfig(RecipientType.CANDIDATE, &quot;Application Status Update - %s&quot;),
+        EmailEvent.APPLICATION_SHORTLISTED, new EventConfig(RecipientType.CANDIDATE, &quot;Congratulations! You've Been Shortlisted - %s&quot;),
+        EmailEvent.INTERVIEW_ASSIGNED_TO_INTERVIEWER, new EventConfig(RecipientType.INTERVIEWER, &quot;New Interview Assignment - %s&quot;),
+        EmailEvent.INTERVIEW_ASSIGNED_TO_CANDIDATE, new EventConfig(RecipientType.CANDIDATE, &quot;Interview Scheduled - %s&quot;)
+    );
+
+    /**
+     * Generic method to send an email with a template and save notification
+     * 
+     * @param to Recipient email address
+     * @param subject Email subject
+     * @param templateName Template name to use
+     * @param templateVariables Variables to pass to the template
+     * @param user Related user (optional)
+     * @return Created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    @Transactional
+    private EmailNotification sendTemplateEmail(String to, String subject, String templateName, 
+            Map&lt;String, Object&gt; templateVariables, User user) throws MessagingException {
+        
+        // Create Thymeleaf context and add variables
+<span class="nc" id="L74">        Context context = new Context();</span>
+<span class="nc" id="L75">        templateVariables.forEach(context::setVariable);</span>
+        
+        // Process template
+<span class="nc" id="L78">        String emailContent = templateEngine.process(templateName, context);</span>
+        
+        // Create email notification record
+<span class="nc" id="L81">        EmailNotification.EmailNotificationBuilder builder = EmailNotification.builder()</span>
+<span class="nc" id="L82">                .recipientEmail(to)</span>
+<span class="nc" id="L83">                .subject(subject)</span>
+<span class="nc" id="L84">                .body(emailContent)</span>
+<span class="nc" id="L85">                .templateName(templateName)</span>
+<span class="nc" id="L86">                .status(EmailNotification.EmailStatus.PENDING)</span>
+<span class="nc" id="L87">                .retryCount(0);</span>
+                
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (user != null) {</span>
+<span class="nc" id="L90">            builder.relatedUser(user);</span>
+        }
+        
+<span class="nc" id="L93">        EmailNotification notification = builder.build();</span>
+        
+        // Save notification first
+<span class="nc" id="L96">        notification = emailNotificationRepository.save(notification);</span>
+
+        try {
+            // Try to send the email
+<span class="nc" id="L100">            MimeMessage message = mailSender.createMimeMessage();</span>
+<span class="nc" id="L101">            MimeMessageHelper helper = new MimeMessageHelper(message, true, &quot;UTF-8&quot;);</span>
+            
+<span class="nc" id="L103">            helper.setTo(to);</span>
+<span class="nc" id="L104">            helper.setSubject(subject);</span>
+<span class="nc" id="L105">            helper.setText(emailContent, true);</span>
+            
+<span class="nc" id="L107">            mailSender.send(message);</span>
+            
+            // Update status to SENT
+<span class="nc" id="L110">            notification.setStatus(EmailNotification.EmailStatus.SENT);</span>
+<span class="nc" id="L111">            return emailNotificationRepository.save(notification);</span>
+<span class="nc" id="L112">        } catch (MessagingException e) {</span>
+            // Update status to FAILED and save error message
+<span class="nc" id="L114">            notification.setStatus(EmailNotification.EmailStatus.FAILED);</span>
+<span class="nc" id="L115">            notification.setErrorMessage(e.getMessage());</span>
+<span class="nc" id="L116">            notification = emailNotificationRepository.save(notification);</span>
+            
+            // Rethrow the exception for the caller to handle if needed
+<span class="nc" id="L119">            throw e;</span>
+<span class="nc" id="L120">        } catch (Exception e) {</span>
+            // Update status to FAILED and save error message for non-MessagingException
+<span class="nc" id="L122">            notification.setStatus(EmailNotification.EmailStatus.FAILED);</span>
+<span class="nc" id="L123">            notification.setErrorMessage(e.getMessage());</span>
+<span class="nc" id="L124">            notification = emailNotificationRepository.save(notification);</span>
+            
+            // Convert to MessagingException to maintain compatibility with existing method signatures
+<span class="nc" id="L127">            MessagingException messagingException = new MessagingException(&quot;Failed to send email&quot;, e);</span>
+<span class="nc" id="L128">            throw messagingException;</span>
+        }
+    }
+
+    @Override
+    @Transactional
+    public EmailNotification sendVerificationEmail(String to, String token) throws MessagingException {
+<span class="nc" id="L135">        Map&lt;String, Object&gt; templateVars = Map.of(</span>
+            &quot;verificationLink&quot;, frontendUrl + &quot;/verify-email?token=&quot; + token
+        );
+        
+<span class="nc" id="L139">        return sendTemplateEmail(to, &quot;Verify your email address&quot;, &quot;verification-email&quot;, templateVars, null);</span>
+    }
+    
+    @Override
+    @Transactional
+    public EmailNotification sendPasswordResetEmail(String to, String token, User user) throws MessagingException {
+<span class="nc" id="L145">        Map&lt;String, Object&gt; templateVars = Map.of(</span>
+            &quot;resetLink&quot;, frontendUrl + &quot;/reset-password?token=&quot; + token
+        );
+        
+<span class="nc" id="L149">        return sendTemplateEmail(to, &quot;Reset Your Password&quot;, &quot;password-reset-email&quot;, templateVars, user);</span>
+    }
+    
+    @Override
+    @Transactional
+    public EmailNotification sendNewUserVerificationEmail(User user, String token) throws MessagingException {
+<span class="nc" id="L155">        Map&lt;String, Object&gt; templateVars = Map.of(</span>
+            &quot;verificationLink&quot;, frontendUrl + &quot;/verify-email?token=&quot; + token,
+<span class="nc" id="L157">            &quot;userName&quot;, user.getFirstName()</span>
+        );
+        
+<span class="nc" id="L160">        return sendTemplateEmail(user.getEmail(), &quot;Your account has been created&quot;, &quot;new-user-email&quot;, templateVars, user);</span>
+    }
+
+    @Override
+    @Transactional
+    public EmailNotification sendEmailFromNotification(EmailNotification notification) {
+        try {
+            // Create a MimeMessage from the notification
+<span class="nc" id="L168">            MimeMessage message = mailSender.createMimeMessage();</span>
+<span class="nc" id="L169">            MimeMessageHelper helper = new MimeMessageHelper(message, true, &quot;UTF-8&quot;);</span>
+            
+<span class="nc" id="L171">            helper.setTo(notification.getRecipientEmail());</span>
+<span class="nc" id="L172">            helper.setSubject(notification.getSubject());</span>
+<span class="nc" id="L173">            helper.setText(notification.getBody(), true);</span>
+            
+            // Try to send the email
+<span class="nc" id="L176">            mailSender.send(message);</span>
+            
+            // Update status to SENT
+<span class="nc" id="L179">            notification.setStatus(EmailNotification.EmailStatus.SENT);</span>
+<span class="nc" id="L180">            return emailNotificationRepository.save(notification);</span>
+<span class="nc" id="L181">        } catch (Exception e) {</span>
+            // Update status to FAILED and save error message
+<span class="nc" id="L183">            notification.setStatus(EmailNotification.EmailStatus.FAILED);</span>
+<span class="nc" id="L184">            notification.setErrorMessage(e.getMessage());</span>
+<span class="nc" id="L185">            return emailNotificationRepository.save(notification);</span>
+        }
+    }
+
+    @Override
+    @Transactional
+    public EmailNotification sendApplicationEmail(Application application, EmailEvent event) throws MessagingException {
+<span class="nc" id="L192">        EventConfig config = eventConfigs.get(event);</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        if (config == null) {</span>
+<span class="nc" id="L194">            throw new IllegalArgumentException(&quot;Unsupported email event: &quot; + event);</span>
+        }
+
+        // Determine recipient based on event configuration
+<span class="nc" id="L198">        String recipientEmail = getRecipientEmail(application, null, config.recipientType);</span>
+<span class="nc" id="L199">        User relatedUser = getRelatedUser(application, null, config.recipientType);</span>
+        
+        // Generate subject
+<span class="nc" id="L202">        String subject = String.format(config.subjectTemplate, application.getJob().getTitle());</span>
+        
+        // Generate template variables based on event
+<span class="nc" id="L205">        Map&lt;String, Object&gt; templateVars = buildApplicationTemplateVariables(application, event);</span>
+        
+<span class="nc" id="L207">        return sendTemplateEmail(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser);</span>
+    }
+
+    @Override
+    @Transactional
+    public EmailNotification sendInterviewEmail(Interview interview, EmailEvent event) throws MessagingException {
+<span class="nc" id="L213">        EventConfig config = eventConfigs.get(event);</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (config == null) {</span>
+<span class="nc" id="L215">            throw new IllegalArgumentException(&quot;Unsupported email event: &quot; + event);</span>
+        }
+
+        // Determine recipient based on event configuration
+<span class="nc" id="L219">        String recipientEmail = getRecipientEmail(interview.getApplication(), interview, config.recipientType);</span>
+<span class="nc" id="L220">        User relatedUser = getRelatedUser(interview.getApplication(), interview, config.recipientType);</span>
+        
+        // Generate subject
+<span class="nc" id="L223">        String subject = String.format(config.subjectTemplate, interview.getApplication().getJob().getTitle());</span>
+        
+        // Generate template variables based on event
+<span class="nc" id="L226">        Map&lt;String, Object&gt; templateVars = buildInterviewTemplateVariables(interview, event);</span>
+        
+<span class="nc" id="L228">        return sendTemplateEmail(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser);</span>
+    }
+
+    /**
+     * Determines the recipient email based on the recipient type
+     */
+    private String getRecipientEmail(Application application, Interview interview, RecipientType recipientType) {
+<span class="nc bnc" id="L235" title="All 4 branches missed.">        switch (recipientType) {</span>
+            case CANDIDATE:
+<span class="nc" id="L237">                return application.getCandidate().getEmail();</span>
+            case INTERVIEWER:
+<span class="nc bnc" id="L239" title="All 2 branches missed.">                if (interview == null) {</span>
+<span class="nc" id="L240">                    throw new IllegalArgumentException(&quot;Interview is required for INTERVIEWER recipient type&quot;);</span>
+                }
+<span class="nc" id="L242">                return interview.getInterviewer().getEmail();</span>
+            case ADMIN:
+                // For now, return the admin who shortlisted (if available)
+<span class="nc bnc" id="L245" title="All 2 branches missed.">                return application.getShortlistedBy() != null ? </span>
+<span class="nc" id="L246">                       application.getShortlistedBy().getEmail() : </span>
+<span class="nc" id="L247">                       application.getCandidate().getEmail(); // fallback</span>
+            default:
+<span class="nc" id="L249">                throw new IllegalArgumentException(&quot;Unsupported recipient type: &quot; + recipientType);</span>
+        }
+    }
+
+    /**
+     * Determines the related user based on the recipient type
+     */
+    private User getRelatedUser(Application application, Interview interview, RecipientType recipientType) {
+<span class="nc bnc" id="L257" title="All 4 branches missed.">        switch (recipientType) {</span>
+            case CANDIDATE:
+<span class="nc" id="L259">                return application.getCandidate();</span>
+            case INTERVIEWER:
+<span class="nc bnc" id="L261" title="All 2 branches missed.">                if (interview == null) {</span>
+<span class="nc" id="L262">                    throw new IllegalArgumentException(&quot;Interview is required for INTERVIEWER recipient type&quot;);</span>
+                }
+<span class="nc" id="L264">                return interview.getInterviewer();</span>
+            case ADMIN:
+<span class="nc" id="L266">                return application.getShortlistedBy();</span>
+            default:
+<span class="nc" id="L268">                return null;</span>
+        }
+    }
+
+    /**
+     * Builds template variables for application-related emails
+     */
+    private Map&lt;String, Object&gt; buildApplicationTemplateVariables(Application application, EmailEvent event) {
+<span class="nc" id="L276">        Map&lt;String, Object&gt; templateVars = new HashMap&lt;&gt;();</span>
+        
+        // Common variables for all application emails
+<span class="nc" id="L279">        templateVars.put(&quot;candidateName&quot;, application.getCandidate().getFirstName() + &quot; &quot; + application.getCandidate().getLastName());</span>
+<span class="nc" id="L280">        templateVars.put(&quot;jobTitle&quot;, application.getJob().getTitle());</span>
+<span class="nc" id="L281">        templateVars.put(&quot;applicationId&quot;, application.getId().toString());</span>
+        
+        // Event-specific variables
+<span class="nc bnc" id="L284" title="All 2 branches missed.">        switch (event) {</span>
+            case APPLICATION_RECEIVED:
+<span class="nc" id="L286">                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(&quot;MMMM dd, yyyy 'at' hh:mm a&quot;);</span>
+<span class="nc" id="L287">                templateVars.put(&quot;applicationDate&quot;, application.getCreatedAt().format(formatter));</span>
+<span class="nc" id="L288">                break;</span>
+            case APPLICATION_REVIEWED:
+            case APPLICATION_SHORTLISTED:
+                // No additional variables needed for these events
+                break;
+        }
+        
+<span class="nc" id="L295">        return templateVars;</span>
+    }
+
+    /**
+     * Builds template variables for interview-related emails
+     */
+    private Map&lt;String, Object&gt; buildInterviewTemplateVariables(Interview interview, EmailEvent event) {
+<span class="nc" id="L302">        Map&lt;String, Object&gt; templateVars = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L303">        Application application = interview.getApplication();</span>
+        
+        // Common variables for all interview emails
+<span class="nc" id="L306">        templateVars.put(&quot;candidateName&quot;, application.getCandidate().getFirstName() + &quot; &quot; + application.getCandidate().getLastName());</span>
+<span class="nc" id="L307">        templateVars.put(&quot;jobTitle&quot;, application.getJob().getTitle());</span>
+<span class="nc" id="L308">        templateVars.put(&quot;applicationId&quot;, application.getId().toString());</span>
+        
+        // Add scheduled date if available
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        if (interview.getScheduledAt() != null) {</span>
+<span class="nc" id="L312">            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(&quot;EEEE, MMMM dd, yyyy 'at' hh:mm a&quot;);</span>
+<span class="nc" id="L313">            templateVars.put(&quot;scheduledDate&quot;, interview.getScheduledAt().format(formatter));</span>
+        }
+        
+        // Event-specific variables
+<span class="nc bnc" id="L317" title="All 3 branches missed.">        switch (event) {</span>
+            case INTERVIEW_ASSIGNED_TO_INTERVIEWER:
+<span class="nc" id="L319">                templateVars.put(&quot;interviewerName&quot;, interview.getInterviewer().getFirstName() + &quot; &quot; + interview.getInterviewer().getLastName());</span>
+<span class="nc" id="L320">                templateVars.put(&quot;candidateEmail&quot;, application.getCandidate().getEmail());</span>
+<span class="nc" id="L321">                templateVars.put(&quot;interviewTemplate&quot;, interview.getSkeleton().getName());</span>
+<span class="nc" id="L322">                templateVars.put(&quot;interviewerPortalLink&quot;, frontendUrl + &quot;/interviewer/dashboard&quot;);</span>
+<span class="nc" id="L323">                break;</span>
+            case INTERVIEW_ASSIGNED_TO_CANDIDATE:
+<span class="nc" id="L325">                templateVars.put(&quot;candidatePortalLink&quot;, frontendUrl + &quot;/candidate/dashboard&quot;);</span>
+                break;
+        }
+        
+<span class="nc" id="L329">        return templateVars;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

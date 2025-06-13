@@ -1,0 +1,859 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.dto.AuthRequest;
+import com.ats.dto.AuthResponse;
+import com.ats.dto.UserDTO;
+import com.ats.dto.ChangePasswordRequest;
+import com.ats.dto.ForgotPasswordRequest;
+import com.ats.dto.LoginRequest;
+import com.ats.dto.ResetPasswordRequest;
+import com.ats.dto.MfaSetupRequest;
+import com.ats.dto.MfaSetupResponse;
+import com.ats.dto.MfaVerifyRequest;
+import com.ats.dto.MfaLoginRequest;
+import com.ats.model.User;
+import com.ats.model.Role;
+import com.ats.repository.UserRepository;
+import com.ats.security.JwtTokenProvider;
+import com.ats.exception.ResourceAlreadyExistsException;
+import com.ats.service.EmailService;
+import com.ats.service.PasswordResetService;
+import com.ats.service.UserService;
+import com.ats.util.TokenUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import com.ats.annotation.RequiresAuthentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/api/auth&quot;)
+@Tag(name = &quot;Authentication &amp; Profile&quot;, description = &quot;APIs for user authentication, registration, and profile management&quot;)
+<span class="fc" id="L52">@RequiredArgsConstructor</span>
+public class AuthController {
+
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider tokenProvider;
+    private final EmailService emailService;
+    private final PasswordResetService passwordResetService;
+    private final UserService userService;
+
+    @PostMapping(&quot;/signup&quot;)
+    @Operation(
+        summary = &quot;Register a new user&quot;,
+        description = &quot;Creates a new user account and sends a verification email&quot;
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;User registered successfully&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;message\&quot;: \&quot;Registration successful. Please check your email for verification.\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;400&quot;,
+            description = &quot;Invalid input or email already in use&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-02-20T10:00:00\&quot;, \&quot;message\&quot;: \&quot;Email is already in use\&quot;, \&quot;status\&quot;: 400, \&quot;error\&quot;: \&quot;Bad Request\&quot;}&quot;
+                )
+            )
+        )
+    })
+    public ResponseEntity&lt;?&gt; signup(@Valid @RequestBody AuthRequest authRequest) {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        if (userRepository.existsByEmail(authRequest.getEmail())) {</span>
+<span class="nc" id="L92">            throw new ResourceAlreadyExistsException(&quot;Email is already in use&quot;);</span>
+        }
+
+<span class="nc" id="L95">        User user = new User();</span>
+<span class="nc" id="L96">        user.setEmail(authRequest.getEmail());</span>
+<span class="nc" id="L97">        user.setPasswordHash(passwordEncoder.encode(authRequest.getPassword()));</span>
+<span class="nc" id="L98">        user.setFirstName(authRequest.getFirstName());</span>
+<span class="nc" id="L99">        user.setLastName(authRequest.getLastName());</span>
+<span class="nc" id="L100">        user.setRole(Role.CANDIDATE);</span>
+<span class="nc" id="L101">        user.setIsActive(true);</span>
+<span class="nc" id="L102">        user.setIsEmailPasswordEnabled(true);</span>
+        
+        // Generate verification token using TokenUtil
+<span class="nc" id="L105">        String verificationToken = TokenUtil.generateVerificationToken(user);</span>
+
+<span class="nc" id="L107">        user = userRepository.save(user);</span>
+
+        try {
+<span class="nc" id="L110">            emailService.sendVerificationEmail(user.getEmail(), verificationToken);</span>
+<span class="nc" id="L111">            return ResponseEntity.ok(new HashMap&lt;String, String&gt;() {{</span>
+<span class="nc" id="L112">                put(&quot;message&quot;, &quot;Registration successful. Please check your email for verification.&quot;);</span>
+<span class="nc" id="L113">            }});</span>
+<span class="nc" id="L114">        } catch (MessagingException e) {</span>
+            // Log the error but return success since user was created
+<span class="nc" id="L116">            e.printStackTrace();</span>
+<span class="nc" id="L117">            return ResponseEntity.ok(new HashMap&lt;String, String&gt;() {{</span>
+<span class="nc" id="L118">                put(&quot;message&quot;, &quot;Registration successful. However, we couldn't send the verification email. Please contact support.&quot;);</span>
+<span class="nc" id="L119">                put(&quot;verificationToken&quot;, verificationToken); // Include token in response for testing</span>
+<span class="nc" id="L120">            }});</span>
+        }
+
+        finally {
+<span class="nc" id="L124">            return ResponseEntity.ok(new HashMap&lt;String, String&gt;() {{</span>
+<span class="nc" id="L125">                put(&quot;message&quot;, &quot;Registration successful. However, we couldn't send the verification email. Please contact support.&quot;);</span>
+<span class="nc" id="L126">                put(&quot;verificationToken&quot;, verificationToken); // Include token in response for testing</span>
+<span class="nc" id="L127">            }});</span>
+        }
+    }
+
+    @PostMapping(&quot;/login&quot;)
+    @Operation(
+        summary = &quot;Login user&quot;,
+        description = &quot;Authenticates a user with email and password&quot;
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;Authentication successful&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;401&quot;,
+            description = &quot;Authentication failed, invalid credentials or email not verified&quot;
+        ),
+        @ApiResponse(
+            responseCode = &quot;202&quot;,
+            description = &quot;2FA required&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;message\&quot;: \&quot;2FA verification required\&quot;, \&quot;email\&quot;: \&quot;user@example.com\&quot;, \&quot;requires2FA\&quot;: true}&quot;
+                )
+            )
+        )
+    })
+    public ResponseEntity&lt;?&gt; login(@Valid @RequestBody LoginRequest authRequest) {
+<span class="nc" id="L161">        User user = userRepository.findByEmail(authRequest.getEmail())</span>
+<span class="nc" id="L162">            .orElseThrow(() -&gt; new RuntimeException(&quot;Invalid email or password&quot;));</span>
+
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (!user.getIsEmailVerified()) {</span>
+<span class="nc" id="L165">            throw new RuntimeException(&quot;Please verify your email before logging in&quot;);</span>
+        }
+        
+<span class="nc bnc" id="L168" title="All 4 branches missed.">        if (user.getIsActive() == null || !user.getIsActive()) {</span>
+<span class="nc" id="L169">            throw new RuntimeException(&quot;This account has been deactivated. Please contact an administrator.&quot;);</span>
+        }
+
+        // Authenticate with password
+<span class="nc" id="L173">        Authentication authentication = authenticationManager.authenticate(</span>
+<span class="nc" id="L174">            new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())</span>
+        );
+
+        // Check if user has 2FA enabled
+<span class="nc bnc" id="L178" title="All 4 branches missed.">        if (user.getMfaEnabled() != null &amp;&amp; user.getMfaEnabled()) {</span>
+            // Return a response indicating 2FA is required
+<span class="nc" id="L180">            return ResponseEntity.status(HttpStatus.ACCEPTED)</span>
+<span class="nc" id="L181">                .body(Map.of(</span>
+                    &quot;message&quot;, &quot;2FA verification required&quot;,
+<span class="nc" id="L183">                    &quot;email&quot;, user.getEmail(),</span>
+<span class="nc" id="L184">                    &quot;requires2FA&quot;, true</span>
+                ));
+        }
+
+        // If 2FA is not enabled, proceed with normal login
+<span class="nc" id="L189">        SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+<span class="nc" id="L190">        String jwt = tokenProvider.generateToken(authentication);</span>
+        
+        // Update last login time
+<span class="nc" id="L193">        user.setLastLogin(LocalDateTime.now());</span>
+<span class="nc" id="L194">        userRepository.save(user);</span>
+
+<span class="nc" id="L196">        return ResponseEntity.ok(new AuthResponse(jwt, convertToDTO(user)));</span>
+    }
+
+    @PostMapping(&quot;/logout&quot;)
+    @Operation(
+        summary = &quot;Logout user&quot;,
+        description = &quot;Logs out the current user by clearing the security context&quot;
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;User logged out successfully&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;message\&quot;: \&quot;Logged out successfully\&quot;}&quot;
+                )
+            )
+        )
+    })
+    public ResponseEntity&lt;?&gt; logout() {
+<span class="nc" id="L217">        SecurityContextHolder.clearContext();</span>
+<span class="nc" id="L218">        return ResponseEntity.ok().body(new HashMap&lt;String, String&gt;() {{</span>
+<span class="nc" id="L219">            put(&quot;message&quot;, &quot;Logged out successfully&quot;);</span>
+<span class="nc" id="L220">        }});</span>
+    }
+
+    @GetMapping(&quot;/verify-email&quot;)
+    public ResponseEntity&lt;?&gt; verifyEmail(@RequestParam String token) {
+<span class="nc" id="L225">        User user = userRepository.findByEmailVerificationToken(token)</span>
+<span class="nc" id="L226">            .orElseThrow(() -&gt; new RuntimeException(&quot;Invalid verification token&quot;));</span>
+
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (user.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {</span>
+<span class="nc" id="L229">            throw new RuntimeException(&quot;Verification token has expired&quot;);</span>
+        }
+
+<span class="nc" id="L232">        user.setIsEmailVerified(true);</span>
+<span class="nc" id="L233">        user.setEmailVerificationToken(null);</span>
+<span class="nc" id="L234">        user.setEmailVerificationTokenExpiry(null);</span>
+<span class="nc" id="L235">        userRepository.save(user);</span>
+
+<span class="nc" id="L237">        return ResponseEntity.ok().body(new HashMap&lt;String, String&gt;() {{</span>
+<span class="nc" id="L238">            put(&quot;message&quot;, &quot;Email verified successfully&quot;);</span>
+<span class="nc" id="L239">        }});</span>
+    }
+    
+    @GetMapping(&quot;/me&quot;)
+    @Operation(
+        summary = &quot;Get current user profile&quot;,
+        description = &quot;Retrieves detailed information about the currently authenticated user's profile. This endpoint returns all profile information including personal details, contact information, and account status. Authorization header with Bearer token is required.&quot;,
+        tags = {&quot;Authentication &amp; Profile&quot;}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;User profile retrieved successfully&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(implementation = UserDTO.class),
+                examples = @ExampleObject(
+                    value = &quot;{\n&quot; +
+                           &quot;  \&quot;id\&quot;: 1,\n&quot; +
+                           &quot;  \&quot;email\&quot;: \&quot;john.doe@example.com\&quot;,\n&quot; +
+                           &quot;  \&quot;firstName\&quot;: \&quot;John\&quot;,\n&quot; +
+                           &quot;  \&quot;lastName\&quot;: \&quot;Doe\&quot;,\n&quot; +
+                           &quot;  \&quot;role\&quot;: \&quot;CANDIDATE\&quot;,\n&quot; +
+                           &quot;  \&quot;department\&quot;: \&quot;Engineering\&quot;,\n&quot; +
+                           &quot;  \&quot;linkedinProfileUrl\&quot;: \&quot;https://linkedin.com/in/johndoe\&quot;,\n&quot; +
+                           &quot;  \&quot;profilePictureUrl\&quot;: \&quot;/api/files/profile-pictures/1bb1d8f6-649f-490d-85b5-621b16b5d2f7.jpg\&quot;,\n&quot; +
+                           &quot;  \&quot;birthDate\&quot;: \&quot;1990-01-15\&quot;,\n&quot; +
+                           &quot;  \&quot;phoneNumber\&quot;: \&quot;+1 (555) 123-4567\&quot;,\n&quot; +
+                           &quot;  \&quot;addressLine1\&quot;: \&quot;123 Main Street\&quot;,\n&quot; +
+                           &quot;  \&quot;addressLine2\&quot;: \&quot;Apt 4B\&quot;,\n&quot; +
+                           &quot;  \&quot;city\&quot;: \&quot;New York\&quot;,\n&quot; +
+                           &quot;  \&quot;state\&quot;: \&quot;NY\&quot;,\n&quot; +
+                           &quot;  \&quot;country\&quot;: \&quot;United States\&quot;,\n&quot; +
+                           &quot;  \&quot;postalCode\&quot;: \&quot;10001\&quot;,\n&quot; +
+                           &quot;  \&quot;bio\&quot;: \&quot;Full-stack developer with 5 years of experience...\&quot;,\n&quot; +
+                           &quot;  \&quot;isActive\&quot;: true,\n&quot; +
+                           &quot;  \&quot;isEmailVerified\&quot;: true,\n&quot; +
+                           &quot;  \&quot;isEmailPasswordEnabled\&quot;: true\n&quot; +
+                           &quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;401&quot;,
+            description = &quot;Unauthorized - Invalid or expired JWT token&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 401, \&quot;error\&quot;: \&quot;Unauthorized\&quot;, \&quot;message\&quot;: \&quot;Invalid JWT token\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;404&quot;,
+            description = &quot;User not found&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 404, \&quot;error\&quot;: \&quot;Not Found\&quot;, \&quot;message\&quot;: \&quot;User not found\&quot;}&quot;
+                )
+            )
+        )
+    })
+    @RequiresAuthentication
+    public ResponseEntity&lt;?&gt; getCurrentUser(Authentication authentication) {
+<span class="nc" id="L304">        String email = authentication.getName();</span>
+<span class="nc" id="L305">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L306">            .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+        
+<span class="nc" id="L308">        return ResponseEntity.ok(convertToDTO(user));</span>
+    }
+    
+    @PutMapping(&quot;/me&quot;)
+    @Operation(
+        summary = &quot;Update current user profile&quot;,
+        description = &quot;Updates information for the currently authenticated user. This endpoint allows users to update their profile information including personal details, contact information, and profile picture. Authorization header with Bearer token is required. Null values will clear the corresponding fields in the database.&quot;,
+        tags = {&quot;Authentication &amp; Profile&quot;}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;Profile updated successfully&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(implementation = UserDTO.class),
+                examples = @ExampleObject(
+                    value = &quot;{\n&quot; +
+                           &quot;  \&quot;id\&quot;: 1,\n&quot; +
+                           &quot;  \&quot;email\&quot;: \&quot;john.doe@example.com\&quot;,\n&quot; +
+                           &quot;  \&quot;firstName\&quot;: \&quot;John\&quot;,\n&quot; +
+                           &quot;  \&quot;lastName\&quot;: \&quot;Smith\&quot;,\n&quot; +
+                           &quot;  \&quot;role\&quot;: \&quot;CANDIDATE\&quot;,\n&quot; +
+                           &quot;  \&quot;department\&quot;: \&quot;Product\&quot;,\n&quot; +
+                           &quot;  \&quot;linkedinProfileUrl\&quot;: \&quot;https://linkedin.com/in/johnsmith\&quot;,\n&quot; +
+                           &quot;  \&quot;profilePictureUrl\&quot;: \&quot;/api/files/profile-pictures/1bb1d8f6-649f-490d-85b5-621b16b5d2f7.jpg\&quot;,\n&quot; +
+                           &quot;  \&quot;birthDate\&quot;: \&quot;1990-01-15\&quot;,\n&quot; +
+                           &quot;  \&quot;phoneNumber\&quot;: \&quot;+1 (555) 123-4567\&quot;,\n&quot; +
+                           &quot;  \&quot;addressLine1\&quot;: \&quot;456 Park Avenue\&quot;,\n&quot; +
+                           &quot;  \&quot;addressLine2\&quot;: null,\n&quot; +
+                           &quot;  \&quot;city\&quot;: \&quot;New York\&quot;,\n&quot; +
+                           &quot;  \&quot;state\&quot;: \&quot;NY\&quot;,\n&quot; +
+                           &quot;  \&quot;country\&quot;: \&quot;United States\&quot;,\n&quot; +
+                           &quot;  \&quot;postalCode\&quot;: \&quot;10022\&quot;,\n&quot; +
+                           &quot;  \&quot;bio\&quot;: \&quot;Senior developer with expertise in React and Spring Boot\&quot;,\n&quot; +
+                           &quot;  \&quot;isActive\&quot;: true,\n&quot; +
+                           &quot;  \&quot;isEmailVerified\&quot;: true,\n&quot; +
+                           &quot;  \&quot;isEmailPasswordEnabled\&quot;: true\n&quot; +
+                           &quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;400&quot;,
+            description = &quot;Invalid request body&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 400, \&quot;error\&quot;: \&quot;Bad Request\&quot;, \&quot;message\&quot;: \&quot;Invalid request body\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;401&quot;,
+            description = &quot;Unauthorized - Invalid or expired JWT token&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 401, \&quot;error\&quot;: \&quot;Unauthorized\&quot;, \&quot;message\&quot;: \&quot;Invalid JWT token\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;404&quot;,
+            description = &quot;User not found&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 404, \&quot;error\&quot;: \&quot;Not Found\&quot;, \&quot;message\&quot;: \&quot;User not found\&quot;}&quot;
+                )
+            )
+        )
+    })
+    @RequiresAuthentication
+    public ResponseEntity&lt;?&gt; updateCurrentUser(
+            Authentication authentication,
+            @Valid @RequestBody UserDTO userDTO) {
+<span class="nc" id="L385">        String email = authentication.getName();</span>
+<span class="nc" id="L386">        System.out.println(&quot;Updating profile for user: &quot; + email);</span>
+<span class="nc" id="L387">        System.out.println(&quot;Received update data: &quot; + userDTO);</span>
+        
+<span class="nc" id="L389">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L390">            .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+        
+        // Update user information (set fields regardless of null status to allow clearing fields)
+<span class="nc" id="L393">        user.setFirstName(userDTO.getFirstName());</span>
+<span class="nc" id="L394">        user.setLastName(userDTO.getLastName());</span>
+<span class="nc" id="L395">        user.setDepartment(userDTO.getDepartment());</span>
+<span class="nc" id="L396">        user.setLinkedinProfileUrl(userDTO.getLinkedinProfileUrl());</span>
+<span class="nc" id="L397">        user.setProfilePictureUrl(userDTO.getProfilePictureUrl());</span>
+        
+        // Update profile fields
+<span class="nc" id="L400">        user.setBirthDate(userDTO.getBirthDate());</span>
+<span class="nc" id="L401">        user.setPhoneNumber(userDTO.getPhoneNumber());</span>
+<span class="nc" id="L402">        user.setAddressLine1(userDTO.getAddressLine1());</span>
+<span class="nc" id="L403">        user.setAddressLine2(userDTO.getAddressLine2());</span>
+<span class="nc" id="L404">        user.setCity(userDTO.getCity());</span>
+<span class="nc" id="L405">        user.setState(userDTO.getState());</span>
+<span class="nc" id="L406">        user.setCountry(userDTO.getCountry());</span>
+<span class="nc" id="L407">        user.setPostalCode(userDTO.getPostalCode());</span>
+<span class="nc" id="L408">        user.setBio(userDTO.getBio());</span>
+        
+        // Don't update sensitive fields like email, role, active status, etc.
+        
+        // Save the updated user
+<span class="nc" id="L413">        user = userRepository.save(user);</span>
+<span class="nc" id="L414">        System.out.println(&quot;Profile updated successfully for user: &quot; + email);</span>
+        
+<span class="nc" id="L416">        UserDTO updatedUserDTO = convertToDTO(user);</span>
+<span class="nc" id="L417">        System.out.println(&quot;Returning updated user data: &quot; + updatedUserDTO);</span>
+<span class="nc" id="L418">        return ResponseEntity.ok(updatedUserDTO);</span>
+    }
+    
+    @PostMapping(&quot;/deactivate&quot;)
+    @Operation(
+        summary = &quot;Deactivate current user account&quot;,
+        description = &quot;Deactivates the currently authenticated user's account. Requires a reason for deactivation. The account will be marked as inactive but data will be preserved for future reactivation by an administrator.&quot;,
+        tags = {&quot;Authentication &amp; Profile&quot;, &quot;Security&quot;}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;, 
+            description = &quot;Account deactivated successfully&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(implementation = UserDTO.class),
+                examples = @ExampleObject(
+                    value = &quot;{\n&quot; +
+                           &quot;  \&quot;id\&quot;: 1,\n&quot; +
+                           &quot;  \&quot;email\&quot;: \&quot;john.doe@example.com\&quot;,\n&quot; +
+                           &quot;  \&quot;firstName\&quot;: \&quot;John\&quot;,\n&quot; +
+                           &quot;  \&quot;lastName\&quot;: \&quot;Doe\&quot;,\n&quot; +
+                           &quot;  \&quot;role\&quot;: \&quot;CANDIDATE\&quot;,\n&quot; +
+                           &quot;  \&quot;isActive\&quot;: false,\n&quot; +
+                           &quot;  \&quot;deactivationReason\&quot;: \&quot;Moving to a different platform\&quot;,\n&quot; +
+                           &quot;  \&quot;deactivationDate\&quot;: \&quot;2024-05-20T10:00:00\&quot;\n&quot; +
+                           &quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;400&quot;, 
+            description = &quot;Invalid request - Missing deactivation reason&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 400, \&quot;error\&quot;: \&quot;Bad Request\&quot;, \&quot;message\&quot;: \&quot;Deactivation reason is required\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;401&quot;, 
+            description = &quot;Unauthorized - Invalid or expired JWT token&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 401, \&quot;error\&quot;: \&quot;Unauthorized\&quot;, \&quot;message\&quot;: \&quot;Invalid JWT token\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;404&quot;, 
+            description = &quot;User not found&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 404, \&quot;error\&quot;: \&quot;Not Found\&quot;, \&quot;message\&quot;: \&quot;User not found\&quot;}&quot;
+                )
+            )
+        )
+    })
+    @RequiresAuthentication(message = &quot;Authentication required to deactivate your account&quot;)
+    public ResponseEntity&lt;?&gt; deactivateCurrentUser(
+            Authentication authentication,
+            @Schema(description = &quot;Deactivation request with reason&quot;, required = true, example = &quot;{\&quot;reason\&quot;: \&quot;Moving to a different platform\&quot;}&quot;)
+            @RequestBody Map&lt;String, String&gt; request) {
+<span class="nc" id="L484">        String email = authentication.getName();</span>
+<span class="nc" id="L485">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L486">            .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+        
+<span class="nc" id="L488">        String reason = request.get(&quot;reason&quot;);</span>
+<span class="nc bnc" id="L489" title="All 4 branches missed.">        if (reason == null || reason.trim().isEmpty()) {</span>
+<span class="nc" id="L490">            throw new IllegalArgumentException(&quot;Deactivation reason is required&quot;);</span>
+        }
+        
+<span class="nc" id="L493">        user.setIsActive(false);</span>
+<span class="nc" id="L494">        user.setDeactivationReason(reason);</span>
+<span class="nc" id="L495">        user.setDeactivationDate(LocalDateTime.now());</span>
+        
+<span class="nc" id="L497">        user = userRepository.save(user);</span>
+        
+<span class="nc" id="L499">        return ResponseEntity.ok(convertToDTO(user));</span>
+    }
+
+    @PostMapping(&quot;/change-password&quot;)
+    @Operation(
+        summary = &quot;Change user password&quot;,
+        description = &quot;Allows authenticated users to change their password. Requires current password for verification and the new password. The password must meet complexity requirements (minimum 8 characters, including upper and lowercase letters, numbers, and special characters).&quot;,
+        tags = {&quot;Authentication &amp; Profile&quot;, &quot;Security&quot;}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;, 
+            description = &quot;Password changed successfully&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;message\&quot;: \&quot;Password changed successfully\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;400&quot;, 
+            description = &quot;Invalid request - Current password incorrect or new password invalid&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 400, \&quot;error\&quot;: \&quot;Bad Request\&quot;, \&quot;message\&quot;: \&quot;Current password is incorrect\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;401&quot;, 
+            description = &quot;Unauthorized - Invalid or expired JWT token&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 401, \&quot;error\&quot;: \&quot;Unauthorized\&quot;, \&quot;message\&quot;: \&quot;Invalid JWT token\&quot;}&quot;
+                )
+            )
+        )
+    })
+    @RequiresAuthentication(message = &quot;Authentication required to change your password&quot;)
+    public ResponseEntity&lt;?&gt; changePassword(
+            Authentication authentication,
+            @Schema(description = &quot;Password change request with current and new password&quot;, required = true,
+                    example = &quot;{\&quot;currentPassword\&quot;: \&quot;oldPassword123\&quot;, \&quot;newPassword\&quot;: \&quot;newPassword456\&quot;, \&quot;confirmPassword\&quot;: \&quot;newPassword456\&quot;}&quot;)
+            @Valid @RequestBody ChangePasswordRequest request) {
+<span class="nc" id="L546">        String email = authentication.getName();</span>
+<span class="nc" id="L547">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L548">            .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+        
+        // Verify current password
+<span class="nc bnc" id="L551" title="All 2 branches missed.">        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {</span>
+<span class="nc" id="L552">            return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, &quot;Current password is incorrect&quot;));</span>
+        }
+        
+        // Validate new password
+<span class="nc bnc" id="L556" title="All 2 branches missed.">        if (!request.getNewPassword().equals(request.getConfirmPassword())) {</span>
+<span class="nc" id="L557">            return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, &quot;New password and confirmation do not match&quot;));</span>
+        }
+        
+        // Password strength validation could be added here
+        
+        // Update password
+<span class="nc" id="L563">        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));</span>
+<span class="nc" id="L564">        userRepository.save(user);</span>
+        
+<span class="nc" id="L566">        return ResponseEntity.ok(Map.of(&quot;message&quot;, &quot;Password changed successfully&quot;));</span>
+    }
+
+    @PostMapping(&quot;/forgot-password&quot;)
+    @Operation(
+        summary = &quot;Request password reset&quot;,
+        description = &quot;Initiates a password reset for the provided email address. If the email exists in the system, a password reset link will be sent to that address. This endpoint can be used by both email/password users and social login users. For social login users, this will enable email/password authentication.&quot;,
+        tags = {&quot;Authentication &amp; Profile&quot;, &quot;Security&quot;}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;Request processed successfully&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(
+                    type = &quot;object&quot;,
+                    example = &quot;{\&quot;message\&quot;: \&quot;If the email exists in our system, a password reset link has been sent.\&quot;}&quot;
+                ),
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;message\&quot;: \&quot;If the email exists in our system, a password reset link has been sent.\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;400&quot;,
+            description = &quot;Invalid request - Email format is invalid&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;message\&quot;: \&quot;Email is required\&quot;, \&quot;status\&quot;: 400, \&quot;error\&quot;: \&quot;Bad Request\&quot;}&quot;
+                )
+            )
+        )
+    })
+    public ResponseEntity&lt;?&gt; forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+<span class="nc" id="L602">        passwordResetService.processForgotPasswordRequest(request);</span>
+        
+        // Always return success to prevent email enumeration attacks
+<span class="nc" id="L605">        return ResponseEntity.ok(Map.of(</span>
+            &quot;message&quot;, &quot;If the email exists in our system, a password reset link has been sent.&quot;
+        ));
+    }
+    
+    @PostMapping(&quot;/reset-password&quot;)
+    @Operation(
+        summary = &quot;Reset password&quot;,
+        description = &quot;Resets a user's password using a valid reset token. The token must be valid, not expired, and not previously used. The password must meet complexity requirements. This endpoint requires no authentication as it's used in the password reset flow.&quot;,
+        tags = {&quot;Authentication &amp; Profile&quot;, &quot;Security&quot;}
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;Password reset successful&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(
+                    type = &quot;object&quot;,
+                    example = &quot;{\&quot;message\&quot;: \&quot;Password has been reset successfully. You can now log in with your new password.\&quot;}&quot;
+                ),
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;message\&quot;: \&quot;Password has been reset successfully. You can now log in with your new password.\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;400&quot;,
+            description = &quot;Invalid request or token&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(
+                    type = &quot;object&quot;,
+                    example = &quot;{\&quot;message\&quot;: \&quot;Invalid or expired token. Please request a new password reset link.\&quot;}&quot;
+                ),
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;message\&quot;: \&quot;Invalid or expired token. Please request a new password reset link.\&quot;}&quot;
+                )
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;422&quot;,
+            description = &quot;Validation error - Password does not meet requirements&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;timestamp\&quot;: \&quot;2024-05-20T10:00:00\&quot;, \&quot;status\&quot;: 422, \&quot;error\&quot;: \&quot;Unprocessable Entity\&quot;, \&quot;message\&quot;: \&quot;Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character\&quot;}&quot;
+                )
+            )
+        )
+    })
+    public ResponseEntity&lt;?&gt; resetPassword(
+        @Schema(description = &quot;Reset password request containing the token and new password&quot;, required = true)
+        @Valid @RequestBody ResetPasswordRequest request) {
+<span class="nc" id="L659">        boolean success = passwordResetService.resetPassword(request);</span>
+        
+<span class="nc bnc" id="L661" title="All 2 branches missed.">        if (success) {</span>
+<span class="nc" id="L662">            return ResponseEntity.ok(Map.of(</span>
+                &quot;message&quot;, &quot;Password has been reset successfully. You can now log in with your new password.&quot;
+            ));
+        } else {
+<span class="nc" id="L666">            return ResponseEntity.badRequest().body(Map.of(</span>
+                &quot;message&quot;, &quot;Invalid or expired token. Please request a new password reset link.&quot;
+            ));
+        }
+    }
+
+    @PostMapping(&quot;/mfa/setup&quot;)
+    @Operation(
+        summary = &quot;Set up MFA&quot;,
+        description = &quot;Initiates the setup of Multi-Factor Authentication for a user&quot;
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;MFA setup initiated successfully&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(implementation = MfaSetupResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;401&quot;,
+            description = &quot;Unauthorized - invalid password&quot;
+        ),
+        @ApiResponse(
+            responseCode = &quot;404&quot;,
+            description = &quot;User not found&quot;
+        )
+    })
+    @RequiresAuthentication(message = &quot;You must be logged in to set up MFA&quot;)
+    public ResponseEntity&lt;?&gt; setupMfa(@Valid @RequestBody MfaSetupRequest request, Authentication authentication) {
+<span class="nc" id="L697">        String email = authentication.getName();</span>
+<span class="nc" id="L698">        MfaSetupResponse response = userService.setupMfa(email, request.getCurrentPassword());</span>
+<span class="nc" id="L699">        return ResponseEntity.ok(response);</span>
+    }
+    
+    @PostMapping(&quot;/mfa/verify&quot;)
+    @Operation(
+        summary = &quot;Verify and enable MFA&quot;,
+        description = &quot;Verify a MFA code and enable MFA for the user&quot;
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;MFA enabled successfully&quot;
+        ),
+        @ApiResponse(
+            responseCode = &quot;400&quot;,
+            description = &quot;Invalid verification code&quot;
+        ),
+        @ApiResponse(
+            responseCode = &quot;404&quot;,
+            description = &quot;User not found&quot;
+        )
+    })
+    @RequiresAuthentication(message = &quot;You must be logged in to verify MFA&quot;)
+    public ResponseEntity&lt;?&gt; verifyAndEnableMfa(@Valid @RequestBody MfaVerifyRequest request, Authentication authentication) {
+<span class="nc" id="L723">        String email = authentication.getName();</span>
+<span class="nc" id="L724">        boolean success = userService.verifyAndEnableMfa(email, request.getCode(), request.getSecret());</span>
+        
+<span class="nc bnc" id="L726" title="All 2 branches missed.">        if (success) {</span>
+<span class="nc" id="L727">            return ResponseEntity.ok().body(Map.of(&quot;message&quot;, &quot;MFA enabled successfully&quot;));</span>
+        } else {
+<span class="nc" id="L729">            return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, &quot;Invalid verification code&quot;));</span>
+        }
+    }
+    
+    @PostMapping(&quot;/mfa/disable&quot;)
+    @Operation(
+        summary = &quot;Disable MFA&quot;,
+        description = &quot;Disable Multi-Factor Authentication for a user&quot;
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;MFA disabled successfully&quot;
+        ),
+        @ApiResponse(
+            responseCode = &quot;401&quot;,
+            description = &quot;Unauthorized - invalid password&quot;
+        ),
+        @ApiResponse(
+            responseCode = &quot;404&quot;,
+            description = &quot;User not found&quot;
+        )
+    })
+    @RequiresAuthentication(message = &quot;You must be logged in to disable MFA&quot;)
+    public ResponseEntity&lt;?&gt; disableMfa(@Valid @RequestBody MfaSetupRequest request, Authentication authentication) {
+<span class="nc" id="L754">        String email = authentication.getName();</span>
+<span class="nc" id="L755">        boolean success = userService.disableMfa(email, request.getCurrentPassword());</span>
+        
+<span class="nc bnc" id="L757" title="All 2 branches missed.">        if (success) {</span>
+<span class="nc" id="L758">            return ResponseEntity.ok().body(Map.of(&quot;message&quot;, &quot;MFA disabled successfully&quot;));</span>
+        } else {
+<span class="nc" id="L760">            return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, &quot;Failed to disable MFA&quot;));</span>
+        }
+    }
+    
+    @PostMapping(&quot;/mfa/login&quot;)
+    @Operation(
+        summary = &quot;Login with MFA&quot;,
+        description = &quot;Complete the login process by providing a MFA code&quot;
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;Login successful&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                schema = @Schema(implementation = AuthResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = &quot;401&quot;,
+            description = &quot;Invalid MFA code&quot;
+        ),
+        @ApiResponse(
+            responseCode = &quot;404&quot;,
+            description = &quot;User not found&quot;
+        )
+    })
+    public ResponseEntity&lt;?&gt; loginWithMfa(@Valid @RequestBody MfaLoginRequest request) {
+<span class="nc" id="L788">        User user = userRepository.findByEmail(request.getEmail())</span>
+<span class="nc" id="L789">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+                
+<span class="nc" id="L791">        boolean isValid = false;</span>
+        
+        // Try verification code first
+<span class="nc bnc" id="L794" title="All 4 branches missed.">        if (request.getCode() != null &amp;&amp; !request.getCode().isEmpty()) {</span>
+<span class="nc" id="L795">            isValid = userService.validateMfaCode(request.getEmail(), request.getCode());</span>
+        }
+        
+        // If verification code is invalid, try recovery code
+<span class="nc bnc" id="L799" title="All 6 branches missed.">        if (!isValid &amp;&amp; request.getRecoveryCode() != null &amp;&amp; !request.getRecoveryCode().isEmpty()) {</span>
+<span class="nc" id="L800">            isValid = userService.validateMfaRecoveryCode(request.getEmail(), request.getRecoveryCode());</span>
+        }
+        
+<span class="nc bnc" id="L803" title="All 2 branches missed.">        if (!isValid) {</span>
+<span class="nc" id="L804">            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)</span>
+<span class="nc" id="L805">                    .body(Map.of(&quot;message&quot;, &quot;Invalid verification code or recovery code&quot;));</span>
+        }
+        
+        // Setup authentication
+<span class="nc" id="L809">        Authentication authentication = new UsernamePasswordAuthenticationToken(</span>
+<span class="nc" id="L810">                user.getEmail(),</span>
+                null,
+<span class="nc" id="L812">                List.of(new SimpleGrantedAuthority(&quot;ROLE_&quot; + user.getRole()))</span>
+        );
+        
+<span class="nc" id="L815">        SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+        
+        // Generate JWT
+<span class="nc" id="L818">        String jwt = tokenProvider.generateToken(authentication);</span>
+        
+        // Update last login
+<span class="nc" id="L821">        user.setLastLogin(LocalDateTime.now());</span>
+<span class="nc" id="L822">        userRepository.save(user);</span>
+        
+<span class="nc" id="L824">        return ResponseEntity.ok(new AuthResponse(jwt, convertToDTO(user)));</span>
+    }
+
+    private UserDTO convertToDTO(User user) {
+<span class="nc" id="L828">        UserDTO userDTO = new UserDTO();</span>
+<span class="nc" id="L829">        userDTO.setId(user.getId());</span>
+<span class="nc" id="L830">        userDTO.setEmail(user.getEmail());</span>
+<span class="nc" id="L831">        userDTO.setFirstName(user.getFirstName());</span>
+<span class="nc" id="L832">        userDTO.setLastName(user.getLastName());</span>
+<span class="nc" id="L833">        userDTO.setRole(user.getRole());</span>
+<span class="nc" id="L834">        userDTO.setDepartment(user.getDepartment());</span>
+<span class="nc" id="L835">        userDTO.setLinkedinId(user.getLinkedinId());</span>
+<span class="nc" id="L836">        userDTO.setLinkedinProfileUrl(user.getLinkedinProfileUrl());</span>
+<span class="nc" id="L837">        userDTO.setProfilePictureUrl(user.getProfilePictureUrl());</span>
+<span class="nc" id="L838">        userDTO.setIsActive(user.getIsActive());</span>
+<span class="nc" id="L839">        userDTO.setIsEmailVerified(user.getIsEmailVerified());</span>
+<span class="nc" id="L840">        userDTO.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());</span>
+<span class="nc" id="L841">        userDTO.setLastLogin(user.getLastLogin());</span>
+        
+        // Include additional profile fields
+<span class="nc" id="L844">        userDTO.setBirthDate(user.getBirthDate());</span>
+<span class="nc" id="L845">        userDTO.setPhoneNumber(user.getPhoneNumber());</span>
+<span class="nc" id="L846">        userDTO.setAddressLine1(user.getAddressLine1());</span>
+<span class="nc" id="L847">        userDTO.setAddressLine2(user.getAddressLine2());</span>
+<span class="nc" id="L848">        userDTO.setCity(user.getCity());</span>
+<span class="nc" id="L849">        userDTO.setState(user.getState());</span>
+<span class="nc" id="L850">        userDTO.setCountry(user.getCountry());</span>
+<span class="nc" id="L851">        userDTO.setPostalCode(user.getPostalCode());</span>
+<span class="nc" id="L852">        userDTO.setBio(user.getBio());</span>
+<span class="nc" id="L853">        userDTO.setDeactivationReason(user.getDeactivationReason());</span>
+<span class="nc" id="L854">        userDTO.setDeactivationDate(user.getDeactivationDate());</span>
+        
+<span class="nc" id="L856">        return userDTO;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

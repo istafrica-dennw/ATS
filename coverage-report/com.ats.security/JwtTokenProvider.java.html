@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JwtTokenProvider.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.security</a> &gt; <span class="el_source">JwtTokenProvider.java</span></div><h1>JwtTokenProvider.java</h1><pre class="source lang-java linenums">package com.ats.security;
+
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.stereotype.Component;
+
+import java.security.Key;
+import java.util.Date;
+import java.util.stream.Collectors;
+import javax.crypto.SecretKey;
+import io.jsonwebtoken.SignatureAlgorithm;
+import java.nio.charset.StandardCharsets;
+
+@Component
+<span class="fc" id="L20">public class JwtTokenProvider {</span>
+
+    @Value(&quot;${jwt.secret}&quot;)
+    private String jwtSecret;
+
+    @Value(&quot;${jwt.expiration}&quot;)
+    private long jwtExpirationInMs;
+    
+    // Use the correct algorithm to match the tokens - HmacSHA384
+    private Key getSigningKey() {
+        // Create the key from the configured secret using HmacSHA384
+<span class="nc" id="L31">        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));</span>
+    }
+
+    public String generateToken(Authentication authentication) {
+        String username;
+        String roles;
+        
+<span class="nc" id="L38">        Object principal = authentication.getPrincipal();</span>
+        
+        // Handle different principal types
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (principal instanceof UserDetails) {</span>
+<span class="nc" id="L42">            UserDetails userDetails = (UserDetails) principal;</span>
+<span class="nc" id="L43">            username = userDetails.getUsername();</span>
+<span class="nc" id="L44">            roles = userDetails.getAuthorities().stream()</span>
+<span class="nc" id="L45">                    .map(GrantedAuthority::getAuthority)</span>
+<span class="nc" id="L46">                    .collect(Collectors.joining(&quot;,&quot;));</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        } else if (principal instanceof OidcUser) {</span>
+<span class="nc" id="L48">            OidcUser oidcUser = (OidcUser) principal;</span>
+<span class="nc" id="L49">            username = oidcUser.getEmail();</span>
+<span class="nc" id="L50">            roles = oidcUser.getAuthorities().stream()</span>
+<span class="nc" id="L51">                    .map(GrantedAuthority::getAuthority)</span>
+<span class="nc" id="L52">                    .collect(Collectors.joining(&quot;,&quot;));</span>
+<span class="nc" id="L53">        } else {</span>
+            // Fallback for other principal types
+<span class="nc" id="L55">            username = principal.toString();</span>
+<span class="nc" id="L56">            roles = authentication.getAuthorities().stream()</span>
+<span class="nc" id="L57">                    .map(GrantedAuthority::getAuthority)</span>
+<span class="nc" id="L58">                    .collect(Collectors.joining(&quot;,&quot;));</span>
+        }
+        
+<span class="nc" id="L61">        return generateTokenForUsernameAndRoles(username, roles);</span>
+    }
+    
+    // Method to generate token with consistent format for any auth method
+    public String generateTokenForUsernameAndRoles(String username, String roles) {
+<span class="nc" id="L66">        System.out.println(&quot;[DEBUG] Generating token for username: &quot; + username + &quot; with roles: &quot; + roles);</span>
+        
+<span class="nc" id="L68">        Date now = new Date();</span>
+<span class="nc" id="L69">        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);</span>
+
+<span class="nc" id="L71">        return Jwts.builder()</span>
+<span class="nc" id="L72">                .setSubject(username)</span>
+<span class="nc" id="L73">                .claim(&quot;roles&quot;, roles)</span>
+<span class="nc" id="L74">                .setIssuedAt(now)</span>
+<span class="nc" id="L75">                .setExpiration(expiryDate)</span>
+<span class="nc" id="L76">                .signWith(getSigningKey(), SignatureAlgorithm.HS384) // Explicitly use HS384 to match the tokens</span>
+<span class="nc" id="L77">                .compact();</span>
+    }
+
+    public String getUsernameFromToken(String token) {
+<span class="nc" id="L81">        Claims claims = Jwts.parserBuilder()</span>
+<span class="nc" id="L82">                .setSigningKey(getSigningKey())</span>
+<span class="nc" id="L83">                .build()</span>
+<span class="nc" id="L84">                .parseClaimsJws(token)</span>
+<span class="nc" id="L85">                .getBody();</span>
+
+<span class="nc" id="L87">        return claims.getSubject();</span>
+    }
+
+    public boolean validateToken(String token) {
+        try {
+<span class="nc" id="L92">            System.out.println(&quot;[DEBUG] Validating token starting with: &quot; + token.substring(0, Math.min(20, token.length())));</span>
+            
+<span class="nc" id="L94">            Jwts.parserBuilder()</span>
+<span class="nc" id="L95">                    .setSigningKey(getSigningKey())</span>
+<span class="nc" id="L96">                    .build()</span>
+<span class="nc" id="L97">                    .parseClaimsJws(token);</span>
+            
+<span class="nc" id="L99">            System.out.println(&quot;[DEBUG] Token validation successful&quot;);</span>
+<span class="nc" id="L100">            return true;</span>
+<span class="nc" id="L101">        } catch (JwtException | IllegalArgumentException e) {</span>
+<span class="nc" id="L102">            System.out.println(&quot;[ERROR] Invalid JWT token: &quot; + e.getMessage());</span>
+<span class="nc" id="L103">            return false;</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

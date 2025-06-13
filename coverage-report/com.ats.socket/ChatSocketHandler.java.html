@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChatSocketHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.socket</a> &gt; <span class="el_source">ChatSocketHandler.java</span></div><h1>ChatSocketHandler.java</h1><pre class="source lang-java linenums">package com.ats.socket;
+
+import com.ats.dto.ChatMessageDTO;
+import com.ats.dto.ConversationDTO;
+import com.ats.model.ConversationStatus;
+import com.ats.service.SocketChatService;
+import com.corundumstudio.socketio.AckRequest;
+import com.corundumstudio.socketio.SocketIOClient;
+import com.corundumstudio.socketio.SocketIOServer;
+import com.corundumstudio.socketio.annotation.OnConnect;
+import com.corundumstudio.socketio.annotation.OnDisconnect;
+import com.corundumstudio.socketio.annotation.OnEvent;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Component
+<span class="fc" id="L24">@Slf4j</span>
+public class ChatSocketHandler {
+
+    private final SocketIOServer server;
+    private final SocketChatService socketChatService;
+    
+    // Track active connections: conversationId -&gt; clientId
+<span class="fc" id="L31">    private final Map&lt;Long, String&gt; activeConversations = new ConcurrentHashMap&lt;&gt;();</span>
+    // Track client to user mapping: clientId -&gt; userId
+<span class="fc" id="L33">    private final Map&lt;String, Long&gt; clientUserMap = new ConcurrentHashMap&lt;&gt;();</span>
+    // Track client to conversation mapping: clientId -&gt; conversationId
+<span class="fc" id="L35">    private final Map&lt;String, Long&gt; clientConversationMap = new ConcurrentHashMap&lt;&gt;();</span>
+
+    @Autowired
+<span class="fc" id="L38">    public ChatSocketHandler(SocketIOServer server, SocketChatService socketChatService) {</span>
+<span class="fc" id="L39">        log.info(&quot;🎯 ChatSocketHandler constructor called - Injecting dependencies&quot;);</span>
+<span class="fc" id="L40">        this.server = server;</span>
+<span class="fc" id="L41">        this.socketChatService = socketChatService;</span>
+<span class="fc" id="L42">        log.info(&quot;✅ ChatSocketHandler dependencies injected successfully&quot;);</span>
+<span class="fc" id="L43">    }</span>
+
+    @PostConstruct
+    public void startServer() {
+<span class="nc" id="L47">        log.info(&quot;🚀 @PostConstruct - Starting Socket.IO server...&quot;);</span>
+<span class="nc" id="L48">        server.start();</span>
+<span class="nc" id="L49">        log.info(&quot;🎉 Socket.IO server started successfully and listening for connections&quot;);</span>
+<span class="nc" id="L50">    }</span>
+
+    @PreDestroy
+    public void stopServer() {
+<span class="nc" id="L54">        server.stop();</span>
+<span class="nc" id="L55">        log.info(&quot;Socket.IO server stopped&quot;);</span>
+<span class="nc" id="L56">    }</span>
+
+    @OnConnect
+    public void onConnect(SocketIOClient client) {
+<span class="nc" id="L60">        log.info(&quot;Client connected: {}&quot;, client.getSessionId());</span>
+<span class="nc" id="L61">    }</span>
+
+    @OnDisconnect
+    public void onDisconnect(SocketIOClient client) {
+<span class="nc" id="L65">        String clientId = client.getSessionId().toString();</span>
+<span class="nc" id="L66">        log.info(&quot;Client disconnected: {}&quot;, clientId);</span>
+        
+        // Get conversation and user info before cleanup
+<span class="nc" id="L69">        Long conversationId = clientConversationMap.get(clientId);</span>
+<span class="nc" id="L70">        Long userId = clientUserMap.get(clientId);</span>
+        
+        // Just cleanup tracking maps - don't close conversation on disconnect
+        // Conversations should only be closed when explicitly requested
+<span class="nc" id="L74">        clientUserMap.remove(clientId);</span>
+<span class="nc" id="L75">        clientConversationMap.remove(clientId);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (conversationId != null) {</span>
+<span class="nc" id="L77">            activeConversations.remove(conversationId);</span>
+        }
+        
+<span class="nc" id="L80">        log.info(&quot;Client {} disconnected and cleaned up tracking for user {} and conversation {}&quot;, </span>
+                clientId, userId, conversationId);
+<span class="nc" id="L82">    }</span>
+
+    @OnEvent(&quot;join_chat&quot;)
+    public void onJoinChat(SocketIOClient client, Map&lt;String, Object&gt; data, AckRequest ackRequest) {
+        try {
+<span class="nc" id="L87">            Long userId = Long.valueOf(data.get(&quot;userId&quot;).toString());</span>
+<span class="nc" id="L88">            String clientId = client.getSessionId().toString();</span>
+            
+<span class="nc" id="L90">            log.info(&quot;User {} joining chat&quot;, userId);</span>
+            
+            // Store client-user mapping
+<span class="nc" id="L93">            clientUserMap.put(clientId, userId);</span>
+            
+            // Get or create conversation and messages through transactional service
+<span class="nc" id="L96">            SocketChatService.ConversationJoinResult result = socketChatService.joinChat(userId);</span>
+            
+            // Store client-conversation mapping
+<span class="nc" id="L99">            clientConversationMap.put(clientId, result.getConversation().getId());</span>
+<span class="nc" id="L100">            activeConversations.put(result.getConversation().getId(), clientId);</span>
+            
+            // Join client to conversation room
+<span class="nc" id="L103">            client.joinRoom(&quot;conversation_&quot; + result.getConversation().getId());</span>
+            
+            // If this is a newly created conversation, notify all admins
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            if (result.isNewConversation()) {</span>
+<span class="nc" id="L107">                log.info(&quot;Notifying admins about new unassigned conversation {}&quot;, result.getConversation().getId());</span>
+<span class="nc" id="L108">                server.getBroadcastOperations().sendEvent(&quot;new_unassigned_conversation&quot;, result.getConversation());</span>
+            }
+            
+            // Acknowledge join with conversation data
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L113">                ackRequest.sendAckData(Map.of(</span>
+<span class="nc" id="L114">                    &quot;success&quot;, true,</span>
+<span class="nc" id="L115">                    &quot;conversation&quot;, result.getConversation(),</span>
+<span class="nc" id="L116">                    &quot;messages&quot;, result.getMessages()</span>
+                ));
+            }
+            
+<span class="nc" id="L120">            log.info(&quot;User {} joined conversation {}&quot;, userId, result.getConversation().getId());</span>
+            
+<span class="nc" id="L122">        } catch (Exception e) {</span>
+<span class="nc" id="L123">            log.error(&quot;Error in join_chat: {}&quot;, e.getMessage());</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L125">                ackRequest.sendAckData(Map.of(&quot;success&quot;, false, &quot;error&quot;, e.getMessage()));</span>
+            }
+<span class="nc" id="L127">        }</span>
+<span class="nc" id="L128">    }</span>
+
+    @OnEvent(&quot;admin_take_conversation&quot;)
+    public void onAdminTakeConversation(SocketIOClient client, Map&lt;String, Object&gt; data, AckRequest ackRequest) {
+        try {
+<span class="nc" id="L133">            Long adminId = Long.valueOf(data.get(&quot;adminId&quot;).toString());</span>
+<span class="nc" id="L134">            Long conversationId = Long.valueOf(data.get(&quot;conversationId&quot;).toString());</span>
+<span class="nc" id="L135">            String clientId = client.getSessionId().toString();</span>
+            
+<span class="nc" id="L137">            log.info(&quot;Admin {} taking conversation {}&quot;, adminId, conversationId);</span>
+            
+            // Take conversation through transactional service
+<span class="nc" id="L140">            ConversationDTO conversationDTO = socketChatService.takeConversation(adminId, conversationId);</span>
+            
+            // Store mappings
+<span class="nc" id="L143">            clientUserMap.put(clientId, adminId);</span>
+<span class="nc" id="L144">            clientConversationMap.put(clientId, conversationId);</span>
+            
+            // Join admin to conversation room
+<span class="nc" id="L147">            client.joinRoom(&quot;conversation_&quot; + conversationId);</span>
+            
+            // Notify all participants about admin assignment
+<span class="nc" id="L150">            server.getRoomOperations(&quot;conversation_&quot; + conversationId)</span>
+<span class="nc" id="L151">                .sendEvent(&quot;admin_assigned&quot;, conversationDTO);</span>
+            
+            // Notify all admins that this conversation was taken
+<span class="nc" id="L154">            server.getBroadcastOperations().sendEvent(&quot;conversation_taken&quot;, Map.of(</span>
+                &quot;conversationId&quot;, conversationId,
+                &quot;adminId&quot;, adminId
+            ));
+            
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L160">                ackRequest.sendAckData(Map.of(</span>
+<span class="nc" id="L161">                    &quot;success&quot;, true,</span>
+                    &quot;conversation&quot;, conversationDTO
+                ));
+            }
+            
+<span class="nc" id="L166">            log.info(&quot;Admin {} successfully assigned to conversation {}&quot;, adminId, conversationId);</span>
+            
+<span class="nc" id="L168">        } catch (Exception e) {</span>
+<span class="nc" id="L169">            log.error(&quot;Error in admin_take_conversation: {}&quot;, e.getMessage());</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L171">                ackRequest.sendAckData(Map.of(&quot;success&quot;, false, &quot;error&quot;, e.getMessage()));</span>
+            }
+<span class="nc" id="L173">        }</span>
+<span class="nc" id="L174">    }</span>
+
+    @OnEvent(&quot;send_message&quot;)
+    public void onSendMessage(SocketIOClient client, Map&lt;String, Object&gt; data, AckRequest ackRequest) {
+        try {
+<span class="nc" id="L179">            String clientId = client.getSessionId().toString();</span>
+<span class="nc" id="L180">            Long userId = clientUserMap.get(clientId);</span>
+<span class="nc" id="L181">            Long conversationId = clientConversationMap.get(clientId);</span>
+<span class="nc" id="L182">            String content = data.get(&quot;content&quot;).toString();</span>
+            
+<span class="nc bnc" id="L184" title="All 4 branches missed.">            if (userId == null || conversationId == null) {</span>
+<span class="nc" id="L185">                throw new RuntimeException(&quot;User not properly connected to conversation&quot;);</span>
+            }
+            
+<span class="nc" id="L188">            log.info(&quot;Sending message from user {} to conversation {}&quot;, userId, conversationId);</span>
+            
+            // Send message through transactional service
+<span class="nc" id="L191">            ChatMessageDTO messageDTO = socketChatService.sendMessage(conversationId, userId, content);</span>
+            
+            // Broadcast message to all participants in the conversation
+<span class="nc" id="L194">            server.getRoomOperations(&quot;conversation_&quot; + conversationId)</span>
+<span class="nc" id="L195">                .sendEvent(&quot;new_message&quot;, messageDTO);</span>
+            
+            // Acknowledge to sender
+<span class="nc bnc" id="L198" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L199">                ackRequest.sendAckData(Map.of(</span>
+<span class="nc" id="L200">                    &quot;success&quot;, true,</span>
+                    &quot;message&quot;, messageDTO
+                ));
+            }
+            
+<span class="nc" id="L205">            log.info(&quot;Message sent successfully: {}&quot;, messageDTO.getId());</span>
+            
+<span class="nc" id="L207">        } catch (Exception e) {</span>
+<span class="nc" id="L208">            log.error(&quot;Error in send_message: {}&quot;, e.getMessage());</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L210">                ackRequest.sendAckData(Map.of(&quot;success&quot;, false, &quot;error&quot;, e.getMessage()));</span>
+            }
+<span class="nc" id="L212">        }</span>
+<span class="nc" id="L213">    }</span>
+
+    @OnEvent(&quot;close_conversation&quot;)
+    public void onCloseConversation(SocketIOClient client, Map&lt;String, Object&gt; data, AckRequest ackRequest) {
+        try {
+<span class="nc" id="L218">            String clientId = client.getSessionId().toString();</span>
+<span class="nc" id="L219">            Long conversationId = clientConversationMap.get(clientId);</span>
+<span class="nc" id="L220">            Long userId = clientUserMap.get(clientId);</span>
+            
+<span class="nc bnc" id="L222" title="All 2 branches missed.">            if (conversationId == null) {</span>
+<span class="nc" id="L223">                throw new RuntimeException(&quot;No active conversation found&quot;);</span>
+            }
+            
+<span class="nc" id="L226">            log.info(&quot;Closing conversation {} by user {}&quot;, conversationId, userId);</span>
+            
+            // Close conversation through transactional service
+<span class="nc" id="L229">            ConversationDTO closedConversation = socketChatService.closeConversation(conversationId);</span>
+            
+            // Notify all participants
+<span class="nc" id="L232">            notifyConversationClosed(conversationId, userId);</span>
+            
+            // Remove from tracking
+<span class="nc" id="L235">            clientConversationMap.remove(clientId);</span>
+<span class="nc" id="L236">            activeConversations.remove(conversationId);</span>
+            
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L239">                ackRequest.sendAckData(Map.of(</span>
+<span class="nc" id="L240">                    &quot;success&quot;, true,</span>
+                    &quot;conversation&quot;, closedConversation
+                ));
+            }
+            
+<span class="nc" id="L245">            log.info(&quot;Conversation {} closed successfully&quot;, conversationId);</span>
+            
+<span class="nc" id="L247">        } catch (Exception e) {</span>
+<span class="nc" id="L248">            log.error(&quot;Error in close_conversation: {}&quot;, e.getMessage());</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L250">                ackRequest.sendAckData(Map.of(&quot;success&quot;, false, &quot;error&quot;, e.getMessage()));</span>
+            }
+<span class="nc" id="L252">        }</span>
+<span class="nc" id="L253">    }</span>
+
+    @OnEvent(&quot;get_unassigned_conversations&quot;)
+    public void onGetUnassignedConversations(SocketIOClient client, Map&lt;String, Object&gt; data, AckRequest ackRequest) {
+        try {
+<span class="nc" id="L258">            log.info(&quot;Fetching unassigned conversations for admin&quot;);</span>
+            
+            // Get unassigned conversations through transactional service
+<span class="nc" id="L261">            List&lt;ConversationDTO&gt; conversationDTOs = socketChatService.getUnassignedConversations();</span>
+            
+<span class="nc bnc" id="L263" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L264">                ackRequest.sendAckData(Map.of(</span>
+<span class="nc" id="L265">                    &quot;success&quot;, true,</span>
+                    &quot;conversations&quot;, conversationDTOs
+                ));
+            }
+            
+<span class="nc" id="L270">        } catch (Exception e) {</span>
+<span class="nc" id="L271">            log.error(&quot;Error fetching unassigned conversations: {}&quot;, e.getMessage());</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L273">                ackRequest.sendAckData(Map.of(&quot;success&quot;, false, &quot;error&quot;, e.getMessage()));</span>
+            }
+<span class="nc" id="L275">        }</span>
+<span class="nc" id="L276">    }</span>
+
+    @OnEvent(&quot;close_all_admin_conversations&quot;)
+    public void onCloseAllAdminConversations(SocketIOClient client, Map&lt;String, Object&gt; data, AckRequest ackRequest) {
+        try {
+<span class="nc" id="L281">            Long adminId = Long.valueOf(data.get(&quot;adminId&quot;).toString());</span>
+<span class="nc" id="L282">            log.info(&quot;Closing all conversations for admin {}&quot;, adminId);</span>
+            
+            // Get all active conversations for this admin
+<span class="nc" id="L285">            List&lt;ConversationDTO&gt; closedConversations = socketChatService.closeAllAdminConversations(adminId);</span>
+            
+            // Notify all participants of closed conversations
+<span class="nc bnc" id="L288" title="All 2 branches missed.">            for (ConversationDTO conversation : closedConversations) {</span>
+<span class="nc" id="L289">                notifyConversationClosed(conversation.getId(), adminId);</span>
+<span class="nc" id="L290">            }</span>
+            
+            // Clean up tracking for this admin
+<span class="nc" id="L293">            String clientId = client.getSessionId().toString();</span>
+<span class="nc" id="L294">            clientUserMap.remove(clientId);</span>
+<span class="nc" id="L295">            clientConversationMap.remove(clientId);</span>
+            
+<span class="nc bnc" id="L297" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L298">                ackRequest.sendAckData(Map.of(</span>
+<span class="nc" id="L299">                    &quot;success&quot;, true,</span>
+                    &quot;closedConversations&quot;, closedConversations
+                ));
+            }
+            
+<span class="nc" id="L304">            log.info(&quot;Closed {} conversations for admin {}&quot;, closedConversations.size(), adminId);</span>
+            
+<span class="nc" id="L306">        } catch (Exception e) {</span>
+<span class="nc" id="L307">            log.error(&quot;Error closing all admin conversations: {}&quot;, e.getMessage());</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">            if (ackRequest.isAckRequested()) {</span>
+<span class="nc" id="L309">                ackRequest.sendAckData(Map.of(&quot;success&quot;, false, &quot;error&quot;, e.getMessage()));</span>
+            }
+<span class="nc" id="L311">        }</span>
+<span class="nc" id="L312">    }</span>
+
+    private void notifyConversationClosed(Long conversationId, Long closedByUserId) {
+<span class="nc" id="L315">        ConversationDTO conversationDTO = new ConversationDTO();</span>
+<span class="nc" id="L316">        conversationDTO.setId(conversationId);</span>
+<span class="nc" id="L317">        conversationDTO.setStatus(ConversationStatus.CLOSED);</span>
+        
+<span class="nc" id="L319">        server.getRoomOperations(&quot;conversation_&quot; + conversationId)</span>
+<span class="nc" id="L320">            .sendEvent(&quot;conversation_closed&quot;, Map.of(</span>
+                &quot;conversation&quot;, conversationDTO,
+                &quot;closedBy&quot;, closedByUserId,
+                &quot;message&quot;, &quot;Conversation has been closed and cannot be reopened.&quot;
+            ));
+<span class="nc" id="L325">    }</span>
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,72 @@
+spring:
+  # Test Database Configuration
+  datasource:
+    url: jdbc:postgresql://postgres-test:5432/ats_test
+    username: ats_test_user
+    password: ats_test_password
+    driver-class-name: org.postgresql.Driver
+
+  # JPA Configuration for Tests
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Disable Flyway for tests - let Hibernate handle schema
+  flyway:
+    enabled: false
+
+  # Disable email for tests
+  mail:
+    host: localhost
+    port: 1025
+    username: test
+    password: test
+
+  # File Upload Configuration
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 1MB
+
+# Test JWT Configuration
+jwt:
+  secret: test-secret-key-for-testing-purposes-only
+  expiration: 3600000
+
+# Test File Upload Configuration
+file:
+  upload-dir: test-uploads
+
+# Test Logging Configuration
+logging:
+  level:
+    root: WARN
+    com.ats: INFO
+    org.hibernate.SQL: WARN
+    org.springframework.security: WARN
+    org.junit: INFO
+    org.springframework.test: INFO
+
+# Application Configuration
+app:
+  frontend:
+    url: http://localhost:3000
+  admin:
+    email: test-admin@ats.test
+    password: test-admin-password
+
+# Disable Socket.IO for tests
+socketio:
+  host: localhost
+  port: 9093
+  enabled: false
+
+# Disable Socket.IO server startup for tests
+socket:
+  io:
+    enabled: false 

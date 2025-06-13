@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomOAuth2AuthenticationSuccessHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.security</a> &gt; <span class="el_source">CustomOAuth2AuthenticationSuccessHandler.java</span></div><h1>CustomOAuth2AuthenticationSuccessHandler.java</h1><pre class="source lang-java linenums">package com.ats.security;
+
+import com.ats.model.User;
+import com.ats.model.Role;
+import com.ats.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
+import org.springframework.stereotype.Component;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.Collections;
+
+@Component
+public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+    
+    @Value(&quot;${app.frontend.url}&quot;)
+    private String frontendUrl;
+    
+    private final UserRepository userRepository;
+    private final JwtTokenProvider tokenProvider;
+    
+    @Autowired
+    public CustomOAuth2AuthenticationSuccessHandler(
+            UserRepository userRepository,
+<span class="fc" id="L36">            JwtTokenProvider tokenProvider) {</span>
+<span class="fc" id="L37">        this.userRepository = userRepository;</span>
+<span class="fc" id="L38">        this.tokenProvider = tokenProvider;</span>
+<span class="fc" id="L39">    }</span>
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException, ServletException {
+        
+<span class="nc" id="L45">        System.out.println(&quot;[DEBUG] OAuth2 Authentication Success Handler called&quot;);</span>
+        
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (authentication instanceof OAuth2AuthenticationToken) {</span>
+<span class="nc" id="L48">            OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;</span>
+<span class="nc" id="L49">            System.out.println(&quot;[DEBUG] Processing OAuth2 authentication token&quot;);</span>
+            
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (oauthToken.getPrincipal() instanceof OidcUser) {</span>
+<span class="nc" id="L52">                OidcUser oidcUser = (OidcUser) oauthToken.getPrincipal();</span>
+<span class="nc" id="L53">                System.out.println(&quot;[DEBUG] Processing OIDC user&quot;);</span>
+                
+                // Save or update the user in the database
+<span class="nc" id="L56">                User user = saveOrUpdateUser(oidcUser, oauthToken.getAuthorizedClientRegistrationId());</span>
+                
+<span class="nc bnc" id="L58" title="All 2 branches missed.">                if (user != null) {</span>
+                    // Check if user account is active
+<span class="nc bnc" id="L60" title="All 4 branches missed.">                    if (user.getIsActive() == null || !user.getIsActive()) {</span>
+<span class="nc" id="L61">                        System.out.println(&quot;[DEBUG] User account is deactivated: &quot; + user.getEmail());</span>
+<span class="nc" id="L62">                        response.sendRedirect(frontendUrl + &quot;/login?error=account_deactivated&quot;);</span>
+<span class="nc" id="L63">                        return;</span>
+                    }
+                    
+                    // Explicitly set the proper role for the JWT token
+<span class="nc" id="L67">                    String email = oidcUser.getEmail();</span>
+                    // Ensure we're using ROLE_CANDIDATE format
+<span class="nc" id="L69">                    String roleString = &quot;ROLE_&quot; + Role.CANDIDATE.name();</span>
+                    
+<span class="nc" id="L71">                    System.out.println(&quot;[DEBUG] Generating JWT with email: &quot; + email + &quot; and role: &quot; + roleString);</span>
+                    
+                    // Generate JWT with proper role
+<span class="nc" id="L74">                    String jwt = tokenProvider.generateTokenForUsernameAndRoles(email, roleString);</span>
+                    
+<span class="nc" id="L76">                    System.out.println(&quot;[DEBUG] Generated JWT for LinkedIn user with proper role&quot;);</span>
+                    
+                    // Redirect to frontend with token
+<span class="nc" id="L79">                    String targetUrl = frontendUrl + &quot;/dashboard?token=&quot; + jwt;</span>
+<span class="nc" id="L80">                    System.out.println(&quot;[DEBUG] Redirecting to frontend with proper token: &quot; + targetUrl);</span>
+<span class="nc" id="L81">                    getRedirectStrategy().sendRedirect(request, response, targetUrl);</span>
+<span class="nc" id="L82">                    return;</span>
+                }
+            }
+        }
+        
+        // Fallback to standard token generation if not OAuth2 or user not found
+<span class="nc" id="L88">        String jwt = tokenProvider.generateToken(authentication);</span>
+<span class="nc" id="L89">        System.out.println(&quot;[DEBUG] Generated JWT token using standard method: &quot; + jwt);</span>
+        
+        // Always redirect to frontend dashboard with the JWT token
+<span class="nc" id="L92">        String targetUrl = frontendUrl + &quot;/dashboard?token=&quot; + jwt;</span>
+<span class="nc" id="L93">        System.out.println(&quot;[DEBUG] Redirecting to frontend with token: &quot; + targetUrl);</span>
+<span class="nc" id="L94">        getRedirectStrategy().sendRedirect(request, response, targetUrl);</span>
+<span class="nc" id="L95">    }</span>
+    
+    private User saveOrUpdateUser(OidcUser oidcUser, String provider) {
+<span class="nc" id="L98">        System.out.println(&quot;[DEBUG] Saving or updating user from OAuth2 provider: &quot; + provider);</span>
+        
+<span class="nc" id="L100">        String email = oidcUser.getEmail();</span>
+<span class="nc" id="L101">        String sub = oidcUser.getSubject();</span>
+        
+<span class="nc bnc" id="L103" title="All 4 branches missed.">        if (email == null || sub == null) {</span>
+<span class="nc" id="L104">            System.out.println(&quot;[DEBUG] Email or subject is null, cannot save user&quot;);</span>
+<span class="nc" id="L105">            return null;</span>
+        }
+        
+        try {
+            // Try to find user by provider ID
+<span class="nc" id="L110">            Optional&lt;User&gt; existingUserByProviderId = null;</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">            if (&quot;linkedin&quot;.equals(provider)) {</span>
+<span class="nc" id="L112">                existingUserByProviderId = userRepository.findByLinkedinId(sub);</span>
+            }
+            
+            // If not found by provider ID, try by email
+<span class="nc bnc" id="L116" title="All 4 branches missed.">            if (existingUserByProviderId == null || existingUserByProviderId.isEmpty()) {</span>
+<span class="nc" id="L117">                System.out.println(&quot;[DEBUG] User not found by provider ID, checking by email: &quot; + email);</span>
+<span class="nc" id="L118">                Optional&lt;User&gt; existingUserByEmail = userRepository.findByEmail(email);</span>
+                
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                if (existingUserByEmail.isPresent()) {</span>
+                    // User exists by email, update provider ID
+<span class="nc" id="L122">                    User user = existingUserByEmail.get();</span>
+<span class="nc" id="L123">                    System.out.println(&quot;[DEBUG] User found by email, updating provider data: &quot; + user.getId());</span>
+                    
+                    // Update provider-specific fields
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                    if (&quot;linkedin&quot;.equals(provider)) {</span>
+<span class="nc" id="L127">                        user.setLinkedinId(sub);</span>
+<span class="nc" id="L128">                        System.out.println(&quot;[DEBUG] Updated LinkedIn ID: &quot; + sub);</span>
+                    }
+                    
+                    // Update other fields
+<span class="nc" id="L132">                    updateUserFields(user, oidcUser);</span>
+                    
+<span class="nc" id="L134">                    userRepository.save(user);</span>
+<span class="nc" id="L135">                    System.out.println(&quot;[DEBUG] User updated: &quot; + user.getId());</span>
+<span class="nc" id="L136">                    return user;</span>
+                } else {
+                    // No existing user, create new one - using the same pattern as email/password signup
+<span class="nc" id="L139">                    System.out.println(&quot;[DEBUG] User not found, creating new user with email: &quot; + email);</span>
+<span class="nc" id="L140">                    User newUser = new User();</span>
+<span class="nc" id="L141">                    newUser.setEmail(email);</span>
+                    
+                    // Required fields from User entity - ALWAYS set CANDIDATE role
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                    newUser.setFirstName(oidcUser.getGivenName() != null ? oidcUser.getGivenName() : &quot;LinkedIn&quot;);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                    newUser.setLastName(oidcUser.getFamilyName() != null ? oidcUser.getFamilyName() : &quot;User&quot;);</span>
+<span class="nc" id="L146">                    newUser.setRole(Role.CANDIDATE); // IMPORTANT: setting proper role from enum</span>
+<span class="nc" id="L147">                    newUser.setIsActive(true);</span>
+<span class="nc" id="L148">                    newUser.setIsEmailVerified(true); // LinkedIn users are already verified</span>
+                    
+                    // LinkedIn specific fields
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                    if (&quot;linkedin&quot;.equals(provider)) {</span>
+<span class="nc" id="L152">                        newUser.setLinkedinId(sub);</span>
+<span class="nc" id="L153">                        newUser.setLinkedinProfileUrl(&quot;https://www.linkedin.com/in/&quot; + sub);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                        if (oidcUser.getPicture() != null) {</span>
+<span class="nc" id="L155">                            newUser.setProfilePictureUrl(oidcUser.getPicture());</span>
+                        }
+                    }
+                    
+                    // Save the user
+<span class="nc" id="L160">                    userRepository.save(newUser);</span>
+<span class="nc" id="L161">                    System.out.println(&quot;[DEBUG] New user created with email: &quot; + email + &quot; and role: &quot; + newUser.getRole());</span>
+<span class="nc" id="L162">                    return newUser;</span>
+                }
+            } else {
+                // User exists by provider ID, update other fields
+<span class="nc" id="L166">                User user = existingUserByProviderId.get();</span>
+<span class="nc" id="L167">                System.out.println(&quot;[DEBUG] User found by provider ID, updating: &quot; + user.getId());</span>
+                
+                // Update user information
+<span class="nc" id="L170">                updateUserFields(user, oidcUser);</span>
+                
+<span class="nc" id="L172">                userRepository.save(user);</span>
+<span class="nc" id="L173">                System.out.println(&quot;[DEBUG] User updated: &quot; + user.getId());</span>
+<span class="nc" id="L174">                return user;</span>
+            }
+<span class="nc" id="L176">        } catch (Exception e) {</span>
+<span class="nc" id="L177">            System.out.println(&quot;[DEBUG] Error saving/updating user: &quot; + e.getMessage());</span>
+<span class="nc" id="L178">            e.printStackTrace();</span>
+<span class="nc" id="L179">            return null;</span>
+        }
+    }
+
+    private void updateUserFields(User user, OidcUser oidcUser) {
+        // First name
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        if (oidcUser.getGivenName() != null) {</span>
+<span class="nc" id="L186">            user.setFirstName(oidcUser.getGivenName());</span>
+        }
+        
+        // Last name
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        if (oidcUser.getFamilyName() != null) {</span>
+<span class="nc" id="L191">            user.setLastName(oidcUser.getFamilyName());</span>
+        }
+        
+        // Profile picture
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (oidcUser.getPicture() != null) {</span>
+<span class="nc" id="L196">            user.setProfilePictureUrl(oidcUser.getPicture());</span>
+        }
+        
+        // Email
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (oidcUser.getEmail() != null) {</span>
+<span class="nc" id="L201">            user.setEmail(oidcUser.getEmail());</span>
+        }
+        
+        // Always ensure the role is set to CANDIDATE for LinkedIn users
+<span class="nc" id="L205">        user.setRole(Role.CANDIDATE);</span>
+        
+        // Email verification - LinkedIn users are considered verified
+<span class="nc" id="L208">        user.setIsEmailVerified(true);</span>
+<span class="nc" id="L209">    }</span>
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

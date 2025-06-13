@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JobsController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">JobsController.java</span></div><h1>JobsController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ats.dto.JobDTO;
+import com.ats.dto.UserDTO;
+import com.ats.model.JobStatus;
+import com.ats.model.WorkSetting;
+import com.ats.service.JobService;
+import com.beust.jcommander.Parameter;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@RestController
+@RequestMapping(&quot;/api/jobs&quot;)
+@Tag(name=&quot;Jobs Management&quot;, description=&quot; APIs for managing jobs in the API System&quot;)
+public class JobsController {
+    
+<span class="fc" id="L44">    private static final Logger logger = LoggerFactory.getLogger(JobsController.class);</span>
+    private JobService jobService;
+
+<span class="fc" id="L47">    public JobsController(JobService jobService){</span>
+<span class="fc" id="L48">        this.jobService =  jobService;</span>
+<span class="fc" id="L49">    }</span>
+
+    @PostMapping
+    @ApiResponses(value={
+        @ApiResponse(
+            responseCode = &quot;201&quot;,
+            description = &quot;Job successfully created&quot;,
+            content = @Content(
+                mediaType = &quot;application/json&quot;,
+                examples = @ExampleObject(
+                    value = &quot;{\&quot;id\&quot;: \&quot;1\&quot;, \&quot;title\&quot;:\&quot;Software Engineer\&quot;, \&quot;description\&quot;:\&quot;Job description goes here\&quot;   }&quot;
+                                    
+                )
+            )
+        )
+    })
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    @Operation(
+        summary = &quot;Create a new job&quot;,
+        description = &quot;Creates a new job in the system. job will be by default draft.&quot;
+    )
+
+    public ResponseEntity&lt;JobDTO&gt; createJob(
+        @Valid @RequestBody JobDTO jobDTO) {
+<span class="nc" id="L73">        logger.debug(&quot;Creating new job: {}&quot;, jobDTO);</span>
+<span class="nc" id="L74">        return ResponseEntity.ok(jobService.createJob(jobDTO));</span>
+    }
+    
+    @GetMapping
+    @Operation(
+        summary = &quot;Get all jobs with filters&quot;,
+        description = &quot;get all jobs unpaginated&quot;
+    )
+    public ResponseEntity&lt;List&lt;JobDTO&gt;&gt; getAllJobs(
+        @RequestParam(required = false) List&lt;JobStatus&gt; jobStatuses,
+        @RequestParam(required = false) List&lt;WorkSetting&gt; workSetting,
+        @RequestParam(required = false) String description
+    ) {
+<span class="nc" id="L87">        logger.debug(&quot;Getting all jobs with filters - statuses: {}, workSettings: {}, description: {}&quot;, </span>
+                    jobStatuses, workSetting, description);
+<span class="nc" id="L89">        return ResponseEntity.ok(jobService.getAllJobs(jobStatuses,workSetting,description));</span>
+    }
+
+
+
+    @GetMapping(&quot;/{id}&quot;)
+    @Operation(
+        summary = &quot;Get job by ID&quot;,
+        description = &quot;Retrieves a specific job by its ID&quot;
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = &quot;200&quot;,
+            description = &quot;Job found&quot;,
+            content = @Content(mediaType = &quot;application/json&quot;)
+        ),
+        @ApiResponse(
+            responseCode = &quot;404&quot;,
+            description = &quot;Job not found&quot;,
+            content = @Content(mediaType = &quot;application/json&quot;)
+        )
+    })
+    public ResponseEntity&lt;JobDTO&gt; getJobById(@PathVariable(&quot;id&quot;) Long id) {
+<span class="nc" id="L112">        logger.debug(&quot;Getting job with ID: {}&quot;, id);</span>
+<span class="nc" id="L113">        return ResponseEntity.ok(jobService.getJobById(id));</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    @Operation(
+        summary = &quot;Update job by ID&quot;,
+        description = &quot;Update a specific job by an its id &quot;
+    )
+    public ResponseEntity&lt;JobDTO&gt; updatedJob( @Valid @RequestBody JobDTO jobDTO, @PathVariable Long id){
+<span class="nc" id="L122">        logger.debug(&quot;Updating job with ID: {}&quot;, id);</span>
+<span class="nc" id="L123">        logger.debug(&quot;Job data: {}&quot;, jobDTO);</span>
+<span class="nc" id="L124">        return ResponseEntity.ok(jobService.updateJob(jobDTO, id));</span>
+
+    }
+
+
+
+    @PatchMapping(&quot;/{id}/status&quot;)
+    @Operation(
+        summary = &quot;Update Status&quot;,
+        description = &quot;Update a specific job status by its id&quot;
+    )
+    public ResponseEntity&lt;JobDTO&gt; updateJobStatus(@RequestBody Map&lt;String, String&gt; statusUpdate, @PathVariable Long id){
+<span class="nc" id="L136">        logger.debug(&quot;Updating job status for job ID: {}&quot;, id);</span>
+<span class="nc" id="L137">        logger.debug(&quot;Status update payload: {}&quot;, statusUpdate);</span>
+        
+<span class="nc" id="L139">        String statusStr = statusUpdate.get(&quot;status&quot;);</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        if (statusStr == null) {</span>
+<span class="nc" id="L141">            throw new IllegalArgumentException(&quot;Status field is required&quot;);</span>
+        }
+        
+        try {
+<span class="nc" id="L145">            JobStatus jobStatus = JobStatus.valueOf(statusStr);</span>
+<span class="nc" id="L146">            logger.debug(&quot;Parsed job status: {}&quot;, jobStatus);</span>
+<span class="nc" id="L147">            return ResponseEntity.ok(jobService.updateJobStatus(jobStatus, id));</span>
+<span class="nc" id="L148">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L149">            logger.error(&quot;Invalid job status: {}&quot;, statusStr, e);</span>
+<span class="nc" id="L150">            throw new IllegalArgumentException(&quot;Invalid job status: &quot; + statusStr);</span>
+        }
+    }
+    
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

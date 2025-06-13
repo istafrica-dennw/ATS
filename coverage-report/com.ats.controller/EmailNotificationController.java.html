@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmailNotificationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">EmailNotificationController.java</span></div><h1>EmailNotificationController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.dto.EmailNotificationDTO;
+import com.ats.model.EmailNotification;
+import com.ats.repository.EmailNotificationRepository;
+import com.ats.model.EmailNotification.EmailStatus;
+import com.ats.service.EmailService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/api/admin/emails&quot;)
+@PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+<span class="fc" id="L27">@RequiredArgsConstructor</span>
+@Tag(name = &quot;Email Notifications&quot;, description = &quot;Endpoints for managing email notifications&quot;)
+public class EmailNotificationController {
+
+    private final EmailNotificationRepository emailNotificationRepository;
+    private final EmailService emailService;
+
+    @GetMapping
+    @Operation(summary = &quot;Get all email notifications&quot;, description = &quot;Retrieves all email notifications with optional filtering&quot;)
+    public ResponseEntity&lt;List&lt;EmailNotificationDTO&gt;&gt; getAllEmails(
+            @RequestParam(required = false) EmailStatus status,
+            @RequestParam(required = false) String recipient,
+            @RequestParam(required = false) String templateName) {
+        
+        List&lt;EmailNotification&gt; emails;
+        
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (status != null) {</span>
+<span class="nc" id="L44">            emails = emailNotificationRepository.findByStatus(status);</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        } else if (recipient != null) {</span>
+<span class="nc" id="L46">            emails = emailNotificationRepository.findByRecipientEmail(recipient);</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        } else if (templateName != null) {</span>
+<span class="nc" id="L48">            emails = emailNotificationRepository.findByTemplateName(templateName);</span>
+        } else {
+<span class="nc" id="L50">            emails = emailNotificationRepository.findAll();</span>
+        }
+        
+<span class="nc" id="L53">        List&lt;EmailNotificationDTO&gt; emailDTOs = emails.stream()</span>
+<span class="nc" id="L54">                .map(this::convertToDTO)</span>
+<span class="nc" id="L55">                .collect(Collectors.toList());</span>
+        
+<span class="nc" id="L57">        return ResponseEntity.ok(emailDTOs);</span>
+    }
+    
+    @GetMapping(&quot;/{id}&quot;)
+    @Operation(summary = &quot;Get email notification by ID&quot;, description = &quot;Retrieves a specific email notification by its ID&quot;)
+    public ResponseEntity&lt;EmailNotificationDTO&gt; getEmailById(@PathVariable Long id) {
+<span class="nc" id="L63">        return emailNotificationRepository.findById(id)</span>
+<span class="nc" id="L64">                .map(this::convertToDTO)</span>
+<span class="nc" id="L65">                .map(ResponseEntity::ok)</span>
+<span class="nc" id="L66">                .orElse(ResponseEntity.notFound().build());</span>
+    }
+    
+    @PostMapping(&quot;/{id}/resend&quot;)
+    @Operation(summary = &quot;Resend an email&quot;, description = &quot;Attempts to resend a failed email notification&quot;)
+    public ResponseEntity&lt;?&gt; resendEmail(@PathVariable Long id) {
+<span class="nc" id="L72">        return emailNotificationRepository.findById(id)</span>
+<span class="nc" id="L73">                .map(email -&gt; {</span>
+                    try {
+                        // Update retry information
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                        email.setRetryCount(email.getRetryCount() != null ? email.getRetryCount() + 1 : 1);</span>
+<span class="nc" id="L77">                        email.setLastRetryAt(LocalDateTime.now());</span>
+<span class="nc" id="L78">                        email.setStatus(EmailStatus.PENDING);</span>
+<span class="nc" id="L79">                        emailNotificationRepository.save(email);</span>
+                        
+                        // Attempt to resend the email based on the template
+<span class="nc bnc" id="L82" title="All 2 branches missed.">                        if (email.getTemplateName().equals(&quot;verification-email&quot;)) {</span>
+                            // For verification emails
+<span class="nc" id="L84">                            emailService.sendEmailFromNotification(email);</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">                        } else if (email.getTemplateName().equals(&quot;new-user-email&quot;) &amp;&amp; email.getRelatedUser() != null) {</span>
+                            // For new user emails, assuming the email verification token is stored somewhere
+<span class="nc" id="L87">                            emailService.sendEmailFromNotification(email);</span>
+                        } else {
+                            // Generic case
+<span class="nc" id="L90">                            emailService.sendEmailFromNotification(email);</span>
+                        }
+                        
+                        // The email service will update the status if successful
+                        
+<span class="nc" id="L95">                        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L96">                        response.put(&quot;message&quot;, &quot;Email resend requested successfully&quot;);</span>
+<span class="nc" id="L97">                        return ResponseEntity.ok(response);</span>
+<span class="nc" id="L98">                    } catch (Exception e) {</span>
+<span class="nc" id="L99">                        email.setStatus(EmailStatus.FAILED);</span>
+<span class="nc" id="L100">                        email.setErrorMessage(e.getMessage());</span>
+<span class="nc" id="L101">                        emailNotificationRepository.save(email);</span>
+                        
+<span class="nc" id="L103">                        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L104">                        response.put(&quot;message&quot;, &quot;Failed to resend email: &quot; + e.getMessage());</span>
+<span class="nc" id="L105">                        return ResponseEntity.badRequest().body(response);</span>
+                    }
+                })
+<span class="nc" id="L108">                .orElse(ResponseEntity.notFound().build());</span>
+    }
+    
+    @PostMapping(&quot;/resend-all-failed&quot;)
+    @Operation(summary = &quot;Resend all failed emails&quot;, description = &quot;Attempts to resend all emails with FAILED status&quot;)
+    public ResponseEntity&lt;?&gt; resendAllFailedEmails() {
+<span class="nc" id="L114">        List&lt;EmailNotification&gt; failedEmails = emailNotificationRepository.findAllFailedEmails();</span>
+        
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (failedEmails.isEmpty()) {</span>
+<span class="nc" id="L117">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L118">            response.put(&quot;message&quot;, &quot;No failed emails found&quot;);</span>
+<span class="nc" id="L119">            return ResponseEntity.ok(response);</span>
+        }
+        
+<span class="nc" id="L122">        int successCount = 0;</span>
+<span class="nc" id="L123">        int failCount = 0;</span>
+        
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        for (EmailNotification email : failedEmails) {</span>
+            try {
+                // Update retry information
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                email.setRetryCount(email.getRetryCount() != null ? email.getRetryCount() + 1 : 1);</span>
+<span class="nc" id="L129">                email.setLastRetryAt(LocalDateTime.now());</span>
+<span class="nc" id="L130">                email.setStatus(EmailStatus.PENDING);</span>
+<span class="nc" id="L131">                emailNotificationRepository.save(email);</span>
+                
+                // Attempt to resend the email based on the template
+<span class="nc" id="L134">                emailService.sendEmailFromNotification(email);</span>
+                
+                // The email service will update the status if successful
+<span class="nc" id="L137">                successCount++;</span>
+<span class="nc" id="L138">            } catch (Exception e) {</span>
+<span class="nc" id="L139">                email.setStatus(EmailStatus.FAILED);</span>
+<span class="nc" id="L140">                email.setErrorMessage(e.getMessage());</span>
+<span class="nc" id="L141">                emailNotificationRepository.save(email);</span>
+                
+<span class="nc" id="L143">                failCount++;</span>
+<span class="nc" id="L144">            }</span>
+<span class="nc" id="L145">        }</span>
+        
+<span class="nc" id="L147">        Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L148">        response.put(&quot;message&quot;, &quot;Resend operation initiated for &quot; + failedEmails.size() + &quot; emails&quot;);</span>
+<span class="nc" id="L149">        response.put(&quot;totalEmails&quot;, failedEmails.size());</span>
+<span class="nc" id="L150">        response.put(&quot;successCount&quot;, successCount);</span>
+<span class="nc" id="L151">        response.put(&quot;failCount&quot;, failCount);</span>
+        
+<span class="nc" id="L153">        return ResponseEntity.ok(response);</span>
+    }
+    
+    @GetMapping(&quot;/stats&quot;)
+    @Operation(summary = &quot;Get email statistics&quot;, description = &quot;Retrieves statistics about email notifications&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; getEmailStats() {
+<span class="nc" id="L159">        long totalEmails = emailNotificationRepository.count();</span>
+<span class="nc" id="L160">        long pendingEmails = emailNotificationRepository.countByStatus(EmailStatus.PENDING);</span>
+<span class="nc" id="L161">        long sentEmails = emailNotificationRepository.countByStatus(EmailStatus.SENT);</span>
+<span class="nc" id="L162">        long failedEmails = emailNotificationRepository.countByStatus(EmailStatus.FAILED);</span>
+        
+<span class="nc" id="L164">        Map&lt;String, Object&gt; stats = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L165">        stats.put(&quot;totalEmails&quot;, totalEmails);</span>
+<span class="nc" id="L166">        stats.put(&quot;pendingEmails&quot;, pendingEmails);</span>
+<span class="nc" id="L167">        stats.put(&quot;sentEmails&quot;, sentEmails);</span>
+<span class="nc" id="L168">        stats.put(&quot;failedEmails&quot;, failedEmails);</span>
+        
+<span class="nc" id="L170">        return ResponseEntity.ok(stats);</span>
+    }
+    
+    private EmailNotificationDTO convertToDTO(EmailNotification email) {
+<span class="nc" id="L174">        return EmailNotificationDTO.builder()</span>
+<span class="nc" id="L175">                .id(email.getId())</span>
+<span class="nc" id="L176">                .recipientEmail(email.getRecipientEmail())</span>
+<span class="nc" id="L177">                .subject(email.getSubject())</span>
+<span class="nc" id="L178">                .body(email.getBody())</span>
+<span class="nc" id="L179">                .templateName(email.getTemplateName())</span>
+<span class="nc" id="L180">                .status(email.getStatus())</span>
+<span class="nc" id="L181">                .errorMessage(email.getErrorMessage())</span>
+<span class="nc" id="L182">                .retryCount(email.getRetryCount())</span>
+<span class="nc" id="L183">                .lastRetryAt(email.getLastRetryAt())</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                .relatedUserId(email.getRelatedUser() != null ? email.getRelatedUser().getId() : null)</span>
+<span class="nc" id="L185">                .createdAt(email.getCreatedAt())</span>
+<span class="nc" id="L186">                .updatedAt(email.getUpdatedAt())</span>
+<span class="nc" id="L187">                .build();</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

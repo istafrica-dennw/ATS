@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OAuth2AuthenticationSuccessHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.security</a> &gt; <span class="el_source">OAuth2AuthenticationSuccessHandler.java</span></div><h1>OAuth2AuthenticationSuccessHandler.java</h1><pre class="source lang-java linenums">package com.ats.security;
+
+import com.ats.dto.AuthResponse;
+import com.ats.dto.UserDTO;
+import com.ats.model.User;
+import com.ats.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+
+@Component
+public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    private final JwtTokenProvider tokenProvider;
+    private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
+    
+    @Value(&quot;${app.frontend.url}&quot;)
+    private String frontendUrl;
+
+    public OAuth2AuthenticationSuccessHandler(
+            JwtTokenProvider tokenProvider,
+            UserRepository userRepository,
+<span class="fc" id="L32">            ObjectMapper objectMapper) {</span>
+<span class="fc" id="L33">        this.tokenProvider = tokenProvider;</span>
+<span class="fc" id="L34">        this.userRepository = userRepository;</span>
+<span class="fc" id="L35">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L36">    }</span>
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                      Authentication authentication) throws IOException, ServletException {
+<span class="nc" id="L41">        System.out.println(&quot;\n\n[DEBUG] OAuth2 Authentication Success&quot;);</span>
+<span class="nc" id="L42">        System.out.println(&quot;[DEBUG] Request URI: &quot; + request.getRequestURI());</span>
+<span class="nc" id="L43">        System.out.println(&quot;[DEBUG] Authentication: &quot; + authentication);</span>
+
+<span class="nc" id="L45">        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();</span>
+<span class="nc" id="L46">        System.out.println(&quot;[DEBUG] OAuth2User attributes: &quot; + oAuth2User.getAttributes());</span>
+        
+<span class="nc" id="L48">        String email = oAuth2User.getAttribute(&quot;email&quot;);</span>
+<span class="nc" id="L49">        System.out.println(&quot;[DEBUG] User email: &quot; + email);</span>
+        
+<span class="nc" id="L51">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L52">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+<span class="nc" id="L53">        System.out.println(&quot;[DEBUG] Found user: &quot; + user.getEmail());</span>
+
+        // Check if the user account is active
+<span class="nc bnc" id="L56" title="All 4 branches missed.">        if (user.getIsActive() == null || !user.getIsActive()) {</span>
+<span class="nc" id="L57">            System.out.println(&quot;[DEBUG] User account is deactivated: &quot; + user.getEmail());</span>
+<span class="nc" id="L58">            response.sendRedirect(frontendUrl + &quot;/login?error=account_deactivated&quot;);</span>
+<span class="nc" id="L59">            return;</span>
+        }
+
+<span class="nc" id="L62">        String jwt = tokenProvider.generateToken(authentication);</span>
+<span class="nc" id="L63">        System.out.println(&quot;[DEBUG] Generated JWT token&quot;);</span>
+
+        // Redirect to frontend with token
+<span class="nc" id="L66">        String redirectUrl = frontendUrl + &quot;/oauth2/callback?token=&quot; + jwt;</span>
+<span class="nc" id="L67">        System.out.println(&quot;[DEBUG] Redirecting to: &quot; + redirectUrl);</span>
+<span class="nc" id="L68">        getRedirectStrategy().sendRedirect(request, response, redirectUrl);</span>
+<span class="nc" id="L69">    }</span>
+
+    private UserDTO convertToDTO(User user) {
+<span class="nc" id="L72">        UserDTO dto = new UserDTO();</span>
+<span class="nc" id="L73">        dto.setId(user.getId());</span>
+<span class="nc" id="L74">        dto.setEmail(user.getEmail());</span>
+<span class="nc" id="L75">        dto.setFirstName(user.getFirstName());</span>
+<span class="nc" id="L76">        dto.setLastName(user.getLastName());</span>
+<span class="nc" id="L77">        dto.setRole(user.getRole());</span>
+<span class="nc" id="L78">        dto.setDepartment(user.getDepartment());</span>
+<span class="nc" id="L79">        dto.setLinkedinProfileUrl(user.getLinkedinProfileUrl());</span>
+<span class="nc" id="L80">        dto.setProfilePictureUrl(user.getProfilePictureUrl());</span>
+<span class="nc" id="L81">        dto.setIsEmailPasswordEnabled(user.getIsEmailPasswordEnabled());</span>
+<span class="nc" id="L82">        dto.setLastLogin(user.getLastLogin());</span>
+<span class="nc" id="L83">        dto.setIsActive(user.getIsActive());</span>
+<span class="nc" id="L84">        return dto;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

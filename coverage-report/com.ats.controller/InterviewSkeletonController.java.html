@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InterviewSkeletonController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">InterviewSkeletonController.java</span></div><h1>InterviewSkeletonController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.dto.CreateInterviewSkeletonRequest;
+import com.ats.dto.InterviewSkeletonDTO;
+import com.ats.model.User;
+import com.ats.repository.UserRepository;
+import com.ats.service.InterviewSkeletonService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping(&quot;/api/interview-skeletons&quot;)
+<span class="fc" id="L22">@Slf4j</span>
+public class InterviewSkeletonController {
+
+    private final InterviewSkeletonService interviewSkeletonService;
+    private final UserRepository userRepository;
+
+    @Autowired
+<span class="fc" id="L29">    public InterviewSkeletonController(InterviewSkeletonService interviewSkeletonService, UserRepository userRepository) {</span>
+<span class="fc" id="L30">        this.interviewSkeletonService = interviewSkeletonService;</span>
+<span class="fc" id="L31">        this.userRepository = userRepository;</span>
+<span class="fc" id="L32">    }</span>
+
+    /**
+     * Create a new interview skeleton
+     * Admin only
+     */
+    @PostMapping
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;InterviewSkeletonDTO&gt; createSkeleton(
+            @Valid @RequestBody CreateInterviewSkeletonRequest request,
+            Authentication authentication) {
+        
+<span class="nc" id="L44">        log.info(&quot;Creating interview skeleton: {}&quot;, request.getName());</span>
+        
+        try {
+<span class="nc" id="L47">            String email = authentication.getName();</span>
+<span class="nc" id="L48">            User admin = userRepository.findByEmail(email)</span>
+<span class="nc" id="L49">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Admin not found&quot;));</span>
+            
+<span class="nc" id="L51">            InterviewSkeletonDTO skeleton = interviewSkeletonService.createSkeleton(request, admin.getId());</span>
+            
+<span class="nc" id="L53">            log.info(&quot;Interview skeleton created successfully with ID: {}&quot;, skeleton.getId());</span>
+<span class="nc" id="L54">            return new ResponseEntity&lt;&gt;(skeleton, HttpStatus.CREATED);</span>
+            
+<span class="nc" id="L56">        } catch (Exception e) {</span>
+<span class="nc" id="L57">            log.error(&quot;Error creating interview skeleton: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L58">            throw e;</span>
+        }
+    }
+
+    /**
+     * Update an existing interview skeleton
+     * Admin only
+     */
+    @PutMapping(&quot;/{skeletonId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;InterviewSkeletonDTO&gt; updateSkeleton(
+            @PathVariable Long skeletonId,
+            @Valid @RequestBody CreateInterviewSkeletonRequest request,
+            Authentication authentication) {
+        
+<span class="nc" id="L73">        log.info(&quot;Updating interview skeleton: {}&quot;, skeletonId);</span>
+        
+        try {
+<span class="nc" id="L76">            String email = authentication.getName();</span>
+<span class="nc" id="L77">            User admin = userRepository.findByEmail(email)</span>
+<span class="nc" id="L78">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Admin not found&quot;));</span>
+                    
+<span class="nc" id="L80">            InterviewSkeletonDTO skeleton = interviewSkeletonService.updateSkeleton(skeletonId, request, admin.getId());</span>
+            
+<span class="nc" id="L82">            log.info(&quot;Interview skeleton updated successfully: {}&quot;, skeletonId);</span>
+<span class="nc" id="L83">            return ResponseEntity.ok(skeleton);</span>
+            
+<span class="nc" id="L85">        } catch (Exception e) {</span>
+<span class="nc" id="L86">            log.error(&quot;Error updating interview skeleton {}: {}&quot;, skeletonId, e.getMessage());</span>
+<span class="nc" id="L87">            throw e;</span>
+        }
+    }
+
+    /**
+     * Get interview skeleton by ID
+     * Admin and Interviewer access
+     */
+    @GetMapping(&quot;/{skeletonId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('INTERVIEWER')&quot;)
+    public ResponseEntity&lt;InterviewSkeletonDTO&gt; getSkeletonById(@PathVariable Long skeletonId) {
+        
+<span class="nc" id="L99">        log.debug(&quot;Fetching interview skeleton: {}&quot;, skeletonId);</span>
+        
+<span class="nc" id="L101">        Optional&lt;InterviewSkeletonDTO&gt; skeleton = interviewSkeletonService.getSkeletonById(skeletonId);</span>
+        
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (skeleton.isPresent()) {</span>
+<span class="nc" id="L104">            return ResponseEntity.ok(skeleton.get());</span>
+        } else {
+<span class="nc" id="L106">            log.warn(&quot;Interview skeleton not found: {}&quot;, skeletonId);</span>
+<span class="nc" id="L107">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+
+    /**
+     * Get all interview skeletons for a specific job
+     * @deprecated Interview skeletons are now independent of jobs. Use getAllSkeletons() instead.
+     * Admin and Interviewer access
+     */
+    @GetMapping(&quot;/job/{jobId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN') or hasRole('INTERVIEWER')&quot;)
+    @Deprecated
+    public ResponseEntity&lt;List&lt;InterviewSkeletonDTO&gt;&gt; getSkeletonsByJob(@PathVariable Long jobId) {
+        
+<span class="nc" id="L121">        log.debug(&quot;Deprecated endpoint called - returning all skeletons since they're no longer job-specific&quot;);</span>
+        
+<span class="nc" id="L123">        List&lt;InterviewSkeletonDTO&gt; skeletons = interviewSkeletonService.getAllSkeletons();</span>
+<span class="nc" id="L124">        return ResponseEntity.ok(skeletons);</span>
+    }
+
+    /**
+     * Get all interview skeletons created by current admin
+     * Admin only
+     */
+    @GetMapping(&quot;/my-skeletons&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewSkeletonDTO&gt;&gt; getMySkeletons(Authentication authentication) {
+        
+<span class="nc" id="L135">        log.debug(&quot;Fetching skeletons created by current admin&quot;);</span>
+        
+        try {
+<span class="nc" id="L138">            String email = authentication.getName();</span>
+<span class="nc" id="L139">            User admin = userRepository.findByEmail(email)</span>
+<span class="nc" id="L140">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Admin not found&quot;));</span>
+                    
+<span class="nc" id="L142">            List&lt;InterviewSkeletonDTO&gt; skeletons = interviewSkeletonService.getSkeletonsByCreatedBy(admin.getId());</span>
+<span class="nc" id="L143">            return ResponseEntity.ok(skeletons);</span>
+            
+<span class="nc" id="L145">        } catch (Exception e) {</span>
+<span class="nc" id="L146">            log.error(&quot;Error fetching admin's skeletons: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L147">            throw e;</span>
+        }
+    }
+
+    /**
+     * Get all interview skeletons
+     * Admin only
+     */
+    @GetMapping
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;List&lt;InterviewSkeletonDTO&gt;&gt; getAllSkeletons() {
+        
+<span class="nc" id="L159">        log.debug(&quot;Fetching all interview skeletons&quot;);</span>
+        
+<span class="nc" id="L161">        List&lt;InterviewSkeletonDTO&gt; skeletons = interviewSkeletonService.getAllSkeletons();</span>
+<span class="nc" id="L162">        return ResponseEntity.ok(skeletons);</span>
+    }
+
+    /**
+     * Delete an interview skeleton
+     * Admin only
+     */
+    @DeleteMapping(&quot;/{skeletonId}&quot;)
+    @PreAuthorize(&quot;hasRole('ADMIN')&quot;)
+    public ResponseEntity&lt;Void&gt; deleteSkeleton(@PathVariable Long skeletonId) {
+        
+<span class="nc" id="L173">        log.info(&quot;Deleting interview skeleton: {}&quot;, skeletonId);</span>
+        
+        try {
+<span class="nc" id="L176">            interviewSkeletonService.deleteSkeleton(skeletonId);</span>
+<span class="nc" id="L177">            log.info(&quot;Interview skeleton deleted successfully: {}&quot;, skeletonId);</span>
+<span class="nc" id="L178">            return ResponseEntity.noContent().build();</span>
+            
+<span class="nc" id="L180">        } catch (IllegalStateException e) {</span>
+<span class="nc" id="L181">            log.warn(&quot;Cannot delete interview skeleton {}: {}&quot;, skeletonId, e.getMessage());</span>
+<span class="nc" id="L182">            return ResponseEntity.status(HttpStatus.CONFLICT).build();</span>
+            
+<span class="nc" id="L184">        } catch (Exception e) {</span>
+<span class="nc" id="L185">            log.error(&quot;Error deleting interview skeleton {}: {}&quot;, skeletonId, e.getMessage());</span>
+<span class="nc" id="L186">            throw e;</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

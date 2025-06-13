@@ -1,0 +1,64 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+ats-backend,com.ats.exception,FileStorageException,9,0,0,0,4,0,2,0,2,0
+ats-backend,com.ats.exception,ResourceNotFoundException,4,0,0,0,2,0,1,0,1,0
+ats-backend,com.ats.exception,ResourceAlreadyExistsException,0,4,0,0,0,2,0,1,0,1
+ats-backend,com.ats.exception,MfaRequiredException,9,0,0,0,4,0,2,0,2,0
+ats-backend,com.ats.exception,GlobalExceptionHandler,254,7,2,0,47,2,9,2,8,2
+ats-backend,com.ats.aspect,MfaRequirementAspect,139,10,20,0,33,4,12,2,2,2
+ats-backend,com.ats.aspect,AuthenticationAspect,61,3,6,0,16,1,4,1,1,1
+ats-backend,com.ats.service.impl,UserServiceImpl,532,248,46,18,109,56,51,10,26,3
+ats-backend,com.ats.service.impl,PasswordResetServiceImpl,159,19,14,0,36,2,9,2,2,2
+ats-backend,com.ats.service.impl,InterviewSkeletonServiceImpl,290,16,2,0,61,6,15,2,14,2
+ats-backend,com.ats.service.impl,ApplicationServiceImpl,828,28,49,0,187,10,46,2,21,2
+ats-backend,com.ats.service.impl,ChatServiceImpl,239,16,18,0,44,6,18,2,9,2
+ats-backend,com.ats.service.impl,FreeResumeAnalysisServiceImpl,1199,43,36,0,253,5,52,2,34,2
+ats-backend,com.ats.service.impl,JobServiceImpl,351,3,26,0,68,1,30,1,17,1
+ats-backend,com.ats.service.impl,EmailServiceImpl,576,0,27,0,111,0,28,0,12,0
+ats-backend,com.ats.service.impl,FileStorageServiceImpl,698,73,69,7,164,17,45,2,7,2
+ats-backend,com.ats.service.impl,TotpServiceImpl,143,37,12,0,33,7,12,1,6,1
+ats-backend,com.ats.service.impl,InterviewServiceImpl,911,25,16,0,194,9,44,2,36,2
+ats-backend,com.ats.service.impl,HealthServiceImpl,2,3,0,0,1,1,1,1,1,1
+ats-backend,com.ats.service.impl,MessageServiceImpl,30,6,2,0,5,3,3,1,2,1
+ats-backend,com.ats.service.impl,JobCustomQuestionServiceImpl,226,16,6,0,48,6,14,2,11,2
+ats-backend,com.ats.service.impl,ConversationServiceImpl,289,13,10,0,60,5,22,2,17,2
+ats-backend,com.ats.security,JwtAuthenticationFilter,108,9,8,0,29,4,6,1,2,1
+ats-backend,com.ats.security,JwtAuthenticationEntryPoint,56,3,0,0,13,1,1,1,1,1
+ats-backend,com.ats.security,CustomOAuth2UserService,232,6,16,0,58,3,9,1,1,1
+ats-backend,com.ats.security,CustomAuthorizationRequestResolver,52,10,2,0,14,3,3,1,2,1
+ats-backend,com.ats.security,JwtTokenProvider,145,3,4,0,46,1,7,1,5,1
+ats-backend,com.ats.security,LinkedInOAuth2User,64,0,0,0,13,0,10,0,10,0
+ats-backend,com.ats.security,OAuth2AuthenticationSuccessHandler,140,12,4,0,33,5,5,1,3,1
+ats-backend,com.ats.security,CustomUserDetailsService,55,6,8,0,11,3,6,1,2,1
+ats-backend,com.ats.security,CustomOAuth2AuthenticationSuccessHandler,336,9,40,0,87,4,23,1,3,1
+ats-backend,com.ats.controller.jobs,JobCustomQuestionController,144,10,2,0,32,4,4,2,3,2
+ats-backend,com.ats.controller.jobs,BaseJobController,0,3,0,0,0,1,0,1,0,1
+ats-backend,com.ats.service,SocketChatService,292,9,14,0,65,4,16,1,9,1
+ats-backend,com.ats.service,SocketChatService.ConversationJoinResult,21,0,0,0,8,0,4,0,4,0
+ats-backend,com.ats.exception.AtsCustomExceptions,BadRequestException,4,0,0,0,2,0,1,0,1,0
+ats-backend,com.ats.exception.AtsCustomExceptions,NotFoundException,4,0,0,0,2,0,1,0,1,0
+ats-backend,com.ats.util,ModelMapperUtil,21,11,0,0,4,4,3,2,3,2
+ats-backend,com.ats.util,StringListConverter,46,5,8,0,11,1,7,1,3,1
+ats-backend,com.ats.util,TokenUtil,39,0,0,0,14,0,3,0,3,0
+ats-backend,com.ats.util,StringListConverter.new TypeReference() {...},6,0,0,0,1,0,1,0,1,0
+ats-backend,com.ats.controller,AuthController,766,24,40,0,159,1,42,1,22,1
+ats-backend,com.ats.controller,HelloController,35,10,2,0,8,4,3,2,2,2
+ats-backend,com.ats.controller,UserController,73,6,4,0,13,3,11,1,9,1
+ats-backend,com.ats.controller,HealthController,3,3,0,0,1,1,1,1,1,1
+ats-backend,com.ats.controller,InterviewController,407,13,6,0,97,5,29,2,26,2
+ats-backend,com.ats.controller,AuthController.new HashMap() {...},20,0,0,0,4,0,1,0,1,0
+ats-backend,com.ats.controller,AuthController.new HashMap() {...},20,0,0,0,4,0,1,0,1,0
+ats-backend,com.ats.controller,AuthController.new HashMap() {...},11,0,0,0,3,0,1,0,1,0
+ats-backend,com.ats.controller,AuthController.new HashMap() {...},11,0,0,0,3,0,1,0,1,0
+ats-backend,com.ats.controller,CustomErrorController.GlobalExceptionHandler,84,3,0,0,16,1,4,1,4,1
+ats-backend,com.ats.controller,AuthController.new HashMap() {...},11,0,0,0,3,0,1,0,1,0
+ats-backend,com.ats.controller,InterviewSkeletonController,206,13,2,0,51,5,11,2,10,2
+ats-backend,com.ats.controller,FileUploadController,410,10,13,0,93,2,17,2,9,2
+ats-backend,com.ats.controller,ApplicationController,494,22,14,0,112,8,19,2,12,2
+ats-backend,com.ats.controller,ResumeAnalysisController,231,16,10,0,49,2,16,2,11,2
+ats-backend,com.ats.controller,EmailNotificationController,367,9,22,0,88,1,18,1,7,1
+ats-backend,com.ats.controller,JobsController,106,10,2,0,20,4,6,2,5,2
+ats-backend,com.ats.controller,AdminController,75,3,0,0,15,1,1,1,1,1
+ats-backend,com.ats.controller,TestController,22,3,0,0,5,1,2,1,2,1
+ats-backend,com.ats.controller,ChatController,198,13,2,0,45,5,8,2,7,2
+ats-backend,com.ats.controller,CustomErrorController,74,3,10,0,14,1,6,1,1,1
+ats-backend,com.ats.socket,ChatSocketHandler,679,34,36,0,139,10,29,2,11,2

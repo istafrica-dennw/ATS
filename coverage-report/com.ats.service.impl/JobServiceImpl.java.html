@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JobServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">JobServiceImpl.java</span></div><h1>JobServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import org.hibernate.annotations.NotFoundAction;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ats.dto.JobCustomQuestionDTO;
+import com.ats.dto.JobDTO;
+import com.ats.exception.AtsCustomExceptions.NotFoundException;
+import com.ats.model.Job;
+import com.ats.service.JobCustomQuestionService;
+import com.ats.model.JobStatus;
+import com.ats.model.WorkSetting;
+import com.ats.repository.JobRepository;
+import com.ats.service.JobService;
+import com.ats.util.ModelMapperUtil;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+<span class="fc" id="L25">public class JobServiceImpl implements JobService {</span>
+
+    @Autowired
+    private JobRepository jobRepository;
+    
+    @Autowired
+    private JobCustomQuestionService jobCustomQuestionService;
+
+    @Autowired
+    private ModelMapperUtil modelMapper;
+
+    @Override
+    public JobDTO createJob(JobDTO jobDTO) {
+<span class="nc" id="L38">        Job job = modelMapper.map(jobDTO, Job.class);</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (job.getJobStatus() == null){</span>
+<span class="nc" id="L40">            job.setJobStatus(JobStatus.DRAFT);</span>
+        }
+        
+<span class="nc" id="L43">        job = jobRepository.save(job);</span>
+<span class="nc" id="L44">        return modelMapper.map(job, JobDTO.class);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public JobDTO getJobById(Long id) {
+<span class="nc" id="L50">        Optional&lt;Job&gt; jobOpt = jobRepository.findById(id);</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (!jobOpt.isPresent()) {</span>
+<span class="nc" id="L52">            throw new NotFoundException(&quot;Job not found with id: &quot; + id);</span>
+        }
+        
+<span class="nc" id="L55">        Job job = jobOpt.get();</span>
+<span class="nc" id="L56">        JobDTO jobDTO = modelMapper.map(job, JobDTO.class);</span>
+        
+        // Fetch and set custom questions
+<span class="nc" id="L59">        List&lt;JobCustomQuestionDTO&gt; customQuestions = jobCustomQuestionService.getAllCustomQuestionsbyJobId(id);</span>
+<span class="nc" id="L60">        jobDTO.setCustomQuestions(customQuestions);</span>
+        
+<span class="nc" id="L62">        return jobDTO;</span>
+    }
+
+
+
+    @Override
+    public JobDTO updateJob(JobDTO jobDTO, Long id) {
+<span class="nc" id="L69">        Optional&lt;Job&gt; existingJob = jobRepository.findById(id);</span>
+        
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (existingJob.isPresent()) {</span>
+<span class="nc" id="L72">            Job updatedJob = existingJob.get();</span>
+<span class="nc" id="L73">            updatedJob.setTitle(jobDTO.getTitle());</span>
+<span class="nc" id="L74">            updatedJob.setDescription(jobDTO.getDescription());</span>
+<span class="nc" id="L75">            updatedJob.setLocation(jobDTO.getLocation());</span>
+
+<span class="nc" id="L77">            updatedJob.setDepartment(jobDTO.getDepartment());</span>
+<span class="nc" id="L78">            updatedJob.setSalaryRange(jobDTO.getSalaryRange());</span>
+<span class="nc" id="L79">            updatedJob.setEmploymentType(jobDTO.getEmploymentType());</span>
+<span class="nc" id="L80">            updatedJob.setSkills(jobDTO.getSkills());</span>
+<span class="nc" id="L81">            updatedJob.setWorkSetting(jobDTO.getWorkSetting());</span>
+<span class="nc" id="L82">            updatedJob.setJobStatus(jobDTO.getJobStatus());</span>
+<span class="nc" id="L83">            Job savedJob = jobRepository.save(updatedJob);</span>
+<span class="nc" id="L84">            return modelMapper.map(savedJob, JobDTO.class);</span>
+        } else {
+<span class="nc" id="L86">            throw new NotFoundException(&quot;Job not found with id: &quot; + jobDTO.getId());</span>
+        }
+    }
+
+    @Override
+    public boolean deleteJob(Long id) {
+<span class="nc" id="L92">        Optional&lt;Job&gt; job = jobRepository.findById(id);</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (job.isPresent()) {</span>
+<span class="nc" id="L94">            jobRepository.delete(job.get());</span>
+<span class="nc" id="L95">            return true;</span>
+        }
+<span class="nc" id="L97">        return false;</span>
+    }
+
+    @Override
+    public List&lt;JobDTO&gt; getAllJobs(
+        List&lt;JobStatus&gt; jobStatuses, 
+        List&lt;WorkSetting&gt; workSettings, 
+        String description
+    ) {
+        // Create dynamic query using Specifications
+<span class="nc" id="L107">        Specification&lt;Job&gt; spec = Specification.where(null);</span>
+
+        // Add filters only if parameters are provided
+<span class="nc bnc" id="L110" title="All 4 branches missed.">        if (jobStatuses != null &amp;&amp; !jobStatuses.isEmpty()) {</span>
+<span class="nc" id="L111">            spec = spec.and((root, query, cb) -&gt; root.get(&quot;jobStatus&quot;).in(jobStatuses));</span>
+        }
+
+<span class="nc bnc" id="L114" title="All 4 branches missed.">        if (workSettings != null &amp;&amp; !workSettings.isEmpty()) {</span>
+<span class="nc" id="L115">            spec = spec.and((root, query, cb) -&gt; root.get(&quot;workSetting&quot;).in(workSettings));</span>
+        }
+
+<span class="nc bnc" id="L118" title="All 4 branches missed.">        if (description != null &amp;&amp; !description.isEmpty()) {</span>
+<span class="nc" id="L119">            spec = spec.and((root, query, cb) -&gt; </span>
+<span class="nc" id="L120">                cb.like(cb.lower(root.get(&quot;description&quot;)), &quot;%&quot; + description.toLowerCase() + &quot;%&quot;));</span>
+        }
+
+<span class="nc bnc" id="L123" title="All 4 branches missed.">        if (description != null &amp;&amp; !description.isEmpty()) {</span>
+<span class="nc" id="L124">            spec = spec.and((root, query, cb) -&gt; cb.or(</span>
+<span class="nc" id="L125">                cb.like(cb.lower(root.get(&quot;title&quot;)), &quot;%&quot; + description.toLowerCase() + &quot;%&quot;),</span>
+<span class="nc" id="L126">                cb.like(cb.lower(root.get(&quot;description&quot;)), &quot;%&quot; + description.toLowerCase() + &quot;%&quot;)</span>
+            ));
+        }
+
+        // Execute query and map to DTOs
+<span class="nc" id="L131">        return jobRepository.findAll(spec)</span>
+<span class="nc" id="L132">                .stream()</span>
+<span class="nc" id="L133">                .map(job -&gt; modelMapper.map(job, JobDTO.class))</span>
+<span class="nc" id="L134">                .collect(Collectors.toList());</span>
+    }
+    @Override
+    public List&lt;JobDTO&gt; getActiveJobs() {
+<span class="nc" id="L138">        return jobRepository.findByJobStatusIn(List.of(JobStatus.PUBLISHED, JobStatus.REOPENED))</span>
+<span class="nc" id="L139">                .stream()</span>
+<span class="nc" id="L140">                .map(job -&gt; modelMapper.map(job, JobDTO.class))</span>
+<span class="nc" id="L141">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;JobDTO&gt; getPastJobs() {
+<span class="nc" id="L146">        return jobRepository.findByJobStatusIn(List.of(JobStatus.EXPIRED, JobStatus.CLOSED))</span>
+<span class="nc" id="L147">                .stream()</span>
+<span class="nc" id="L148">                .map(job -&gt; modelMapper.map(job, JobDTO.class))</span>
+<span class="nc" id="L149">                .collect(Collectors.toList());</span>
+    }
+    @Override
+    public List&lt;JobDTO&gt; searchJobs(String keyword, String filter) {
+<span class="nc" id="L153">        return jobRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(</span>
+            keyword, keyword)
+<span class="nc" id="L155">                .stream()</span>
+<span class="nc" id="L156">                .map(job -&gt; modelMapper.map(job, JobDTO.class))</span>
+<span class="nc" id="L157">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public JobDTO updateJobStatus(JobStatus jobStatus, Long id) {
+
+<span class="nc" id="L163">        Optional&lt;Job&gt; existingJob = jobRepository.findById(id);</span>
+        
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (existingJob.isPresent()) {</span>
+<span class="nc" id="L166">            Job updatedJob = existingJob.get();</span>
+<span class="nc" id="L167">            updatedJob.setJobStatus(jobStatus);</span>
+<span class="nc" id="L168">            Job savedJob = jobRepository.save(updatedJob);</span>
+<span class="nc" id="L169">            return modelMapper.map(savedJob, JobDTO.class);</span>
+        } else {
+<span class="nc" id="L171">            throw new NotFoundException(&quot;Job not found with id: &quot; + id);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomAuthorizationRequestResolver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.security</a> &gt; <span class="el_source">CustomAuthorizationRequestResolver.java</span></div><h1>CustomAuthorizationRequestResolver.java</h1><pre class="source lang-java linenums">package com.ats.security;
+
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+public class CustomAuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
+    private final OAuth2AuthorizationRequestResolver defaultResolver;
+
+<span class="fc" id="L22">    public CustomAuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository, String authorizationRequestBaseUri) {</span>
+<span class="fc" id="L23">        this.defaultResolver = new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, authorizationRequestBaseUri);</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
+<span class="nc" id="L28">        System.out.println(&quot;\n\n[DEBUG] ===== AUTHORIZATION REQUEST DEBUG =====&quot;);</span>
+<span class="nc" id="L29">        System.out.println(&quot;[DEBUG] Request URI: &quot; + request.getRequestURI());</span>
+        
+<span class="nc" id="L31">        OAuth2AuthorizationRequest authorizationRequest = this.defaultResolver.resolve(request);</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (authorizationRequest != null) {</span>
+<span class="nc" id="L33">            String nonce = (String) authorizationRequest.getAdditionalParameters().get(&quot;nonce&quot;);</span>
+<span class="nc" id="L34">            System.out.println(&quot;[DEBUG] Nonce from request: &quot; + nonce);</span>
+<span class="nc" id="L35">            System.out.println(&quot;[DEBUG] Authorization request URI: &quot; + authorizationRequest.getAuthorizationUri());</span>
+<span class="nc" id="L36">            System.out.println(&quot;[DEBUG] Additional parameters: &quot; + authorizationRequest.getAdditionalParameters());</span>
+<span class="nc" id="L37">            System.out.println(&quot;[DEBUG] ======================\n&quot;);</span>
+<span class="nc" id="L38">            return authorizationRequest;</span>
+        }
+
+<span class="nc" id="L41">        System.out.println(&quot;[DEBUG] No authorization request found&quot;);</span>
+<span class="nc" id="L42">        System.out.println(&quot;[DEBUG] ======================\n&quot;);</span>
+<span class="nc" id="L43">        return null;</span>
+    }
+
+    @Override
+    public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
+<span class="nc" id="L48">        return resolve(request);</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

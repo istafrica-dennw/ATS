@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConversationServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">ConversationServiceImpl.java</span></div><h1>ConversationServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import com.ats.model.Conversation;
+import com.ats.model.ConversationStatus;
+import com.ats.model.User;
+import com.ats.repository.ConversationRepository;
+import com.ats.repository.UserRepository;
+import com.ats.service.ConversationService;
+import com.ats.exception.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@Transactional
+<span class="fc" id="L20">@Slf4j</span>
+public class ConversationServiceImpl implements ConversationService {
+
+    private final ConversationRepository conversationRepository;
+    private final UserRepository userRepository;
+
+    @Autowired
+    public ConversationServiceImpl(ConversationRepository conversationRepository,
+<span class="fc" id="L28">                                 UserRepository userRepository) {</span>
+<span class="fc" id="L29">        this.conversationRepository = conversationRepository;</span>
+<span class="fc" id="L30">        this.userRepository = userRepository;</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public Conversation createConversation(Long candidateId, Long adminId) {
+<span class="nc" id="L35">        log.info(&quot;Creating conversation for candidate {} and admin {}&quot;, candidateId, adminId);</span>
+        
+        // Validate candidate exists
+<span class="nc" id="L38">        User candidate = userRepository.findById(candidateId)</span>
+<span class="nc" id="L39">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Candidate not found with ID: &quot; + candidateId));</span>
+        
+        // Validate admin exists (if provided)
+<span class="nc" id="L42">        User admin = null;</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (adminId != null) {</span>
+<span class="nc" id="L44">            admin = userRepository.findById(adminId)</span>
+<span class="nc" id="L45">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Admin not found with ID: &quot; + adminId));</span>
+        }
+        
+        // Create new conversation
+<span class="nc" id="L49">        Conversation conversation = new Conversation();</span>
+<span class="nc" id="L50">        conversation.setCandidate(candidate);</span>
+<span class="nc" id="L51">        conversation.setAdmin(admin);</span>
+<span class="nc" id="L52">        conversation.setStatus(ConversationStatus.ACTIVE);</span>
+        
+<span class="nc" id="L54">        Conversation savedConversation = conversationRepository.save(conversation);</span>
+<span class="nc" id="L55">        log.info(&quot;Conversation created successfully with ID: {}&quot;, savedConversation.getId());</span>
+        
+<span class="nc" id="L57">        return savedConversation;</span>
+    }
+
+    @Override
+    public Conversation getOrCreateConversationForCandidate(Long candidateId) {
+<span class="nc" id="L62">        log.debug(&quot;Getting or creating conversation for candidate {}&quot;, candidateId);</span>
+        
+        // Try to find existing ACTIVE conversation first
+<span class="nc" id="L65">        List&lt;Conversation&gt; activeConversations = conversationRepository.findByCandidateIdAndStatus(candidateId, ConversationStatus.ACTIVE);</span>
+        
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (!activeConversations.isEmpty()) {</span>
+<span class="nc" id="L68">            log.debug(&quot;Found existing active conversation for candidate {}&quot;, candidateId);</span>
+<span class="nc" id="L69">            return activeConversations.get(0);</span>
+        }
+        
+        // Create new conversation if no active one exists
+<span class="nc" id="L73">        log.debug(&quot;Creating new conversation for candidate {}&quot;, candidateId);</span>
+<span class="nc" id="L74">        return createConversation(candidateId, null);</span>
+    }
+
+    @Override
+    public Conversation assignAdminToConversation(Long conversationId, Long adminId) {
+<span class="nc" id="L79">        log.info(&quot;Assigning admin {} to conversation {}&quot;, adminId, conversationId);</span>
+        
+        // Validate conversation exists
+<span class="nc" id="L82">        Conversation conversation = conversationRepository.findById(conversationId)</span>
+<span class="nc" id="L83">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Conversation not found with ID: &quot; + conversationId));</span>
+        
+        // Validate admin exists
+<span class="nc" id="L86">        User admin = userRepository.findById(adminId)</span>
+<span class="nc" id="L87">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Admin not found with ID: &quot; + adminId));</span>
+        
+        // Assign admin and update conversation
+<span class="nc" id="L90">        conversation.setAdmin(admin);</span>
+<span class="nc" id="L91">        conversation.setStatus(ConversationStatus.ACTIVE);</span>
+        
+<span class="nc" id="L93">        Conversation updatedConversation = conversationRepository.save(conversation);</span>
+<span class="nc" id="L94">        log.info(&quot;Admin assigned successfully to conversation {}&quot;, conversationId);</span>
+        
+<span class="nc" id="L96">        return updatedConversation;</span>
+    }
+
+    @Override
+    public Conversation updateConversationStatus(Long conversationId, ConversationStatus status) {
+<span class="nc" id="L101">        log.info(&quot;Updating conversation {} status to {}&quot;, conversationId, status);</span>
+        
+<span class="nc" id="L103">        Conversation conversation = conversationRepository.findById(conversationId)</span>
+<span class="nc" id="L104">            .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Conversation not found with ID: &quot; + conversationId));</span>
+        
+<span class="nc" id="L106">        conversation.setStatus(status);</span>
+        
+<span class="nc" id="L108">        Conversation updatedConversation = conversationRepository.save(conversation);</span>
+<span class="nc" id="L109">        log.info(&quot;Conversation status updated successfully&quot;);</span>
+        
+<span class="nc" id="L111">        return updatedConversation;</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional&lt;Conversation&gt; getConversationById(Long conversationId) {
+<span class="nc" id="L117">        log.debug(&quot;Fetching conversation with ID: {}&quot;, conversationId);</span>
+<span class="nc" id="L118">        return conversationRepository.findById(conversationId);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Conversation&gt; getConversationsByCandidate(Long candidateId) {
+<span class="nc" id="L124">        log.debug(&quot;Fetching conversations for candidate ID: {}&quot;, candidateId);</span>
+        
+        // Validate candidate exists
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (!userRepository.existsById(candidateId)) {</span>
+<span class="nc" id="L128">            throw new ResourceNotFoundException(&quot;Candidate not found with ID: &quot; + candidateId);</span>
+        }
+        
+<span class="nc" id="L131">        return conversationRepository.findByCandidateId(candidateId);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Conversation&gt; getConversationsByAdmin(Long adminId) {
+<span class="nc" id="L137">        log.debug(&quot;Fetching conversations for admin ID: {}&quot;, adminId);</span>
+        
+        // Validate admin exists
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        if (!userRepository.existsById(adminId)) {</span>
+<span class="nc" id="L141">            throw new ResourceNotFoundException(&quot;Admin not found with ID: &quot; + adminId);</span>
+        }
+        
+<span class="nc" id="L144">        return conversationRepository.findByAdminId(adminId);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Conversation&gt; getConversationsByStatus(ConversationStatus status) {
+<span class="nc" id="L150">        log.debug(&quot;Fetching conversations with status: {}&quot;, status);</span>
+<span class="nc" id="L151">        return conversationRepository.findByStatus(status);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Conversation&gt; getActiveConversationsByAdmin(Long adminId) {
+<span class="nc" id="L157">        log.debug(&quot;Fetching active conversations for admin ID: {}&quot;, adminId);</span>
+        
+        // Validate admin exists
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        if (!userRepository.existsById(adminId)) {</span>
+<span class="nc" id="L161">            throw new ResourceNotFoundException(&quot;Admin not found with ID: &quot; + adminId);</span>
+        }
+        
+<span class="nc" id="L164">        return conversationRepository.findByAdminIdAndStatus(adminId, ConversationStatus.ACTIVE);</span>
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List&lt;Conversation&gt; getUnassignedConversations() {
+<span class="nc" id="L170">        log.debug(&quot;Fetching unassigned conversations&quot;);</span>
+<span class="nc" id="L171">        return conversationRepository.findByAdminIdAndStatus(null, ConversationStatus.ACTIVE);</span>
+    }
+
+    @Override
+    public Conversation closeConversation(Long conversationId) {
+<span class="nc" id="L176">        log.info(&quot;Closing conversation {}&quot;, conversationId);</span>
+<span class="nc" id="L177">        return updateConversationStatus(conversationId, ConversationStatus.CLOSED);</span>
+    }
+
+    @Override
+    public Conversation reopenConversation(Long conversationId) {
+<span class="nc" id="L182">        log.info(&quot;Reopening conversation {}&quot;, conversationId);</span>
+<span class="nc" id="L183">        return updateConversationStatus(conversationId, ConversationStatus.ACTIVE);</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

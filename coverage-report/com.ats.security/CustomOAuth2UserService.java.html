@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomOAuth2UserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.security</a> &gt; <span class="el_source">CustomOAuth2UserService.java</span></div><h1>CustomOAuth2UserService.java</h1><pre class="source lang-java linenums">package com.ats.security;
+
+import com.ats.model.User;
+import com.ats.model.Role;
+import com.ats.repository.UserRepository;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+
+    private final UserRepository userRepository;
+
+<span class="fc" id="L23">    public CustomOAuth2UserService(UserRepository userRepository) {</span>
+<span class="fc" id="L24">        this.userRepository = userRepository;</span>
+<span class="fc" id="L25">    }</span>
+
+    @Override
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+<span class="nc" id="L29">        System.out.println(&quot;\n\n[DEBUG] ===== TOKEN EXCHANGE DEBUG =====&quot;);</span>
+<span class="nc" id="L30">        System.out.println(&quot;[DEBUG] Client registration: &quot; + userRequest.getClientRegistration().getRegistrationId());</span>
+<span class="nc" id="L31">        System.out.println(&quot;[DEBUG] Access token: &quot; + userRequest.getAccessToken().getTokenValue());</span>
+<span class="nc" id="L32">        System.out.println(&quot;[DEBUG] Token type: &quot; + userRequest.getAccessToken().getTokenType().getValue());</span>
+<span class="nc" id="L33">        System.out.println(&quot;[DEBUG] Scopes: &quot; + userRequest.getAccessToken().getScopes());</span>
+        
+        // Enhanced token debugging
+<span class="nc" id="L36">        Map&lt;String, Object&gt; params = userRequest.getAdditionalParameters();</span>
+<span class="nc" id="L37">        System.out.println(&quot;[DEBUG] All additional parameters: &quot; + params);</span>
+        
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (params.containsKey(&quot;id_token&quot;)) {</span>
+<span class="nc" id="L40">            System.out.println(&quot;[DEBUG] ID Token found in additional parameters&quot;);</span>
+<span class="nc" id="L41">            String idToken = params.get(&quot;id_token&quot;).toString();</span>
+<span class="nc" id="L42">            System.out.println(&quot;[DEBUG] ID Token: &quot; + idToken);</span>
+            
+            // Try to decode and check the payload
+            try {
+<span class="nc" id="L46">                String[] parts = idToken.split(&quot;\\.&quot;);</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">                if (parts.length &gt;= 2) {</span>
+<span class="nc" id="L48">                    String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));</span>
+<span class="nc" id="L49">                    System.out.println(&quot;[DEBUG] ID Token payload: &quot; + payload);</span>
+                    
+                    // Check if nonce is present in the token
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                    if (payload.contains(&quot;nonce&quot;)) {</span>
+<span class="nc" id="L53">                        System.out.println(&quot;[DEBUG] Nonce found in ID token payload&quot;);</span>
+                    } else {
+<span class="nc" id="L55">                        System.out.println(&quot;[DEBUG] WARNING: Nonce NOT found in ID token payload!&quot;);</span>
+                    }
+                }
+<span class="nc" id="L58">            } catch (Exception e) {</span>
+<span class="nc" id="L59">                System.out.println(&quot;[DEBUG] Error decoding ID token: &quot; + e.getMessage());</span>
+<span class="nc" id="L60">            }</span>
+<span class="nc" id="L61">        } else {</span>
+<span class="nc" id="L62">            System.out.println(&quot;[DEBUG] No ID Token found in additional parameters - THIS IS LIKELY THE ISSUE&quot;);</span>
+            // Check if this might be an OIDC user 
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            if (userRequest.getClientRegistration().getScopes().contains(&quot;openid&quot;)) {</span>
+<span class="nc" id="L65">                System.out.println(&quot;[DEBUG] This is an OIDC flow but no ID token was received!&quot;);</span>
+            }
+        }
+        
+<span class="nc" id="L69">        OAuth2User oauth2User = super.loadUser(userRequest);</span>
+<span class="nc" id="L70">        System.out.println(&quot;[DEBUG] OAuth2User attributes: &quot; + oauth2User.getAttributes());</span>
+        
+        // Check if it's potentially an OidcUser
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (oauth2User instanceof OidcUser) {</span>
+<span class="nc" id="L74">            OidcUser oidcUser = (OidcUser) oauth2User;</span>
+<span class="nc" id="L75">            OidcIdToken idToken = oidcUser.getIdToken();</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (idToken != null) {</span>
+<span class="nc" id="L77">                System.out.println(&quot;[DEBUG] OidcIdToken found: &quot; + idToken.getTokenValue());</span>
+<span class="nc" id="L78">                System.out.println(&quot;[DEBUG] OidcIdToken claims: &quot; + idToken.getClaims());</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (idToken.getClaims().containsKey(&quot;nonce&quot;)) {</span>
+<span class="nc" id="L80">                    System.out.println(&quot;[DEBUG] Nonce in ID token: &quot; + idToken.getClaims().get(&quot;nonce&quot;));</span>
+                } else {
+<span class="nc" id="L82">                    System.out.println(&quot;[DEBUG] WARNING: No nonce in ID token claims!&quot;);</span>
+                }
+            } else {
+<span class="nc" id="L85">                System.out.println(&quot;[DEBUG] User is OidcUser but no ID token present - THIS IS UNEXPECTED&quot;);</span>
+            }
+        }
+        
+<span class="nc" id="L89">        LinkedInOAuth2User linkedInUser = new LinkedInOAuth2User(oauth2User, Role.CANDIDATE);</span>
+<span class="nc" id="L90">        System.out.println(&quot;[DEBUG] Created LinkedInOAuth2User&quot;);</span>
+
+<span class="nc" id="L92">        Optional&lt;User&gt; existingUser = userRepository.findByLinkedinId(linkedInUser.getLinkedinId());</span>
+<span class="nc" id="L93">        System.out.println(&quot;[DEBUG] Existing user by LinkedIn ID: &quot; + existingUser.isPresent());</span>
+
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (existingUser.isPresent()) {</span>
+<span class="nc" id="L96">            System.out.println(&quot;[DEBUG] Returning existing user&quot;);</span>
+<span class="nc" id="L97">            return linkedInUser;</span>
+        }
+
+<span class="nc" id="L100">        System.out.println(&quot;[DEBUG] Creating new user&quot;);</span>
+<span class="nc" id="L101">        User newUser = new User();</span>
+<span class="nc" id="L102">        newUser.setEmail(linkedInUser.getEmail());</span>
+<span class="nc" id="L103">        newUser.setFirstName(linkedInUser.getFirstName());</span>
+<span class="nc" id="L104">        newUser.setLastName(linkedInUser.getLastName());</span>
+<span class="nc" id="L105">        newUser.setLinkedinId(linkedInUser.getLinkedinId());</span>
+<span class="nc" id="L106">        newUser.setLinkedinProfileUrl(linkedInUser.getLinkedinProfileUrl());</span>
+<span class="nc" id="L107">        newUser.setProfilePictureUrl(linkedInUser.getProfilePictureUrl());</span>
+<span class="nc" id="L108">        newUser.setRole(Role.CANDIDATE);</span>
+<span class="nc" id="L109">        newUser.setIsActive(true);</span>
+
+<span class="nc" id="L111">        userRepository.save(newUser);</span>
+<span class="nc" id="L112">        System.out.println(&quot;[DEBUG] Saved new user&quot;);</span>
+<span class="nc" id="L113">        System.out.println(&quot;[DEBUG] ======================\n&quot;);</span>
+
+<span class="nc" id="L115">        return linkedInUser;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

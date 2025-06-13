@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileUploadController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">FileUploadController.java</span></div><h1>FileUploadController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.service.FileStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+@RestController
+@RequestMapping(&quot;/api/files&quot;)
+<span class="fc" id="L33">@RequiredArgsConstructor</span>
+@Tag(name = &quot;File Upload&quot;, description = &quot;APIs for file uploads&quot;)
+public class FileUploadController {
+    
+<span class="fc" id="L37">    private static final Logger logger = LoggerFactory.getLogger(FileUploadController.class);</span>
+
+    private final FileStorageService fileStorageService;
+    
+    @Value(&quot;${file.upload-dir:uploads}&quot;)
+    private String uploadDir;
+
+    @PostMapping(&quot;/upload/profile-picture&quot;)
+    @Operation(summary = &quot;Upload profile picture&quot;, description = &quot;Uploads a profile picture for a user&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;File uploaded successfully&quot;,
+            content = @Content(mediaType = &quot;application/json&quot;,
+            schema = @Schema(implementation = Map.class))),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid file format&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Server error during upload&quot;)
+    })
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; uploadProfilePicture(
+            @Parameter(description = &quot;Profile picture file to upload&quot;, required = true)
+            @RequestParam(&quot;file&quot;) MultipartFile file) {
+        
+<span class="nc" id="L57">        String fileUrl = fileStorageService.storeProfilePicture(file);</span>
+        
+<span class="nc" id="L59">        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L60">        response.put(&quot;url&quot;, fileUrl);</span>
+<span class="nc" id="L61">        response.put(&quot;message&quot;, &quot;File uploaded successfully&quot;);</span>
+        
+<span class="nc" id="L63">        return ResponseEntity.ok(response);</span>
+    }
+    
+    @PostMapping(&quot;/upload/resume&quot;)
+    @Operation(summary = &quot;Upload resume&quot;, description = &quot;Uploads a resume for a job application&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;File uploaded successfully&quot;,
+            content = @Content(mediaType = &quot;application/json&quot;,
+            schema = @Schema(implementation = Map.class))),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid file format&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Server error during upload&quot;)
+    })
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; uploadResume(
+            @Parameter(description = &quot;Resume file to upload (PDF, DOC, DOCX, TXT)&quot;, required = true)
+            @RequestParam(&quot;file&quot;) MultipartFile file) {
+        
+<span class="nc" id="L79">        String fileUrl = fileStorageService.storeResume(file);</span>
+        
+<span class="nc" id="L81">        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L82">        response.put(&quot;url&quot;, fileUrl);</span>
+<span class="nc" id="L83">        response.put(&quot;message&quot;, &quot;Resume uploaded successfully&quot;);</span>
+        
+<span class="nc" id="L85">        return ResponseEntity.ok(response);</span>
+    }
+    
+    @PostMapping(&quot;/upload/cover-letter&quot;)
+    @Operation(summary = &quot;Upload cover letter&quot;, description = &quot;Uploads a cover letter for a job application&quot;)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = &quot;200&quot;, description = &quot;File uploaded successfully&quot;,
+            content = @Content(mediaType = &quot;application/json&quot;,
+            schema = @Schema(implementation = Map.class))),
+        @ApiResponse(responseCode = &quot;400&quot;, description = &quot;Invalid file format&quot;),
+        @ApiResponse(responseCode = &quot;500&quot;, description = &quot;Server error during upload&quot;)
+    })
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; uploadCoverLetter(
+            @Parameter(description = &quot;Cover letter file to upload (PDF, DOC, DOCX, TXT)&quot;, required = true)
+            @RequestParam(&quot;file&quot;) MultipartFile file) {
+        
+<span class="nc" id="L101">        String fileUrl = fileStorageService.storeCoverLetter(file);</span>
+        
+<span class="nc" id="L103">        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L104">        response.put(&quot;url&quot;, fileUrl);</span>
+<span class="nc" id="L105">        response.put(&quot;message&quot;, &quot;Cover letter uploaded successfully&quot;);</span>
+        
+<span class="nc" id="L107">        return ResponseEntity.ok(response);</span>
+    }
+    
+    @GetMapping(&quot;/profile-pictures/{fileName:.+}&quot;)
+    @Operation(summary = &quot;Get profile picture&quot;, description = &quot;Retrieves a profile picture by its filename&quot;)
+    public ResponseEntity&lt;byte[]&gt; getProfilePicture(@PathVariable String fileName) {
+        try {
+<span class="nc" id="L114">            Path filePath = Paths.get(uploadDir).resolve(&quot;profile-pictures&quot;).resolve(fileName);</span>
+<span class="nc" id="L115">            byte[] fileBytes = Files.readAllBytes(filePath);</span>
+            
+<span class="nc" id="L117">            return ResponseEntity.ok()</span>
+<span class="nc" id="L118">                    .contentType(MediaType.IMAGE_JPEG)</span>
+<span class="nc" id="L119">                    .body(fileBytes);</span>
+<span class="nc" id="L120">        } catch (Exception e) {</span>
+<span class="nc" id="L121">            logger.error(&quot;Error retrieving profile picture: {}&quot;, fileName, e);</span>
+<span class="nc" id="L122">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+    
+    @GetMapping(&quot;/resumes/{fileName:.+}&quot;)
+    @Operation(summary = &quot;Get resume&quot;, description = &quot;Retrieves a resume by its filename&quot;)
+    public ResponseEntity&lt;byte[]&gt; getResume(@PathVariable String fileName) {
+        try {
+<span class="nc" id="L130">            Path filePath = Paths.get(uploadDir).resolve(&quot;resumes&quot;).resolve(fileName);</span>
+<span class="nc" id="L131">            byte[] fileBytes = Files.readAllBytes(filePath);</span>
+<span class="nc" id="L132">            String contentType = determineContentType(fileName);</span>
+            
+<span class="nc" id="L134">            return ResponseEntity.ok()</span>
+<span class="nc" id="L135">                    .contentType(MediaType.parseMediaType(contentType))</span>
+<span class="nc" id="L136">                    .body(fileBytes);</span>
+<span class="nc" id="L137">        } catch (Exception e) {</span>
+<span class="nc" id="L138">            logger.error(&quot;Error retrieving resume: {}&quot;, fileName, e);</span>
+<span class="nc" id="L139">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+    
+    @GetMapping(&quot;/cover-letters/{fileName:.+}&quot;)
+    @Operation(summary = &quot;Get cover letter&quot;, description = &quot;Retrieves a cover letter by its filename&quot;)
+    public ResponseEntity&lt;byte[]&gt; getCoverLetter(@PathVariable String fileName) {
+        try {
+<span class="nc" id="L147">            Path filePath = Paths.get(uploadDir).resolve(&quot;cover-letters&quot;).resolve(fileName);</span>
+<span class="nc" id="L148">            byte[] fileBytes = Files.readAllBytes(filePath);</span>
+<span class="nc" id="L149">            String contentType = determineContentType(fileName);</span>
+            
+<span class="nc" id="L151">            return ResponseEntity.ok()</span>
+<span class="nc" id="L152">                    .contentType(MediaType.parseMediaType(contentType))</span>
+<span class="nc" id="L153">                    .body(fileBytes);</span>
+<span class="nc" id="L154">        } catch (Exception e) {</span>
+<span class="nc" id="L155">            logger.error(&quot;Error retrieving cover letter: {}&quot;, fileName, e);</span>
+<span class="nc" id="L156">            return ResponseEntity.notFound().build();</span>
+        }
+    }
+    
+    private String determineContentType(String fileName) {
+<span class="nc" id="L161">        String extension = fileName.substring(fileName.lastIndexOf(&quot;.&quot;) + 1).toLowerCase();</span>
+<span class="nc bnc" id="L162" title="All 5 branches missed.">        switch (extension) {</span>
+            case &quot;pdf&quot;:
+<span class="nc" id="L164">                return &quot;application/pdf&quot;;</span>
+            case &quot;doc&quot;:
+<span class="nc" id="L166">                return &quot;application/msword&quot;;</span>
+            case &quot;docx&quot;:
+<span class="nc" id="L168">                return &quot;application/vnd.openxmlformats-officedocument.wordprocessingml.document&quot;;</span>
+            case &quot;txt&quot;:
+<span class="nc" id="L170">                return &quot;text/plain&quot;;</span>
+            default:
+<span class="nc" id="L172">                return &quot;application/octet-stream&quot;;</span>
+        }
+    }
+    
+    @GetMapping(&quot;/test&quot;)
+    @Operation(summary = &quot;Test endpoint&quot;, description = &quot;Returns information about the file storage system&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; getFileSystemInfo() {
+<span class="nc" id="L179">        Map&lt;String, Object&gt; info = new HashMap&lt;&gt;();</span>
+        
+        try {
+<span class="nc" id="L182">            Path uploadPath = Paths.get(uploadDir).toAbsolutePath();</span>
+<span class="nc" id="L183">            Path profilePicsPath = uploadPath.resolve(&quot;profile-pictures&quot;);</span>
+<span class="nc" id="L184">            Path resumesPath = uploadPath.resolve(&quot;resumes&quot;);</span>
+<span class="nc" id="L185">            Path coverLettersPath = uploadPath.resolve(&quot;cover-letters&quot;);</span>
+            
+<span class="nc" id="L187">            boolean uploadDirExists = Files.exists(uploadPath);</span>
+<span class="nc" id="L188">            boolean profilePicsDirExists = Files.exists(profilePicsPath);</span>
+<span class="nc" id="L189">            boolean resumesDirExists = Files.exists(resumesPath);</span>
+<span class="nc" id="L190">            boolean coverLettersDirExists = Files.exists(coverLettersPath);</span>
+            
+<span class="nc" id="L192">            info.put(&quot;uploadDirectory&quot;, uploadPath.toString());</span>
+<span class="nc" id="L193">            info.put(&quot;profilePicturesDirectory&quot;, profilePicsPath.toString());</span>
+<span class="nc" id="L194">            info.put(&quot;resumesDirectory&quot;, resumesPath.toString());</span>
+<span class="nc" id="L195">            info.put(&quot;coverLettersDirectory&quot;, coverLettersPath.toString());</span>
+<span class="nc" id="L196">            info.put(&quot;uploadDirectoryExists&quot;, String.valueOf(uploadDirExists));</span>
+<span class="nc" id="L197">            info.put(&quot;profilePicturesDirectoryExists&quot;, String.valueOf(profilePicsDirExists));</span>
+<span class="nc" id="L198">            info.put(&quot;resumesDirectoryExists&quot;, String.valueOf(resumesDirExists));</span>
+<span class="nc" id="L199">            info.put(&quot;coverLettersDirectoryExists&quot;, String.valueOf(coverLettersDirExists));</span>
+            
+            // List files in the profile pictures directory if it exists
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            if (profilePicsDirExists) {</span>
+<span class="nc" id="L203">                info.put(&quot;profilePictures&quot;, getDirectoryFiles(profilePicsPath, &quot;/api/files/profile-pictures/&quot;));</span>
+            }
+            
+            // List files in the resumes directory if it exists
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (resumesDirExists) {</span>
+<span class="nc" id="L208">                info.put(&quot;resumes&quot;, getDirectoryFiles(resumesPath, &quot;/api/files/resumes/&quot;));</span>
+            }
+            
+            // List files in the cover letters directory if it exists
+<span class="nc bnc" id="L212" title="All 2 branches missed.">            if (coverLettersDirExists) {</span>
+<span class="nc" id="L213">                info.put(&quot;coverLetters&quot;, getDirectoryFiles(coverLettersPath, &quot;/api/files/cover-letters/&quot;));</span>
+            }
+            
+<span class="nc" id="L216">            info.put(&quot;message&quot;, &quot;File system information retrieved successfully&quot;);</span>
+            
+<span class="nc" id="L218">            return ResponseEntity.ok(info);</span>
+<span class="nc" id="L219">        } catch (Exception e) {</span>
+<span class="nc" id="L220">            logger.error(&quot;Error retrieving file system info&quot;, e);</span>
+<span class="nc" id="L221">            info.put(&quot;error&quot;, e.getMessage());</span>
+<span class="nc" id="L222">            return ResponseEntity.internalServerError().body(info);</span>
+        }
+    }
+    
+    private Map&lt;String, Object&gt; getDirectoryFiles(Path directory, String urlPrefix) throws IOException {
+<span class="nc" id="L227">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L228">        List&lt;Map&lt;String, String&gt;&gt; files = new ArrayList&lt;&gt;();</span>
+        
+<span class="nc" id="L230">        try (Stream&lt;Path&gt; paths = Files.list(directory)) {</span>
+<span class="nc" id="L231">            List&lt;Path&gt; filesList = paths.collect(Collectors.toList());</span>
+            
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            for (Path filePath : filesList) {</span>
+<span class="nc" id="L234">                Map&lt;String, String&gt; fileInfo = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L235">                String filename = filePath.getFileName().toString();</span>
+<span class="nc" id="L236">                fileInfo.put(&quot;name&quot;, filename);</span>
+<span class="nc" id="L237">                fileInfo.put(&quot;fullPath&quot;, filePath.toString());</span>
+<span class="nc" id="L238">                fileInfo.put(&quot;size&quot;, String.valueOf(Files.size(filePath)) + &quot; bytes&quot;);</span>
+<span class="nc" id="L239">                fileInfo.put(&quot;url&quot;, urlPrefix + filename);</span>
+<span class="nc" id="L240">                files.add(fileInfo);</span>
+<span class="nc" id="L241">            }</span>
+        }
+        
+<span class="nc" id="L244">        result.put(&quot;files&quot;, files);</span>
+<span class="nc" id="L245">        result.put(&quot;fileCount&quot;, files.size());</span>
+<span class="nc" id="L246">        return result;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileStorageServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">FileStorageServiceImpl.java</span></div><h1>FileStorageServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import com.ats.exception.FileStorageException;
+import com.ats.service.FileStorageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+
+@Service
+public class FileStorageServiceImpl implements FileStorageService {
+    
+<span class="fc" id="L25">    private static final Logger logger = LoggerFactory.getLogger(FileStorageServiceImpl.class);</span>
+
+    private final Path fileStorageLocation;
+    private final Path profilePicturesDir;
+    private final Path resumesDir;
+    private final Path coverLettersDir;
+
+    @Value(&quot;${app.frontend.url}&quot;)
+    private String frontendUrl;
+
+<span class="fc" id="L35">    public FileStorageServiceImpl(@Value(&quot;${file.upload-dir:uploads}&quot;) String uploadDir) {</span>
+<span class="fc" id="L36">        this.fileStorageLocation = Paths.get(uploadDir)</span>
+<span class="fc" id="L37">                .toAbsolutePath().normalize();</span>
+<span class="fc" id="L38">        this.profilePicturesDir = this.fileStorageLocation.resolve(&quot;profile-pictures&quot;);</span>
+<span class="fc" id="L39">        this.resumesDir = this.fileStorageLocation.resolve(&quot;resumes&quot;);</span>
+<span class="fc" id="L40">        this.coverLettersDir = this.fileStorageLocation.resolve(&quot;cover-letters&quot;);</span>
+        
+        // Initialize storage directories during construction
+        try {
+            // Create main upload directory if it doesn't exist
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">            if (!Files.exists(fileStorageLocation)) {</span>
+<span class="nc" id="L46">                Files.createDirectories(fileStorageLocation);</span>
+<span class="nc" id="L47">                logger.info(&quot;Created main file storage location at: {}&quot;, fileStorageLocation);</span>
+            }
+            
+            // Create profile pictures directory if it doesn't exist
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">            if (!Files.exists(profilePicturesDir)) {</span>
+<span class="nc" id="L52">                Files.createDirectories(profilePicturesDir);</span>
+<span class="nc" id="L53">                logger.info(&quot;Created profile pictures directory at: {}&quot;, profilePicturesDir);</span>
+            }
+            
+            // Create resumes directory if it doesn't exist
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            if (!Files.exists(resumesDir)) {</span>
+<span class="nc" id="L58">                Files.createDirectories(resumesDir);</span>
+<span class="nc" id="L59">                logger.info(&quot;Created resumes directory at: {}&quot;, resumesDir);</span>
+            }
+            
+            // Create cover letters directory if it doesn't exist
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">            if (!Files.exists(coverLettersDir)) {</span>
+<span class="nc" id="L64">                Files.createDirectories(coverLettersDir);</span>
+<span class="nc" id="L65">                logger.info(&quot;Created cover letters directory at: {}&quot;, coverLettersDir);</span>
+            }
+            
+            // Verify directories are writable
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            if (!Files.isWritable(profilePicturesDir)) {</span>
+<span class="nc" id="L70">                logger.warn(&quot;Profile pictures directory is not writable: {}&quot;, profilePicturesDir);</span>
+                // Try to fix permissions
+                try {
+<span class="nc" id="L73">                    Files.setPosixFilePermissions(profilePicturesDir, java.nio.file.attribute.PosixFilePermissions.fromString(&quot;rwxrwxrwx&quot;));</span>
+<span class="nc" id="L74">                    logger.info(&quot;Set permissions on profile pictures directory&quot;);</span>
+<span class="nc" id="L75">                } catch (Exception e) {</span>
+<span class="nc" id="L76">                    logger.warn(&quot;Could not set permissions on profile pictures directory&quot;, e);</span>
+<span class="nc" id="L77">                }</span>
+            }
+            
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            if (!Files.isWritable(resumesDir)) {</span>
+<span class="nc" id="L81">                logger.warn(&quot;Resumes directory is not writable: {}&quot;, resumesDir);</span>
+                try {
+<span class="nc" id="L83">                    Files.setPosixFilePermissions(resumesDir, java.nio.file.attribute.PosixFilePermissions.fromString(&quot;rwxrwxrwx&quot;));</span>
+<span class="nc" id="L84">                    logger.info(&quot;Set permissions on resumes directory&quot;);</span>
+<span class="nc" id="L85">                } catch (Exception e) {</span>
+<span class="nc" id="L86">                    logger.warn(&quot;Could not set permissions on resumes directory&quot;, e);</span>
+<span class="nc" id="L87">                }</span>
+            }
+            
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            if (!Files.isWritable(coverLettersDir)) {</span>
+<span class="nc" id="L91">                logger.warn(&quot;Cover letters directory is not writable: {}&quot;, coverLettersDir);</span>
+                try {
+<span class="nc" id="L93">                    Files.setPosixFilePermissions(coverLettersDir, java.nio.file.attribute.PosixFilePermissions.fromString(&quot;rwxrwxrwx&quot;));</span>
+<span class="nc" id="L94">                    logger.info(&quot;Set permissions on cover letters directory&quot;);</span>
+<span class="nc" id="L95">                } catch (Exception e) {</span>
+<span class="nc" id="L96">                    logger.warn(&quot;Could not set permissions on cover letters directory&quot;, e);</span>
+<span class="nc" id="L97">                }</span>
+            }
+            
+<span class="fc" id="L100">            logger.info(&quot;File storage locations initialized successfully&quot;);</span>
+<span class="nc" id="L101">        } catch (IOException ex) {</span>
+<span class="nc" id="L102">            logger.error(&quot;Could not initialize storage directories&quot;, ex);</span>
+<span class="nc" id="L103">            throw new FileStorageException(&quot;Could not initialize storage directories&quot;, ex);</span>
+<span class="fc" id="L104">        }</span>
+<span class="fc" id="L105">    }</span>
+    
+    /**
+     * Initialize or reinitialize storage directories.
+     */
+    public void initializeStorageDirectories() {
+        try {
+            // Create main upload directory if it doesn't exist
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (!Files.exists(fileStorageLocation)) {</span>
+<span class="nc" id="L114">                Files.createDirectories(fileStorageLocation);</span>
+<span class="nc" id="L115">                logger.info(&quot;Created main file storage location at: {}&quot;, fileStorageLocation);</span>
+            }
+            
+            // Create profile pictures directory if it doesn't exist
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            if (!Files.exists(profilePicturesDir)) {</span>
+<span class="nc" id="L120">                Files.createDirectories(profilePicturesDir);</span>
+<span class="nc" id="L121">                logger.info(&quot;Created profile pictures directory at: {}&quot;, profilePicturesDir);</span>
+            }
+            
+            // Create resumes directory if it doesn't exist
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            if (!Files.exists(resumesDir)) {</span>
+<span class="nc" id="L126">                Files.createDirectories(resumesDir);</span>
+<span class="nc" id="L127">                logger.info(&quot;Created resumes directory at: {}&quot;, resumesDir);</span>
+            }
+            
+            // Create cover letters directory if it doesn't exist
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            if (!Files.exists(coverLettersDir)) {</span>
+<span class="nc" id="L132">                Files.createDirectories(coverLettersDir);</span>
+<span class="nc" id="L133">                logger.info(&quot;Created cover letters directory at: {}&quot;, coverLettersDir);</span>
+            }
+            
+            // Verify directories are writable
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            if (!Files.isWritable(profilePicturesDir)) {</span>
+<span class="nc" id="L138">                logger.warn(&quot;Profile pictures directory is not writable: {}&quot;, profilePicturesDir);</span>
+                // Try to fix permissions
+                try {
+<span class="nc" id="L141">                    Files.setPosixFilePermissions(profilePicturesDir, java.nio.file.attribute.PosixFilePermissions.fromString(&quot;rwxrwxrwx&quot;));</span>
+<span class="nc" id="L142">                    logger.info(&quot;Set permissions on profile pictures directory&quot;);</span>
+<span class="nc" id="L143">                } catch (Exception e) {</span>
+<span class="nc" id="L144">                    logger.warn(&quot;Could not set permissions on profile pictures directory&quot;, e);</span>
+<span class="nc" id="L145">                }</span>
+            }
+            
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            if (!Files.isWritable(resumesDir)) {</span>
+<span class="nc" id="L149">                logger.warn(&quot;Resumes directory is not writable: {}&quot;, resumesDir);</span>
+                try {
+<span class="nc" id="L151">                    Files.setPosixFilePermissions(resumesDir, java.nio.file.attribute.PosixFilePermissions.fromString(&quot;rwxrwxrwx&quot;));</span>
+<span class="nc" id="L152">                    logger.info(&quot;Set permissions on resumes directory&quot;);</span>
+<span class="nc" id="L153">                } catch (Exception e) {</span>
+<span class="nc" id="L154">                    logger.warn(&quot;Could not set permissions on resumes directory&quot;, e);</span>
+<span class="nc" id="L155">                }</span>
+            }
+            
+<span class="nc bnc" id="L158" title="All 2 branches missed.">            if (!Files.isWritable(coverLettersDir)) {</span>
+<span class="nc" id="L159">                logger.warn(&quot;Cover letters directory is not writable: {}&quot;, coverLettersDir);</span>
+                try {
+<span class="nc" id="L161">                    Files.setPosixFilePermissions(coverLettersDir, java.nio.file.attribute.PosixFilePermissions.fromString(&quot;rwxrwxrwx&quot;));</span>
+<span class="nc" id="L162">                    logger.info(&quot;Set permissions on cover letters directory&quot;);</span>
+<span class="nc" id="L163">                } catch (Exception e) {</span>
+<span class="nc" id="L164">                    logger.warn(&quot;Could not set permissions on cover letters directory&quot;, e);</span>
+<span class="nc" id="L165">                }</span>
+            }
+            
+<span class="nc" id="L168">            logger.info(&quot;File storage locations initialized successfully&quot;);</span>
+<span class="nc" id="L169">        } catch (IOException ex) {</span>
+<span class="nc" id="L170">            logger.error(&quot;Could not initialize storage directories&quot;, ex);</span>
+<span class="nc" id="L171">            throw new FileStorageException(&quot;Could not initialize storage directories&quot;, ex);</span>
+<span class="nc" id="L172">        }</span>
+<span class="nc" id="L173">    }</span>
+    
+    /**
+     * Periodically check if storage directories exist and recreate if necessary
+     */
+    @Scheduled(fixedRate = 3600000) // Check every hour
+    public void checkStorageDirectories() {
+<span class="nc" id="L180">        logger.debug(&quot;Performing scheduled check of storage directories&quot;);</span>
+        try {
+<span class="nc bnc" id="L182" title="All 4 branches missed.">            if (!Files.exists(fileStorageLocation) || !Files.exists(profilePicturesDir)) {</span>
+<span class="nc" id="L183">                logger.warn(&quot;One or more storage directories missing, recreating...&quot;);</span>
+<span class="nc" id="L184">                initializeStorageDirectories();</span>
+            }
+<span class="nc" id="L186">        } catch (Exception e) {</span>
+<span class="nc" id="L187">            logger.error(&quot;Error during scheduled storage directory check&quot;, e);</span>
+<span class="nc" id="L188">        }</span>
+<span class="nc" id="L189">    }</span>
+
+    @Override
+    public String storeProfilePicture(MultipartFile file) {
+        // Check if directories exist, recreate if needed
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (!Files.exists(profilePicturesDir)) {</span>
+<span class="nc" id="L195">            logger.warn(&quot;Profile pictures directory not found, recreating...&quot;);</span>
+<span class="nc" id="L196">            initializeStorageDirectories();</span>
+        }
+        
+        // Normalize file name and add a UUID to avoid name collisions
+<span class="nc" id="L200">        String fileName = StringUtils.cleanPath(file.getOriginalFilename());</span>
+<span class="nc" id="L201">        String fileExtension = &quot;&quot;;</span>
+        
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        if (fileName.contains(&quot;.&quot;)) {</span>
+<span class="nc" id="L204">            fileExtension = fileName.substring(fileName.lastIndexOf(&quot;.&quot;));</span>
+<span class="nc" id="L205">            fileName = fileName.substring(0, fileName.lastIndexOf(&quot;.&quot;));</span>
+        }
+        
+<span class="nc" id="L208">        String uniqueFileName = UUID.randomUUID() + &quot;-&quot; + fileName + fileExtension;</span>
+<span class="nc" id="L209">        logger.info(&quot;Generated unique filename: {}&quot;, uniqueFileName);</span>
+        
+        // Check for valid file types (images only)
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (!isImageFile(file)) {</span>
+<span class="nc" id="L213">            throw new FileStorageException(&quot;Only image files (JPEG, PNG, GIF) are allowed for profile pictures&quot;);</span>
+        }
+        
+        try {
+            // Copy file to the target location
+<span class="nc" id="L218">            Path targetLocation = profilePicturesDir.resolve(uniqueFileName);</span>
+            
+<span class="nc" id="L220">            try (InputStream inputStream = file.getInputStream()) {</span>
+<span class="nc" id="L221">                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="nc" id="L222">                logger.info(&quot;Stored file at: {}&quot;, targetLocation);</span>
+                
+                // Verify file was actually written
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                if (!Files.exists(targetLocation)) {</span>
+<span class="nc" id="L226">                    throw new FileStorageException(&quot;File appears not to have been written: &quot; + targetLocation);</span>
+                }
+                
+<span class="nc bnc" id="L229" title="All 2 branches missed.">                if (Files.size(targetLocation) == 0) {</span>
+<span class="nc" id="L230">                    throw new FileStorageException(&quot;File was written but has zero size: &quot; + targetLocation);</span>
+                }
+            }
+            
+            // Build the URL to access the file - use a relative URL that starts with / 
+            // to ensure it works with both localhost and production environments
+<span class="nc" id="L236">            String fileUrl = &quot;/api/files/profile-pictures/&quot; + uniqueFileName;</span>
+                    
+<span class="nc" id="L238">            logger.info(&quot;File URL for access: {}&quot;, fileUrl);</span>
+<span class="nc" id="L239">            return fileUrl;</span>
+            
+<span class="nc" id="L241">        } catch (IOException ex) {</span>
+<span class="nc" id="L242">            logger.error(&quot;Failed to store file: {}&quot;, uniqueFileName, ex);</span>
+<span class="nc" id="L243">            throw new FileStorageException(&quot;Could not store file &quot; + uniqueFileName, ex);</span>
+        }
+    }
+    
+    private boolean isImageFile(MultipartFile file) {
+<span class="nc" id="L248">        String contentType = file.getContentType();</span>
+<span class="nc" id="L249">        logger.debug(&quot;Checking file type: {}&quot;, contentType);</span>
+<span class="nc bnc" id="L250" title="All 4 branches missed.">        return contentType != null &amp;&amp; contentType.startsWith(&quot;image/&quot;);</span>
+    }
+    
+    private boolean isDocumentFile(MultipartFile file) {
+<span class="nc" id="L254">        String contentType = file.getContentType();</span>
+<span class="nc" id="L255">        logger.debug(&quot;Checking file type: {}&quot;, contentType);</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">        return contentType != null &amp;&amp; (</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">            contentType.equals(&quot;application/pdf&quot;) || </span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">            contentType.equals(&quot;application/msword&quot;) || </span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            contentType.equals(&quot;application/vnd.openxmlformats-officedocument.wordprocessingml.document&quot;) ||</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">            contentType.equals(&quot;text/plain&quot;)</span>
+        );
+    }
+    
+    @Override
+    public String storeResume(MultipartFile file) {
+        // Check if directories exist, recreate if needed
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (!Files.exists(resumesDir)) {</span>
+<span class="nc" id="L268">            logger.warn(&quot;Resumes directory not found, recreating...&quot;);</span>
+<span class="nc" id="L269">            initializeStorageDirectories();</span>
+        }
+        
+        // Normalize file name and add a UUID to avoid name collisions
+<span class="nc" id="L273">        String fileName = StringUtils.cleanPath(file.getOriginalFilename());</span>
+<span class="nc" id="L274">        String fileExtension = &quot;&quot;;</span>
+        
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        if (fileName.contains(&quot;.&quot;)) {</span>
+<span class="nc" id="L277">            fileExtension = fileName.substring(fileName.lastIndexOf(&quot;.&quot;));</span>
+<span class="nc" id="L278">            fileName = fileName.substring(0, fileName.lastIndexOf(&quot;.&quot;));</span>
+        }
+        
+<span class="nc" id="L281">        String uniqueFileName = UUID.randomUUID() + &quot;-&quot; + fileName + fileExtension;</span>
+<span class="nc" id="L282">        logger.info(&quot;Generated unique filename: {}&quot;, uniqueFileName);</span>
+        
+        // Check for valid file types (PDF, DOC, DOCX, TXT)
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        if (!isDocumentFile(file)) {</span>
+<span class="nc" id="L286">            throw new FileStorageException(&quot;Only document files (PDF, DOC, DOCX, TXT) are allowed for resumes&quot;);</span>
+        }
+        
+        try {
+            // Copy file to the target location
+<span class="nc" id="L291">            Path targetLocation = resumesDir.resolve(uniqueFileName);</span>
+            
+<span class="nc" id="L293">            try (InputStream inputStream = file.getInputStream()) {</span>
+<span class="nc" id="L294">                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="nc" id="L295">                logger.info(&quot;Stored file at: {}&quot;, targetLocation);</span>
+                
+                // Verify file was actually written
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                if (!Files.exists(targetLocation)) {</span>
+<span class="nc" id="L299">                    throw new FileStorageException(&quot;File appears not to have been written: &quot; + targetLocation);</span>
+                }
+                
+<span class="nc bnc" id="L302" title="All 2 branches missed.">                if (Files.size(targetLocation) == 0) {</span>
+<span class="nc" id="L303">                    throw new FileStorageException(&quot;File was written but has zero size: &quot; + targetLocation);</span>
+                }
+            }
+            
+            // Build the URL to access the file - use a relative URL that starts with / 
+            // to ensure it works with both localhost and production environments
+<span class="nc" id="L309">            String fileUrl = &quot;/api/files/resumes/&quot; + uniqueFileName;</span>
+                    
+<span class="nc" id="L311">            logger.info(&quot;File URL for access: {}&quot;, fileUrl);</span>
+<span class="nc" id="L312">            return fileUrl;</span>
+            
+<span class="nc" id="L314">        } catch (IOException ex) {</span>
+<span class="nc" id="L315">            logger.error(&quot;Failed to store file: {}&quot;, uniqueFileName, ex);</span>
+<span class="nc" id="L316">            throw new FileStorageException(&quot;Could not store file &quot; + uniqueFileName, ex);</span>
+        }
+    }
+    
+    @Override
+    public String storeCoverLetter(MultipartFile file) {
+        // Check if directories exist, recreate if needed
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        if (!Files.exists(coverLettersDir)) {</span>
+<span class="nc" id="L324">            logger.warn(&quot;Cover letters directory not found, recreating...&quot;);</span>
+<span class="nc" id="L325">            initializeStorageDirectories();</span>
+        }
+        
+        // Normalize file name and add a UUID to avoid name collisions
+<span class="nc" id="L329">        String fileName = StringUtils.cleanPath(file.getOriginalFilename());</span>
+<span class="nc" id="L330">        String fileExtension = &quot;&quot;;</span>
+        
+<span class="nc bnc" id="L332" title="All 2 branches missed.">        if (fileName.contains(&quot;.&quot;)) {</span>
+<span class="nc" id="L333">            fileExtension = fileName.substring(fileName.lastIndexOf(&quot;.&quot;));</span>
+<span class="nc" id="L334">            fileName = fileName.substring(0, fileName.lastIndexOf(&quot;.&quot;));</span>
+        }
+        
+<span class="nc" id="L337">        String uniqueFileName = UUID.randomUUID() + &quot;-&quot; + fileName + fileExtension;</span>
+<span class="nc" id="L338">        logger.info(&quot;Generated unique filename: {}&quot;, uniqueFileName);</span>
+        
+        // Check for valid file types (PDF, DOC, DOCX, TXT)
+<span class="nc bnc" id="L341" title="All 2 branches missed.">        if (!isDocumentFile(file)) {</span>
+<span class="nc" id="L342">            throw new FileStorageException(&quot;Only document files (PDF, DOC, DOCX, TXT) are allowed for cover letters&quot;);</span>
+        }
+        
+        try {
+            // Copy file to the target location
+<span class="nc" id="L347">            Path targetLocation = coverLettersDir.resolve(uniqueFileName);</span>
+            
+<span class="nc" id="L349">            try (InputStream inputStream = file.getInputStream()) {</span>
+<span class="nc" id="L350">                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="nc" id="L351">                logger.info(&quot;Stored file at: {}&quot;, targetLocation);</span>
+                
+                // Verify file was actually written
+<span class="nc bnc" id="L354" title="All 2 branches missed.">                if (!Files.exists(targetLocation)) {</span>
+<span class="nc" id="L355">                    throw new FileStorageException(&quot;File appears not to have been written: &quot; + targetLocation);</span>
+                }
+                
+<span class="nc bnc" id="L358" title="All 2 branches missed.">                if (Files.size(targetLocation) == 0) {</span>
+<span class="nc" id="L359">                    throw new FileStorageException(&quot;File was written but has zero size: &quot; + targetLocation);</span>
+                }
+            }
+            
+            // Build the URL to access the file - use a relative URL that starts with / 
+            // to ensure it works with both localhost and production environments
+<span class="nc" id="L365">            String fileUrl = &quot;/api/files/cover-letters/&quot; + uniqueFileName;</span>
+                    
+<span class="nc" id="L367">            logger.info(&quot;File URL for access: {}&quot;, fileUrl);</span>
+<span class="nc" id="L368">            return fileUrl;</span>
+            
+<span class="nc" id="L370">        } catch (IOException ex) {</span>
+<span class="nc" id="L371">            logger.error(&quot;Failed to store file: {}&quot;, uniqueFileName, ex);</span>
+<span class="nc" id="L372">            throw new FileStorageException(&quot;Could not store file &quot; + uniqueFileName, ex);</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

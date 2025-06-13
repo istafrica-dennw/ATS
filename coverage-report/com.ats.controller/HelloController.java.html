@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HelloController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.controller</a> &gt; <span class="el_source">HelloController.java</span></div><h1>HelloController.java</h1><pre class="source lang-java linenums">package com.ats.controller;
+
+import com.ats.dto.ApiResponse;
+import com.ats.dto.HelloMessage;
+import com.ats.service.MessageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping(&quot;/api/test/hello&quot;)
+@Tag(name = &quot;Hello World&quot;, description = &quot;Hello World APIs&quot;)
+public class HelloController {
+
+<span class="fc" id="L19">    private static final Logger logger = LoggerFactory.getLogger(HelloController.class);</span>
+    private final MessageService messageService;
+
+    @Autowired
+<span class="fc" id="L23">    public HelloController(MessageService messageService) {</span>
+<span class="fc" id="L24">        this.messageService = messageService;</span>
+<span class="fc" id="L25">    }</span>
+
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = &quot;Set Hello World message&quot;, description = &quot;Sets a new Hello World message&quot;)
+    public ApiResponse&lt;HelloMessage&gt; setMessage(@RequestBody HelloMessage helloMessage) {
+<span class="nc" id="L30">        logger.info(&quot;Received message update request: {}&quot;, helloMessage.getMessage());</span>
+<span class="nc" id="L31">        messageService.saveMessage(helloMessage.getMessage());</span>
+<span class="nc" id="L32">        return ApiResponse.success(helloMessage);</span>
+    }
+
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = &quot;Get Hello World message&quot;, description = &quot;Retrieves the current Hello World message&quot;)
+    public ApiResponse&lt;HelloMessage&gt; getMessage() {
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        String message = messageService.getLatestMessage() != null </span>
+<span class="nc" id="L39">            ? messageService.getLatestMessage().getContent() </span>
+<span class="nc" id="L40">            : &quot;Hello World&quot;;</span>
+<span class="nc" id="L41">        logger.info(&quot;Returning message: {}&quot;, message);</span>
+<span class="nc" id="L42">        return ApiResponse.success(new HelloMessage(message));</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

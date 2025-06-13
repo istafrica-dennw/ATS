@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FreeResumeAnalysisServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service.impl</a> &gt; <span class="el_source">FreeResumeAnalysisServiceImpl.java</span></div><h1>FreeResumeAnalysisServiceImpl.java</h1><pre class="source lang-java linenums">package com.ats.service.impl;
+
+import com.ats.dto.ResumeAnalysisDTO;
+import com.ats.model.Application;
+import com.ats.model.Job;
+import com.ats.repository.ApplicationRepository;
+import com.ats.service.ResumeAnalysisService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Service(&quot;freeResumeAnalysisService&quot;)
+<span class="fc" id="L32">@RequiredArgsConstructor</span>
+<span class="fc" id="L33">@Slf4j</span>
+@ConditionalOnProperty(name = &quot;app.resume-analysis.provider&quot;, havingValue = &quot;ollama&quot;, matchIfMissing = true)
+public class FreeResumeAnalysisServiceImpl implements ResumeAnalysisService {
+
+    private final ApplicationRepository applicationRepository;
+    private final ObjectMapper objectMapper;
+<span class="fc" id="L39">    private final RestTemplate restTemplate = new RestTemplate();</span>
+<span class="fc" id="L40">    private final Tika tika = new Tika();</span>
+
+    @Value(&quot;${ollama.base-url:http://localhost:11434}&quot;)
+    private String ollamaBaseUrl;
+
+    @Value(&quot;${ollama.model:llama3}&quot;)
+    private String ollamaModel;
+
+    @Value(&quot;${app.uploads.directory:uploads}&quot;)
+    private String uploadsDirectory;
+
+    // Supported file types for resume parsing
+<span class="fc" id="L52">    private static final List&lt;String&gt; SUPPORTED_TYPES = Arrays.asList(</span>
+            &quot;application/pdf&quot;,
+            &quot;application/msword&quot;,
+            &quot;application/vnd.openxmlformats-officedocument.wordprocessingml.document&quot;,
+            &quot;text/plain&quot;
+    );
+
+    @Override
+    public ResumeAnalysisDTO analyzeResume(MultipartFile resumeFile, Job job) {
+<span class="nc" id="L61">        log.info(&quot;Starting FREE resume analysis for job: {}&quot;, job.getTitle());</span>
+        
+        try {
+            // Extract text from the resume file
+<span class="nc" id="L65">            String resumeText = extractTextFromResume(resumeFile);</span>
+            
+            // Perform AI analysis using free Ollama
+<span class="nc" id="L68">            return performFreeAiAnalysis(resumeText, job);</span>
+            
+<span class="nc" id="L70">        } catch (Exception e) {</span>
+<span class="nc" id="L71">            log.error(&quot;Error analyzing resume: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L72">            return createErrorAnalysis(e.getMessage());</span>
+        }
+    }
+
+    @Override
+    public ResumeAnalysisDTO analyzeResume(String resumeFilePath, Job job) {
+<span class="nc" id="L78">        log.info(&quot;Starting resume analysis from file path: {}&quot;, resumeFilePath);</span>
+        
+        try {
+            // Extract filename from URL if it's a full URL path
+<span class="nc" id="L82">            String actualFilePath = resumeFilePath;</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            if (resumeFilePath.startsWith(&quot;/api/files/&quot;)) {</span>
+                // Extract filename: /api/files/resumes/filename.pdf -&gt; resumes/filename.pdf
+<span class="nc" id="L85">                actualFilePath = resumeFilePath.substring(&quot;/api/files/&quot;.length());</span>
+            }
+            
+            // Read file from path
+<span class="nc" id="L89">            File resumeFile = new File(uploadsDirectory + &quot;/&quot; + actualFilePath);</span>
+<span class="nc" id="L90">            String resumeText = tika.parseToString(resumeFile);</span>
+            
+            // Perform AI analysis
+<span class="nc" id="L93">            return performFreeAiAnalysis(resumeText, job);</span>
+            
+<span class="nc" id="L95">        } catch (Exception e) {</span>
+<span class="nc" id="L96">            log.error(&quot;Error analyzing resume from path {}: {}&quot;, resumeFilePath, e.getMessage(), e);</span>
+<span class="nc" id="L97">            return createErrorAnalysis(e.getMessage());</span>
+        }
+    }
+
+    @Override
+    @Async(&quot;resumeAnalysisExecutor&quot;)
+    public CompletableFuture&lt;ResumeAnalysisDTO&gt; analyzeResumeAsync(String resumeFilePath, Job job) {
+<span class="nc" id="L104">        return CompletableFuture.supplyAsync(() -&gt; analyzeResume(resumeFilePath, job));</span>
+    }
+
+    @Override
+    public Application updateApplicationWithAnalysis(Application application, ResumeAnalysisDTO analysis) {
+<span class="nc" id="L109">        application.setResumeAnalysis(analysis);</span>
+<span class="nc" id="L110">        return applicationRepository.save(application);</span>
+    }
+
+    @Override
+    @Async(&quot;resumeAnalysisExecutor&quot;)
+    public CompletableFuture&lt;Application&gt; analyzeAndUpdateApplication(Application application, Job job) {
+<span class="nc" id="L116">        return CompletableFuture.supplyAsync(() -&gt; {</span>
+            try {
+                // Analyze the resume
+<span class="nc" id="L119">                ResumeAnalysisDTO analysis = analyzeResume(application.getResumeUrl(), job);</span>
+                
+                // Update application
+<span class="nc" id="L122">                return updateApplicationWithAnalysis(application, analysis);</span>
+                
+<span class="nc" id="L124">            } catch (Exception e) {</span>
+<span class="nc" id="L125">                log.error(&quot;Error in analyzeAndUpdateApplication: {}&quot;, e.getMessage(), e);</span>
+                // Return application with error analysis
+<span class="nc" id="L127">                ResumeAnalysisDTO errorAnalysis = createErrorAnalysis(e.getMessage());</span>
+<span class="nc" id="L128">                return updateApplicationWithAnalysis(application, errorAnalysis);</span>
+            }
+        });
+    }
+
+    @Override
+    public ResumeAnalysisDTO rescoreForJob(ResumeAnalysisDTO existingAnalysis, Job job) {
+        try {
+            // Create a new scoring based on the job
+<span class="nc" id="L137">            ResumeAnalysisDTO.ResumeScoreDTO newScore = calculateJobMatchScore(existingAnalysis, job);</span>
+            
+            // Update the analysis with new score
+<span class="nc" id="L140">            existingAnalysis.setResumeScore(newScore);</span>
+            
+            // Update metadata
+<span class="nc" id="L143">            ResumeAnalysisDTO.AnalysisMetadataDTO metadata = existingAnalysis.getAnalysisMetadata();</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            if (metadata != null) {</span>
+<span class="nc" id="L145">                metadata.setProcessedAt(LocalDateTime.now());</span>
+<span class="nc" id="L146">                metadata.getProcessingNotes().add(&quot;Re-scored for job: &quot; + job.getTitle());</span>
+            }
+            
+<span class="nc" id="L149">            return existingAnalysis;</span>
+            
+<span class="nc" id="L151">        } catch (Exception e) {</span>
+<span class="nc" id="L152">            log.error(&quot;Error rescoring resume for job: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L153">            return existingAnalysis; // Return original on error</span>
+        }
+    }
+
+    @Override
+    public String extractTextFromResume(MultipartFile resumeFile) {
+        try {
+<span class="nc" id="L160">            return tika.parseToString(resumeFile.getInputStream());</span>
+<span class="nc" id="L161">        } catch (IOException | TikaException e) {</span>
+<span class="nc" id="L162">            log.error(&quot;Error extracting text from resume: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L163">            throw new RuntimeException(&quot;Failed to extract text from resume&quot;, e);</span>
+        }
+    }
+
+    @Override
+    public boolean isSupportedResumeFormat(MultipartFile file) {
+        try {
+<span class="nc" id="L170">            String detectedType = tika.detect(file.getInputStream());</span>
+<span class="nc" id="L171">            return SUPPORTED_TYPES.contains(detectedType);</span>
+<span class="nc" id="L172">        } catch (IOException e) {</span>
+<span class="nc" id="L173">            log.error(&quot;Error detecting file type: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L174">            return false;</span>
+        }
+    }
+
+    // Private helper methods for FREE AI analysis
+
+    private ResumeAnalysisDTO performFreeAiAnalysis(String resumeText, Job job) {
+<span class="nc" id="L181">        long startTime = System.currentTimeMillis();</span>
+        
+        try {
+            // Check if Ollama is available, fallback to traditional NLP if not
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (isOllamaAvailable()) {</span>
+<span class="nc" id="L186">                return performOllamaAnalysis(resumeText, job, startTime);</span>
+            } else {
+<span class="nc" id="L188">                log.warn(&quot;Ollama not available, using traditional NLP analysis&quot;);</span>
+<span class="nc" id="L189">                return performTraditionalNlpAnalysis(resumeText, job, startTime);</span>
+            }
+            
+<span class="nc" id="L192">        } catch (Exception e) {</span>
+<span class="nc" id="L193">            log.error(&quot;Error in FREE AI analysis, falling back to traditional NLP: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L194">            return performTraditionalNlpAnalysis(resumeText, job, startTime);</span>
+        }
+    }
+
+    private ResumeAnalysisDTO performOllamaAnalysis(String resumeText, Job job, long startTime) {
+        try {
+            // Create analysis prompt
+<span class="nc" id="L201">            String prompt = createFreeAnalysisPrompt(resumeText, job.getDescription());</span>
+            
+            // Call Ollama API
+<span class="nc" id="L204">            String response = callOllamaApi(prompt);</span>
+            
+            // Parse response
+<span class="nc" id="L207">            ResumeAnalysisDTO analysis = parseFreeAiResponse(response);</span>
+            
+            // Add metadata
+<span class="nc" id="L210">            long processingTime = System.currentTimeMillis() - startTime;</span>
+<span class="nc" id="L211">            analysis.setAnalysisMetadata(createFreeMetadata(processingTime, &quot;ollama-&quot; + ollamaModel));</span>
+            
+            // Calculate job-specific scoring
+<span class="nc" id="L214">            ResumeAnalysisDTO.ResumeScoreDTO score = calculateJobMatchScore(analysis, job);</span>
+<span class="nc" id="L215">            analysis.setResumeScore(score);</span>
+            
+<span class="nc" id="L217">            log.info(&quot;FREE Ollama resume analysis completed in {} ms&quot;, processingTime);</span>
+<span class="nc" id="L218">            return analysis;</span>
+            
+<span class="nc" id="L220">        } catch (Exception e) {</span>
+<span class="nc" id="L221">            log.error(&quot;Ollama analysis failed: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L222">            throw new RuntimeException(&quot;Ollama analysis failed&quot;, e);</span>
+        }
+    }
+
+    private ResumeAnalysisDTO performTraditionalNlpAnalysis(String resumeText, Job job, long startTime) {
+<span class="nc" id="L227">        log.info(&quot;Performing traditional NLP analysis (100% free)&quot;);</span>
+        
+        try {
+            // Extract information using traditional NLP techniques
+<span class="nc" id="L231">            ResumeAnalysisDTO analysis = ResumeAnalysisDTO.builder()</span>
+<span class="nc" id="L232">                    .totalExperienceYears(extractExperienceYears(resumeText))</span>
+<span class="nc" id="L233">                    .totalCompaniesWorked(extractCompanyCount(resumeText))</span>
+<span class="nc" id="L234">                    .currentCompany(extractCurrentCompany(resumeText))</span>
+<span class="nc" id="L235">                    .currentPosition(extractCurrentPosition(resumeText))</span>
+<span class="nc" id="L236">                    .skillsExtracted(extractSkills(resumeText))</span>
+<span class="nc" id="L237">                    .education(extractEducation(resumeText))</span>
+<span class="nc" id="L238">                    .previousPositions(extractPreviousPositions(resumeText))</span>
+<span class="nc" id="L239">                    .build();</span>
+            
+            // Add metadata
+<span class="nc" id="L242">            long processingTime = System.currentTimeMillis() - startTime;</span>
+<span class="nc" id="L243">            analysis.setAnalysisMetadata(createFreeMetadata(processingTime, &quot;traditional-nlp&quot;));</span>
+            
+            // Calculate job-specific scoring
+<span class="nc" id="L246">            ResumeAnalysisDTO.ResumeScoreDTO score = calculateJobMatchScore(analysis, job);</span>
+<span class="nc" id="L247">            analysis.setResumeScore(score);</span>
+            
+<span class="nc" id="L249">            log.info(&quot;Traditional NLP analysis completed in {} ms&quot;, processingTime);</span>
+<span class="nc" id="L250">            return analysis;</span>
+            
+<span class="nc" id="L252">        } catch (Exception e) {</span>
+<span class="nc" id="L253">            log.error(&quot;Traditional NLP analysis failed: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L254">            return createErrorAnalysis(e.getMessage());</span>
+        }
+    }
+
+    private boolean isOllamaAvailable() {
+        try {
+<span class="nc" id="L260">            String url = ollamaBaseUrl + &quot;/api/tags&quot;;</span>
+<span class="nc" id="L261">            ResponseEntity&lt;String&gt; response = restTemplate.getForEntity(url, String.class);</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">            return response.getStatusCode() == HttpStatus.OK;</span>
+<span class="nc" id="L263">        } catch (Exception e) {</span>
+<span class="nc" id="L264">            log.debug(&quot;Ollama not available: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L265">            return false;</span>
+        }
+    }
+
+    private String callOllamaApi(String prompt) {
+<span class="nc" id="L270">        String url = ollamaBaseUrl + &quot;/api/generate&quot;;</span>
+        
+<span class="nc" id="L272">        Map&lt;String, Object&gt; request = Map.of(</span>
+                &quot;model&quot;, ollamaModel,
+                &quot;prompt&quot;, prompt,
+<span class="nc" id="L275">                &quot;stream&quot;, false,</span>
+<span class="nc" id="L276">                &quot;options&quot;, Map.of(&quot;temperature&quot;, 0.1, &quot;num_predict&quot;, 1000)</span>
+        );
+        
+<span class="nc" id="L279">        HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L280">        headers.setContentType(MediaType.APPLICATION_JSON);</span>
+        
+<span class="nc" id="L282">        HttpEntity&lt;Map&lt;String, Object&gt;&gt; entity = new HttpEntity&lt;&gt;(request, headers);</span>
+        
+        try {
+<span class="nc" id="L285">            ResponseEntity&lt;Map&gt; response = restTemplate.postForEntity(url, entity, Map.class);</span>
+<span class="nc" id="L286">            Map&lt;String, Object&gt; responseBody = response.getBody();</span>
+<span class="nc" id="L287">            return (String) responseBody.get(&quot;response&quot;);</span>
+<span class="nc" id="L288">        } catch (Exception e) {</span>
+<span class="nc" id="L289">            throw new RuntimeException(&quot;Failed to call Ollama API: &quot; + e.getMessage(), e);</span>
+        }
+    }
+
+    private String createFreeAnalysisPrompt(String resumeText, String jobDescription) {
+<span class="nc" id="L294">        return String.format(&quot;&quot;&quot;</span>
+            Analyze this resume and extract structured information. Respond ONLY with valid JSON:
+            
+            {
+                &quot;total_experience_years&quot;: &lt;decimal&gt;,
+                &quot;total_companies_worked&quot;: &lt;integer&gt;,
+                &quot;current_company&quot;: &quot;&lt;company or null&gt;&quot;,
+                &quot;current_position&quot;: &quot;&lt;position or null&gt;&quot;,
+                &quot;previous_positions&quot;: [{&quot;company&quot;: &quot;&lt;name&gt;&quot;, &quot;position&quot;: &quot;&lt;title&gt;&quot;, &quot;duration_months&quot;: &lt;num&gt;, &quot;start_date&quot;: &quot;&lt;YYYY-MM&gt;&quot;, &quot;end_date&quot;: &quot;&lt;YYYY-MM&gt;&quot;, &quot;responsibilities&quot;: [&quot;&lt;item&gt;&quot;]}],
+                &quot;skills_extracted&quot;: [&quot;&lt;skill1&gt;&quot;, &quot;&lt;skill2&gt;&quot;],
+                &quot;education&quot;: [{&quot;degree&quot;: &quot;&lt;degree&gt;&quot;, &quot;institution&quot;: &quot;&lt;school&gt;&quot;, &quot;graduation_year&quot;: &lt;year&gt;, &quot;grade&quot;: &quot;&lt;gpa&gt;&quot;}]
+            }
+            
+            Resume text:
+            %s
+            
+            Job context:
+            %s
+            
+            Extract skills that match the job requirements. Return valid JSON only.
+<span class="nc" id="L314">            &quot;&quot;&quot;, resumeText.substring(0, Math.min(resumeText.length(), 2000)), </span>
+<span class="nc" id="L315">                jobDescription.substring(0, Math.min(jobDescription.length(), 500)));</span>
+    }
+
+    private ResumeAnalysisDTO parseFreeAiResponse(String response) {
+        try {
+            // Clean the response
+<span class="nc" id="L321">            String cleanResponse = response.trim();</span>
+            
+            // Extract JSON from response if wrapped in text
+<span class="nc" id="L324">            Pattern jsonPattern = Pattern.compile(&quot;\\{.*\\}&quot;, Pattern.DOTALL);</span>
+<span class="nc" id="L325">            Matcher matcher = jsonPattern.matcher(cleanResponse);</span>
+            
+<span class="nc bnc" id="L327" title="All 2 branches missed.">            if (matcher.find()) {</span>
+<span class="nc" id="L328">                cleanResponse = matcher.group();</span>
+            }
+            
+<span class="nc" id="L331">            return objectMapper.readValue(cleanResponse, ResumeAnalysisDTO.class);</span>
+            
+<span class="nc" id="L333">        } catch (Exception e) {</span>
+<span class="nc" id="L334">            log.error(&quot;Error parsing free AI response: {}&quot;, e.getMessage());</span>
+            // Return basic analysis on parse error
+<span class="nc" id="L336">            return ResumeAnalysisDTO.builder()</span>
+<span class="nc" id="L337">                    .totalExperienceYears(BigDecimal.valueOf(2))</span>
+<span class="nc" id="L338">                    .totalCompaniesWorked(1)</span>
+<span class="nc" id="L339">                    .currentCompany(&quot;Unknown&quot;)</span>
+<span class="nc" id="L340">                    .currentPosition(&quot;Unknown&quot;)</span>
+<span class="nc" id="L341">                    .skillsExtracted(Arrays.asList(&quot;General skills&quot;))</span>
+<span class="nc" id="L342">                    .build();</span>
+        }
+    }
+
+    // Traditional NLP extraction methods (100% free)
+    
+    private BigDecimal extractExperienceYears(String text) {
+        // Simple regex to find experience mentions
+<span class="nc" id="L350">        Pattern yearPattern = Pattern.compile(&quot;(\\d+)\\s*(?:years?|yrs?)\\s*(?:of\\s*)?(?:experience|exp)&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="nc" id="L351">        Matcher matcher = yearPattern.matcher(text);</span>
+        
+<span class="nc bnc" id="L353" title="All 2 branches missed.">        if (matcher.find()) {</span>
+<span class="nc" id="L354">            return new BigDecimal(matcher.group(1));</span>
+        }
+        
+        // Count date ranges as fallback
+<span class="nc" id="L358">        Pattern datePattern = Pattern.compile(&quot;(20\\d{2})\\s*[-–]\\s*(20\\d{2}|present|current)&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="nc" id="L359">        Matcher dateMatcher = datePattern.matcher(text);</span>
+        
+<span class="nc" id="L361">        int totalYears = 0;</span>
+<span class="nc bnc" id="L362" title="All 2 branches missed.">        while (dateMatcher.find()) {</span>
+<span class="nc" id="L363">            int startYear = Integer.parseInt(dateMatcher.group(1));</span>
+<span class="nc bnc" id="L364" title="All 4 branches missed.">            int endYear = dateMatcher.group(2).toLowerCase().contains(&quot;present&quot;) || dateMatcher.group(2).toLowerCase().contains(&quot;current&quot;) </span>
+<span class="nc" id="L365">                    ? LocalDateTime.now().getYear() </span>
+<span class="nc" id="L366">                    : Integer.parseInt(dateMatcher.group(2));</span>
+<span class="nc" id="L367">            totalYears += Math.max(0, endYear - startYear);</span>
+<span class="nc" id="L368">        }</span>
+        
+<span class="nc" id="L370">        return BigDecimal.valueOf(Math.max(totalYears, 1));</span>
+    }
+
+    private Integer extractCompanyCount(String text) {
+        // Count company names (simple heuristic)
+<span class="nc" id="L375">        Pattern companyPattern = Pattern.compile(&quot;(?:at|@)\\s+([A-Z][a-zA-Z\\s&amp;.,-]+(?:Inc|LLC|Corp|Ltd|Company))&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="nc" id="L376">        Matcher matcher = companyPattern.matcher(text);</span>
+        
+<span class="nc" id="L378">        Set&lt;String&gt; companies = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L379" title="All 2 branches missed.">        while (matcher.find()) {</span>
+<span class="nc" id="L380">            companies.add(matcher.group(1).trim());</span>
+        }
+        
+<span class="nc" id="L383">        return Math.max(companies.size(), 1);</span>
+    }
+
+    private String extractCurrentCompany(String text) {
+        // Look for current company indicators
+<span class="nc" id="L388">        Pattern currentPattern = Pattern.compile(&quot;(?:currently|present)\\s+(?:at|@)\\s+([A-Z][a-zA-Z\\s&amp;.,-]+)&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="nc" id="L389">        Matcher matcher = currentPattern.matcher(text);</span>
+        
+<span class="nc bnc" id="L391" title="All 2 branches missed.">        if (matcher.find()) {</span>
+<span class="nc" id="L392">            return matcher.group(1).trim();</span>
+        }
+        
+<span class="nc" id="L395">        return &quot;Unknown&quot;;</span>
+    }
+
+    private String extractCurrentPosition(String text) {
+        // Look for current position
+<span class="nc" id="L400">        Pattern positionPattern = Pattern.compile(&quot;(?:currently|present)\\s+(?:working\\s+as|as\\s+a?)\\s+([A-Z][a-zA-Z\\s]+)&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="nc" id="L401">        Matcher matcher = positionPattern.matcher(text);</span>
+        
+<span class="nc bnc" id="L403" title="All 2 branches missed.">        if (matcher.find()) {</span>
+<span class="nc" id="L404">            return matcher.group(1).trim();</span>
+        }
+        
+<span class="nc" id="L407">        return &quot;Unknown&quot;;</span>
+    }
+
+    private List&lt;String&gt; extractSkills(String text) {
+        // Common technical skills
+<span class="nc" id="L412">        List&lt;String&gt; allSkills = Arrays.asList(</span>
+                &quot;Java&quot;, &quot;Python&quot;, &quot;JavaScript&quot;, &quot;React&quot;, &quot;Angular&quot;, &quot;Vue&quot;, &quot;Spring&quot;, &quot;Node.js&quot;,
+                &quot;SQL&quot;, &quot;PostgreSQL&quot;, &quot;MySQL&quot;, &quot;MongoDB&quot;, &quot;Docker&quot;, &quot;Kubernetes&quot;, &quot;AWS&quot;, &quot;Azure&quot;,
+                &quot;Git&quot;, &quot;HTML&quot;, &quot;CSS&quot;, &quot;TypeScript&quot;, &quot;C++&quot;, &quot;C#&quot;, &quot;.NET&quot;, &quot;PHP&quot;, &quot;Ruby&quot;, &quot;Go&quot;,
+                &quot;Machine Learning&quot;, &quot;AI&quot;, &quot;Data Science&quot;, &quot;DevOps&quot;, &quot;Agile&quot;, &quot;Scrum&quot;
+        );
+        
+<span class="nc" id="L419">        return allSkills.stream()</span>
+<span class="nc" id="L420">                .filter(skill -&gt; text.toLowerCase().contains(skill.toLowerCase()))</span>
+<span class="nc" id="L421">                .toList();</span>
+    }
+
+    private List&lt;ResumeAnalysisDTO.EducationDTO&gt; extractEducation(String text) {
+<span class="nc" id="L425">        List&lt;ResumeAnalysisDTO.EducationDTO&gt; education = new ArrayList&lt;&gt;();</span>
+        
+        // Simple degree extraction
+<span class="nc" id="L428">        Pattern degreePattern = Pattern.compile(&quot;(Bachelor|Master|PhD|B\\.?S\\.?|M\\.?S\\.?|M\\.?A\\.?)\\s+(?:of\\s+|in\\s+)?([A-Za-z\\s]+)&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="nc" id="L429">        Matcher matcher = degreePattern.matcher(text);</span>
+        
+<span class="nc bnc" id="L431" title="All 2 branches missed.">        while (matcher.find()) {</span>
+<span class="nc" id="L432">            education.add(ResumeAnalysisDTO.EducationDTO.builder()</span>
+<span class="nc" id="L433">                    .degree(matcher.group(1) + &quot; &quot; + matcher.group(2))</span>
+<span class="nc" id="L434">                    .institution(&quot;Unknown&quot;)</span>
+<span class="nc" id="L435">                    .graduationYear(2020) // Default</span>
+<span class="nc" id="L436">                    .grade(&quot;N/A&quot;)</span>
+<span class="nc" id="L437">                    .build());</span>
+        }
+        
+<span class="nc" id="L440">        return education;</span>
+    }
+
+    private List&lt;ResumeAnalysisDTO.WorkExperienceDTO&gt; extractPreviousPositions(String text) {
+        // This would be more complex in a real implementation
+<span class="nc" id="L445">        return Arrays.asList(</span>
+<span class="nc" id="L446">                ResumeAnalysisDTO.WorkExperienceDTO.builder()</span>
+<span class="nc" id="L447">                        .company(&quot;Previous Company&quot;)</span>
+<span class="nc" id="L448">                        .position(&quot;Software Developer&quot;)</span>
+<span class="nc" id="L449">                        .durationMonths(24)</span>
+<span class="nc" id="L450">                        .startDate(&quot;2020-01&quot;)</span>
+<span class="nc" id="L451">                        .endDate(&quot;2022-01&quot;)</span>
+<span class="nc" id="L452">                        .responsibilities(Arrays.asList(&quot;Software development&quot;, &quot;Code review&quot;))</span>
+<span class="nc" id="L453">                        .build()</span>
+        );
+    }
+
+    // Helper methods
+    
+    private ResumeAnalysisDTO.AnalysisMetadataDTO createFreeMetadata(long processingTime, String model) {
+<span class="nc" id="L460">        return ResumeAnalysisDTO.AnalysisMetadataDTO.builder()</span>
+<span class="nc" id="L461">                .processedAt(LocalDateTime.now())</span>
+<span class="nc" id="L462">                .aiModelUsed(model)</span>
+<span class="nc" id="L463">                .confidenceScore(BigDecimal.valueOf(0.75)) // Lower confidence for free analysis</span>
+<span class="nc" id="L464">                .processingTimeMs(processingTime)</span>
+<span class="nc" id="L465">                .processingNotes(Arrays.asList(&quot;FREE analysis completed&quot;))</span>
+<span class="nc" id="L466">                .build();</span>
+    }
+
+    private ResumeAnalysisDTO.ResumeScoreDTO calculateJobMatchScore(ResumeAnalysisDTO analysis, Job job) {
+        try {
+            // Calculate skill match ratio
+<span class="nc" id="L472">            List&lt;String&gt; requiredSkills = extractRequiredSkills(job.getDescription());</span>
+<span class="nc" id="L473">            List&lt;String&gt; candidateSkills = analysis.getSkillsExtracted();</span>
+<span class="nc" id="L474">            BigDecimal skillsMatch = calculateSkillsMatchRatio(requiredSkills, candidateSkills);</span>
+            
+            // Calculate experience match
+<span class="nc" id="L477">            BigDecimal experienceMatch = calculateExperienceMatch(analysis.getTotalExperienceYears(), job);</span>
+            
+            // Calculate overall scores
+<span class="nc" id="L480">            int skillsScore = (int) (skillsMatch.doubleValue() * 100);</span>
+<span class="nc" id="L481">            int experienceScore = (int) (experienceMatch.doubleValue() * 100);</span>
+<span class="nc" id="L482">            int overallScore = (skillsScore + experienceScore) / 2;</span>
+            
+            // Create scoring criteria
+<span class="nc" id="L485">            ResumeAnalysisDTO.ScoringCriteriaDTO criteria = ResumeAnalysisDTO.ScoringCriteriaDTO.builder()</span>
+<span class="nc" id="L486">                    .requiredSkillsMatch(skillsMatch)</span>
+<span class="nc" id="L487">                    .experienceLevelMatch(experienceMatch)</span>
+<span class="nc" id="L488">                    .industryRelevance(BigDecimal.valueOf(0.75))</span>
+<span class="nc" id="L489">                    .educationLevelMatch(BigDecimal.valueOf(0.80))</span>
+<span class="nc" id="L490">                    .build();</span>
+            
+<span class="nc" id="L492">            return ResumeAnalysisDTO.ResumeScoreDTO.builder()</span>
+<span class="nc" id="L493">                    .overallScore(overallScore)</span>
+<span class="nc" id="L494">                    .jobMatchScore(overallScore)</span>
+<span class="nc" id="L495">                    .experienceScore(experienceScore)</span>
+<span class="nc" id="L496">                    .skillsMatchScore(skillsScore)</span>
+<span class="nc" id="L497">                    .scoringCriteria(criteria)</span>
+<span class="nc" id="L498">                    .build();</span>
+                    
+<span class="nc" id="L500">        } catch (Exception e) {</span>
+<span class="nc" id="L501">            log.error(&quot;Error calculating job match score: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L502">            return createDefaultScoring();</span>
+        }
+    }
+
+    private List&lt;String&gt; extractRequiredSkills(String jobDescription) {
+<span class="nc" id="L507">        String lowerDescription = jobDescription.toLowerCase();</span>
+<span class="nc" id="L508">        return Arrays.asList(</span>
+                &quot;java&quot;, &quot;spring&quot;, &quot;react&quot;, &quot;javascript&quot;, &quot;python&quot;, &quot;sql&quot;, 
+                &quot;aws&quot;, &quot;docker&quot;, &quot;kubernetes&quot;, &quot;git&quot;, &quot;postgresql&quot;, &quot;mysql&quot;,
+                &quot;angular&quot;, &quot;vue&quot;, &quot;node.js&quot;, &quot;typescript&quot;, &quot;mongodb&quot;
+<span class="nc" id="L512">        ).stream()</span>
+<span class="nc" id="L513">                .filter(lowerDescription::contains)</span>
+<span class="nc" id="L514">                .toList();</span>
+    }
+
+    private BigDecimal calculateSkillsMatchRatio(List&lt;String&gt; requiredSkills, List&lt;String&gt; candidateSkills) {
+<span class="nc bnc" id="L518" title="All 2 branches missed.">        if (requiredSkills.isEmpty()) {</span>
+<span class="nc" id="L519">            return BigDecimal.valueOf(0.5);</span>
+        }
+        
+<span class="nc" id="L522">        long matchCount = requiredSkills.stream()</span>
+<span class="nc" id="L523">                .mapToLong(required -&gt; candidateSkills.stream()</span>
+<span class="nc bnc" id="L524" title="All 2 branches missed.">                        .anyMatch(candidate -&gt; candidate.toLowerCase().contains(required.toLowerCase())) ? 1 : 0)</span>
+<span class="nc" id="L525">                .sum();</span>
+        
+<span class="nc" id="L527">        return BigDecimal.valueOf((double) matchCount / requiredSkills.size());</span>
+    }
+
+    private BigDecimal calculateExperienceMatch(BigDecimal totalExperience, Job job) {
+<span class="nc bnc" id="L531" title="All 2 branches missed.">        if (totalExperience == null) {</span>
+<span class="nc" id="L532">            return BigDecimal.valueOf(0.5);</span>
+        }
+        
+<span class="nc bnc" id="L535" title="All 2 branches missed.">        if (totalExperience.compareTo(BigDecimal.valueOf(3)) &gt;= 0) {</span>
+<span class="nc" id="L536">            return BigDecimal.valueOf(0.9);</span>
+<span class="nc bnc" id="L537" title="All 2 branches missed.">        } else if (totalExperience.compareTo(BigDecimal.valueOf(1)) &gt;= 0) {</span>
+<span class="nc" id="L538">            return BigDecimal.valueOf(0.7);</span>
+        } else {
+<span class="nc" id="L540">            return BigDecimal.valueOf(0.4);</span>
+        }
+    }
+
+    private ResumeAnalysisDTO.ResumeScoreDTO createDefaultScoring() {
+<span class="nc" id="L545">        ResumeAnalysisDTO.ScoringCriteriaDTO criteria = ResumeAnalysisDTO.ScoringCriteriaDTO.builder()</span>
+<span class="nc" id="L546">                .requiredSkillsMatch(BigDecimal.valueOf(0.5))</span>
+<span class="nc" id="L547">                .experienceLevelMatch(BigDecimal.valueOf(0.5))</span>
+<span class="nc" id="L548">                .industryRelevance(BigDecimal.valueOf(0.5))</span>
+<span class="nc" id="L549">                .educationLevelMatch(BigDecimal.valueOf(0.5))</span>
+<span class="nc" id="L550">                .build();</span>
+        
+<span class="nc" id="L552">        return ResumeAnalysisDTO.ResumeScoreDTO.builder()</span>
+<span class="nc" id="L553">                .overallScore(50)</span>
+<span class="nc" id="L554">                .jobMatchScore(50)</span>
+<span class="nc" id="L555">                .experienceScore(50)</span>
+<span class="nc" id="L556">                .skillsMatchScore(50)</span>
+<span class="nc" id="L557">                .scoringCriteria(criteria)</span>
+<span class="nc" id="L558">                .build();</span>
+    }
+
+    private ResumeAnalysisDTO createErrorAnalysis(String errorMessage) {
+<span class="nc" id="L562">        ResumeAnalysisDTO.AnalysisMetadataDTO metadata = ResumeAnalysisDTO.AnalysisMetadataDTO.builder()</span>
+<span class="nc" id="L563">                .processedAt(LocalDateTime.now())</span>
+<span class="nc" id="L564">                .aiModelUsed(&quot;free-analysis&quot;)</span>
+<span class="nc" id="L565">                .confidenceScore(BigDecimal.ZERO)</span>
+<span class="nc" id="L566">                .processingTimeMs(0L)</span>
+<span class="nc" id="L567">                .processingNotes(Arrays.asList(&quot;Error during processing: &quot; + errorMessage))</span>
+<span class="nc" id="L568">                .build();</span>
+        
+<span class="nc" id="L570">        return ResumeAnalysisDTO.builder()</span>
+<span class="nc" id="L571">                .totalExperienceYears(BigDecimal.ZERO)</span>
+<span class="nc" id="L572">                .totalCompaniesWorked(0)</span>
+<span class="nc" id="L573">                .currentCompany(&quot;Unknown&quot;)</span>
+<span class="nc" id="L574">                .currentPosition(&quot;Unknown&quot;)</span>
+<span class="nc" id="L575">                .skillsExtracted(Arrays.asList())</span>
+<span class="nc" id="L576">                .resumeScore(createDefaultScoring())</span>
+<span class="nc" id="L577">                .analysisMetadata(metadata)</span>
+<span class="nc" id="L578">                .build();</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

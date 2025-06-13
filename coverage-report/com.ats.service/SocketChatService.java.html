@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SocketChatService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.service</a> &gt; <span class="el_source">SocketChatService.java</span></div><h1>SocketChatService.java</h1><pre class="source lang-java linenums">package com.ats.service;
+
+import com.ats.dto.ChatMessageDTO;
+import com.ats.dto.ConversationDTO;
+import com.ats.model.Chat;
+import com.ats.model.Conversation;
+import com.ats.model.ConversationStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@Transactional
+public class SocketChatService {
+
+    private final ChatService chatService;
+    private final ConversationService conversationService;
+
+    @Autowired
+<span class="fc" id="L25">    public SocketChatService(ChatService chatService, ConversationService conversationService) {</span>
+<span class="fc" id="L26">        this.chatService = chatService;</span>
+<span class="fc" id="L27">        this.conversationService = conversationService;</span>
+<span class="fc" id="L28">    }</span>
+
+    public ConversationJoinResult joinChat(Long userId) {
+        // Check if there's an existing active conversation first
+<span class="nc" id="L32">        List&lt;Conversation&gt; activeConversations = conversationService.getConversationsByCandidate(userId)</span>
+<span class="nc" id="L33">            .stream()</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">            .filter(conv -&gt; conv.getStatus() == ConversationStatus.ACTIVE)</span>
+<span class="nc" id="L35">            .toList();</span>
+        
+<span class="nc" id="L37">        boolean isNewConversation = activeConversations.isEmpty();</span>
+        
+<span class="nc" id="L39">        Conversation conversation = conversationService.getOrCreateConversationForCandidate(userId);</span>
+<span class="nc" id="L40">        ConversationDTO conversationDTO = mapToConversationDTO(conversation);</span>
+        
+<span class="nc" id="L42">        List&lt;Chat&gt; messages = chatService.getMessagesByConversation(conversation.getId());</span>
+<span class="nc" id="L43">        List&lt;ChatMessageDTO&gt; messageDTOs = messages.stream()</span>
+<span class="nc" id="L44">            .map(this::mapToChatMessageDTO)</span>
+<span class="nc" id="L45">            .toList();</span>
+            
+<span class="nc" id="L47">        return new ConversationJoinResult(conversationDTO, messageDTOs, isNewConversation);</span>
+    }
+
+    public ConversationDTO takeConversation(Long adminId, Long conversationId) {
+<span class="nc" id="L51">        Optional&lt;Conversation&gt; conversationOpt = conversationService.getConversationById(conversationId);</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (conversationOpt.isEmpty()) {</span>
+<span class="nc" id="L53">            throw new RuntimeException(&quot;Conversation not found&quot;);</span>
+        }
+        
+<span class="nc" id="L56">        Conversation conversation = conversationOpt.get();</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (conversation.getAdmin() != null) {</span>
+<span class="nc" id="L58">            throw new RuntimeException(&quot;Conversation already assigned to another admin&quot;);</span>
+        }
+        
+<span class="nc" id="L61">        Conversation updatedConversation = conversationService.assignAdminToConversation(conversationId, adminId);</span>
+<span class="nc" id="L62">        return mapToConversationDTO(updatedConversation);</span>
+    }
+
+    public ChatMessageDTO sendMessage(Long conversationId, Long userId, String content) {
+        // Validate that the conversation is still active
+<span class="nc" id="L67">        Optional&lt;Conversation&gt; conversationOpt = conversationService.getConversationById(conversationId);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (conversationOpt.isEmpty()) {</span>
+<span class="nc" id="L69">            throw new RuntimeException(&quot;Conversation not found&quot;);</span>
+        }
+        
+<span class="nc" id="L72">        Conversation conversation = conversationOpt.get();</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (conversation.getStatus() == ConversationStatus.CLOSED) {</span>
+<span class="nc" id="L74">            throw new RuntimeException(&quot;Cannot send message: Conversation has been closed&quot;);</span>
+        }
+        
+<span class="nc" id="L77">        Chat savedMessage = chatService.sendMessage(conversationId, userId, content);</span>
+<span class="nc" id="L78">        return mapToChatMessageDTO(savedMessage);</span>
+    }
+
+    public ConversationDTO closeConversation(Long conversationId) {
+<span class="nc" id="L82">        Conversation closedConversation = conversationService.closeConversation(conversationId);</span>
+<span class="nc" id="L83">        return mapToConversationDTO(closedConversation);</span>
+    }
+
+    public List&lt;ConversationDTO&gt; getUnassignedConversations() {
+<span class="nc" id="L87">        List&lt;Conversation&gt; unassignedConversations = conversationService.getUnassignedConversations();</span>
+<span class="nc" id="L88">        return unassignedConversations.stream()</span>
+<span class="nc" id="L89">            .map(this::mapToConversationDTO)</span>
+<span class="nc" id="L90">            .toList();</span>
+    }
+
+    public List&lt;ConversationDTO&gt; closeAllAdminConversations(Long adminId) {
+<span class="nc" id="L94">        List&lt;Conversation&gt; activeConversations = conversationService.getActiveConversationsByAdmin(adminId);</span>
+<span class="nc" id="L95">        List&lt;ConversationDTO&gt; closedConversations = new ArrayList&lt;&gt;();</span>
+        
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        for (Conversation conversation : activeConversations) {</span>
+            try {
+<span class="nc" id="L99">                Conversation closedConversation = conversationService.closeConversation(conversation.getId());</span>
+<span class="nc" id="L100">                closedConversations.add(mapToConversationDTO(closedConversation));</span>
+<span class="nc" id="L101">            } catch (Exception e) {</span>
+                // Log error but continue with other conversations
+<span class="nc" id="L103">                System.err.println(&quot;Error closing conversation &quot; + conversation.getId() + &quot;: &quot; + e.getMessage());</span>
+<span class="nc" id="L104">            }</span>
+<span class="nc" id="L105">        }</span>
+        
+<span class="nc" id="L107">        return closedConversations;</span>
+    }
+
+    private ChatMessageDTO mapToChatMessageDTO(Chat chat) {
+<span class="nc" id="L111">        ChatMessageDTO dto = new ChatMessageDTO();</span>
+<span class="nc" id="L112">        dto.setId(chat.getId());</span>
+<span class="nc" id="L113">        dto.setConversationId(chat.getConversation().getId());</span>
+<span class="nc" id="L114">        dto.setSenderId(chat.getSender().getId());</span>
+<span class="nc" id="L115">        dto.setSenderName(chat.getSender().getFirstName() + &quot; &quot; + chat.getSender().getLastName());</span>
+<span class="nc" id="L116">        dto.setSenderRole(chat.getSender().getRole().toString());</span>
+<span class="nc" id="L117">        dto.setContent(chat.getContent());</span>
+<span class="nc" id="L118">        dto.setCreatedAt(chat.getCreatedAt().atZone(ZoneId.systemDefault()).toString());</span>
+<span class="nc" id="L119">        dto.setMessageType(&quot;text&quot;);</span>
+<span class="nc" id="L120">        return dto;</span>
+    }
+
+    private ConversationDTO mapToConversationDTO(Conversation conversation) {
+<span class="nc" id="L124">        ConversationDTO dto = new ConversationDTO();</span>
+<span class="nc" id="L125">        dto.setId(conversation.getId());</span>
+<span class="nc" id="L126">        dto.setCandidateId(conversation.getCandidate().getId());</span>
+<span class="nc" id="L127">        dto.setCandidateName(conversation.getCandidate().getFirstName() + &quot; &quot; + conversation.getCandidate().getLastName());</span>
+        
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (conversation.getAdmin() != null) {</span>
+<span class="nc" id="L130">            dto.setAdminId(conversation.getAdmin().getId());</span>
+<span class="nc" id="L131">            dto.setAdminName(conversation.getAdmin().getFirstName() + &quot; &quot; + conversation.getAdmin().getLastName());</span>
+        }
+        
+<span class="nc" id="L134">        dto.setStatus(conversation.getStatus());</span>
+<span class="nc" id="L135">        dto.setCreatedAt(conversation.getCreatedAt().atZone(ZoneId.systemDefault()).toString());</span>
+<span class="nc" id="L136">        dto.setUpdatedAt(conversation.getUpdatedAt().atZone(ZoneId.systemDefault()).toString());</span>
+<span class="nc" id="L137">        return dto;</span>
+    }
+
+    public static class ConversationJoinResult {
+        private final ConversationDTO conversation;
+        private final List&lt;ChatMessageDTO&gt; messages;
+        private final boolean isNewConversation;
+
+<span class="nc" id="L145">        public ConversationJoinResult(ConversationDTO conversation, List&lt;ChatMessageDTO&gt; messages, boolean isNewConversation) {</span>
+<span class="nc" id="L146">            this.conversation = conversation;</span>
+<span class="nc" id="L147">            this.messages = messages;</span>
+<span class="nc" id="L148">            this.isNewConversation = isNewConversation;</span>
+<span class="nc" id="L149">        }</span>
+
+<span class="nc" id="L151">        public ConversationDTO getConversation() { return conversation; }</span>
+<span class="nc" id="L152">        public List&lt;ChatMessageDTO&gt; getMessages() { return messages; }</span>
+<span class="nc" id="L153">        public boolean isNewConversation() { return isNewConversation; }</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

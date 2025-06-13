@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinkedInOAuth2User.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">ats-backend</a> &gt; <a href="index.source.html" class="el_package">com.ats.security</a> &gt; <span class="el_source">LinkedInOAuth2User.java</span></div><h1>LinkedInOAuth2User.java</h1><pre class="source lang-java linenums">package com.ats.security;
+
+import com.ats.model.Role;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
+public class LinkedInOAuth2User implements OAuth2User {
+    private final OAuth2User oauth2User;
+    private final Role role;
+
+<span class="nc" id="L16">    public LinkedInOAuth2User(OAuth2User oauth2User, Role role) {</span>
+<span class="nc" id="L17">        this.oauth2User = oauth2User;</span>
+<span class="nc" id="L18">        this.role = role;</span>
+<span class="nc" id="L19">    }</span>
+
+    @Override
+    public Map&lt;String, Object&gt; getAttributes() {
+<span class="nc" id="L23">        return oauth2User.getAttributes();</span>
+    }
+
+    @Override
+    public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
+<span class="nc" id="L28">        return Collections.singletonList(new SimpleGrantedAuthority(&quot;ROLE_&quot; + role.name()));</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="nc" id="L33">        return oauth2User.getAttribute(&quot;email&quot;);</span>
+    }
+
+    public String getEmail() {
+<span class="nc" id="L37">        return oauth2User.getAttribute(&quot;email&quot;);</span>
+    }
+
+    public String getFirstName() {
+<span class="nc" id="L41">        return oauth2User.getAttribute(&quot;firstName&quot;);</span>
+    }
+
+    public String getLastName() {
+<span class="nc" id="L45">        return oauth2User.getAttribute(&quot;lastName&quot;);</span>
+    }
+
+    public String getLinkedinId() {
+<span class="nc" id="L49">        return oauth2User.getAttribute(&quot;id&quot;);</span>
+    }
+
+    public String getProfilePictureUrl() {
+<span class="nc" id="L53">        return oauth2User.getAttribute(&quot;profilePicture&quot;);</span>
+    }
+
+    public String getLinkedinProfileUrl() {
+<span class="nc" id="L57">        return oauth2User.getAttribute(&quot;profileUrl&quot;);</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

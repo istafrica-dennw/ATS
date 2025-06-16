@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ats-postgres-prod
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - ats-prod-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    build:
+      context: ./ollama
+      dockerfile: Dockerfile
+    container_name: ats-ollama-prod
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_prod_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3}
+      - OLLAMA_AUTO_PULL=${OLLAMA_AUTO_PULL:-true}
+      - OLLAMA_STARTUP_TIMEOUT=${OLLAMA_STARTUP_TIMEOUT:-30}
+    networks:
+      - ats-prod-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: ats-backend-prod
+    ports:
+      - "8080:8080"
+      - "9092:9092"
+    env_file:
+      - .env
+    environment:
+      # Production Spring Profile
+      - SPRING_PROFILES_ACTIVE=prod
+      # Database Configuration
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      # Security Configuration
+      - JWT_SECRET=${JWT_SECRET}
+      - SPRING_SECURITY_USER_NAME=${SPRING_SECURITY_USER_NAME}
+      - SPRING_SECURITY_USER_PASSWORD=${SPRING_SECURITY_USER_PASSWORD}
+      - SPRING_SECURITY_USER_ROLES=${SPRING_SECURITY_USER_ROLES}
+      # Email Configuration
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      # OAuth Configuration
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+      # Ollama Configuration
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3}
+      - APP_RESUME_ANALYSIS_PROVIDER=${APP_RESUME_ANALYSIS_PROVIDER:-ollama}
+      # Production JVM Settings
+      - JAVA_OPTS=-Xmx1g -Xms512m -XX:+UseG1GC -XX:+UseStringDeduplication
+    volumes:
+      - profile_prod_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    networks:
+      - ats-prod-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ats-frontend-prod
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_SOCKET_URL=${REACT_APP_SOCKET_URL:-http://localhost:9092}
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - ats-prod-network
+    restart: unless-stopped
+
+networks:
+  ats-prod-network:
+    driver: bridge
+
+volumes:
+  postgres_prod_data:
+    name: ats-system_postgres_prod_data
+  profile_prod_uploads:
+    name: ats-system_ats_prod_uploads
+  ollama_prod_data:
+    name: ats-system_ollama_prod_data 

@@ -317,4 +317,37 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Production Profile -->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <spring.profiles.active>prod</spring.profiles.active>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Exclude development dependencies in production -->
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <excludeDevtools>true</excludeDevtools>
+                            <excludes>
+                                <exclude>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                </exclude>
+                                <exclude>
+                                    <groupId>org.springframework.boot</groupId>
+                                    <artifactId>spring-boot-devtools</artifactId>
+                                </exclude>
+                            </excludes>
+                            <mainClass>com.ats.AtsApplication</mainClass>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project> 

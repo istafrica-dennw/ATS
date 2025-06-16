@@ -1,0 +1,99 @@
+spring:
+  # Production Database Configuration
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      connection-timeout: 20000
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
+
+  # JPA Configuration for Production
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        generate_statistics: false
+        jdbc:
+          batch_size: 25
+          order_inserts: true
+          order_updates: true
+
+  # Production Logging Configuration
+  output:
+    ansi:
+      enabled: never
+
+# Production Logging
+logging:
+  level:
+    root: INFO
+    com.ats: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN
+    org.springframework.web: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /app/logs/ats-application.log
+    max-size: 100MB
+    max-history: 30
+
+# Production Server Configuration
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  http2:
+    enabled: true
+  error:
+    include-stacktrace: never
+    include-message: never
+
+# Production Management/Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Production Security Headers
+security:
+  headers:
+    frame: DENY
+    content-type: true
+    xss: true
+
+# Production File Upload
+servlet:
+  multipart:
+    max-file-size: 5MB
+    max-request-size: 5MB
+
+# Production Socket.IO Configuration
+socketio:
+  host: 0.0.0.0
+  port: 9092
+  bossCount: 1
+  workCount: 4
+  allowCustomRequests: false
+  upgradeTimeout: 10000
+  pingTimeout: 60000
+  pingInterval: 25000 

@@ -1,10 +1,11 @@
 # ATS System - Test Makefile
 
-.PHONY: test test-unit test-setup test-cleanup test-coverage test-coverage-report test-coverage-view help dev-setup dev-backend dev-frontend dev-full dev-cleanup prod-build prod-up prod-down logs-backend logs-frontend logs-db clean-all
+.PHONY: test test-unit test-setup test-cleanup test-coverage test-coverage-report test-coverage-view help dev-setup dev-backend dev-frontend dev-full dev-cleanup prod-build prod-up prod-down prod-logs prod-cleanup clean-all
 
 # Default target
 help:
 	@echo "Available targets:"
+	@echo "  🧪 TEST COMMANDS"
 	@echo "  test-setup         - Start test database"
 	@echo "  test-unit          - Run unit tests"
 	@echo "  test               - Run all tests (setup + unit tests)"
@@ -12,19 +13,23 @@ help:
 	@echo "  test-coverage-report - Generate and extract coverage report"
 	@echo "  test-coverage-view - Open coverage report in browser"
 	@echo "  test-cleanup       - Stop and cleanup test environment"
+	@echo ""
+	@echo "  🚀 DEVELOPMENT COMMANDS"
 	@echo "  dev-setup          - Start development environment"
 	@echo "  dev-backend        - Start backend in development mode"
 	@echo "  dev-frontend       - Start frontend in development mode"
 	@echo "  dev-full           - Start full development environment"
 	@echo "  dev-cleanup        - Clean up development environment"
+	@echo ""
+	@echo "  🏭 PRODUCTION COMMANDS"
 	@echo "  prod-build         - Build production images"
 	@echo "  prod-up            - Start production environment"
 	@echo "  prod-down          - Stop production environment"
-	@echo "  logs-backend       - Show backend logs"
-	@echo "  logs-frontend      - Show frontend logs"
-	@echo "  logs-db            - Show database logs"
-	@echo "  clean-all          - Clean up all Docker resources"
-	@echo "  help               - Show this help message"
+	@echo "  prod-logs          - View production logs"
+	@echo "  prod-cleanup       - Clean up production environment"
+	@echo ""
+	@echo "  🧹 UTILITY COMMANDS"
+	@echo "  clean-all          - Clean up all environments and volumes"
 
 # Start test database
 test-setup:
@@ -91,8 +96,8 @@ dev-cleanup:
 
 # Production Environment Commands
 prod-build:
-	@echo "🏗️ Building production images..."
-	docker-compose -f docker-compose.prod.yml build
+	@echo "🏭 Building production images..."
+	docker-compose -f docker-compose.prod.yml build --no-cache
 
 prod-up:
 	@echo "🚀 Starting production environment..."
@@ -102,19 +107,20 @@ prod-down:
 	@echo "🛑 Stopping production environment..."
 	docker-compose -f docker-compose.prod.yml down
 
+prod-logs:
+	@echo "📋 Viewing production logs..."
+	docker-compose -f docker-compose.prod.yml logs -f
+
+prod-cleanup:
+	@echo "🧹 Cleaning up production environment..."
+	docker-compose -f docker-compose.prod.yml down -v
+
 # Utility Commands
-logs-backend:
-	docker-compose logs -f backend
-
-logs-frontend:
-	docker-compose logs -f frontend
-
-logs-db:
-	docker-compose logs -f postgres
-
 clean-all:
-	@echo "🧹 Cleaning up all Docker resources..."
-	docker-compose down
-	docker-compose -f docker-compose.test.yml down
-	docker-compose -f docker-compose.prod.yml down
-	docker system prune -f 
+	@echo "🧹 Cleaning up all environments..."
+	docker-compose down -v 2>/dev/null || true
+	docker-compose -f docker-compose.test.yml down -v 2>/dev/null || true
+	docker-compose -f docker-compose.prod.yml down -v 2>/dev/null || true
+	@echo "🗑️  Removing unused Docker resources..."
+	docker system prune -f
+	@echo "✅ Cleanup complete!" 

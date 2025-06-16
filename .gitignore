@@ -103,7 +103,7 @@ backend/application-*.properties
 !backend/application-prod.properties
 
 # Docker
-.env
+.env*
 docker-compose.override.yml
 
 # System Files

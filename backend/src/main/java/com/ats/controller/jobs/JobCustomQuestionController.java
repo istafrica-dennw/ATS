@@ -126,7 +126,13 @@ public class JobCustomQuestionController extends BaseJobController {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-        }catch (Exception e) {
+        } catch (IllegalStateException e) {
+            // Question has answers, cannot be deleted
+            logger.warn("Cannot delete custom question with ID: {} - {}", questionId, e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        } catch (Exception e) {
             logger.error("Error deleting custom question with ID: {}", questionId, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
                 "An error occurred while deleting the custom question", e);

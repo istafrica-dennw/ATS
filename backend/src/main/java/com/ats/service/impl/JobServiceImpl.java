@@ -20,9 +20,16 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class JobServiceImpl implements JobService {
+
+    private static final Logger logger = LoggerFactory.getLogger(JobServiceImpl.class);
 
     @Autowired
     private JobRepository jobRepository;
@@ -62,9 +69,8 @@ public class JobServiceImpl implements JobService {
         return jobDTO;
     }
 
-
-
     @Override
+    @Transactional
     public JobDTO updateJob(JobDTO jobDTO, Long id) {
         Optional<Job> existingJob = jobRepository.findById(id);
         
@@ -73,17 +79,66 @@ public class JobServiceImpl implements JobService {
             updatedJob.setTitle(jobDTO.getTitle());
             updatedJob.setDescription(jobDTO.getDescription());
             updatedJob.setLocation(jobDTO.getLocation());
-
             updatedJob.setDepartment(jobDTO.getDepartment());
             updatedJob.setSalaryRange(jobDTO.getSalaryRange());
             updatedJob.setEmploymentType(jobDTO.getEmploymentType());
             updatedJob.setSkills(jobDTO.getSkills());
             updatedJob.setWorkSetting(jobDTO.getWorkSetting());
             updatedJob.setJobStatus(jobDTO.getJobStatus());
+            
+            // Save the job first
             Job savedJob = jobRepository.save(updatedJob);
-            return modelMapper.map(savedJob, JobDTO.class);
+            
+            // Handle custom questions if provided
+            if (jobDTO.getCustomQuestions() != null) {
+                handleCustomQuestionsUpdate(id, jobDTO.getCustomQuestions());
+            }
+            
+            // Return the updated job with custom questions
+            return getJobById(id);
         } else {
-            throw new NotFoundException("Job not found with id: " + jobDTO.getId());
+            throw new NotFoundException("Job not found with id: " + id);
+        }
+    }
+    
+    /**
+     * Handle updating custom questions for a job
+     * This method will create new questions and delete removed ones
+     */
+    private void handleCustomQuestionsUpdate(Long jobId, List<JobCustomQuestionDTO> newQuestions) {
+        // Get existing questions
+        List<JobCustomQuestionDTO> existingQuestions = jobCustomQuestionService.getAllCustomQuestionsbyJobId(jobId);
+        
+        // Create a map of existing questions by ID for quick lookup
+        Map<Long, JobCustomQuestionDTO> existingQuestionsMap = existingQuestions.stream()
+                .collect(Collectors.toMap(JobCustomQuestionDTO::getId, q -> q));
+        
+        // Track which existing questions are still present
+        Set<Long> keptQuestionIds = new HashSet<>();
+        
+        // Process new questions
+        for (JobCustomQuestionDTO newQuestion : newQuestions) {
+            if (newQuestion.getId() != null && existingQuestionsMap.containsKey(newQuestion.getId())) {
+                // Keep existing question (no update functionality)
+                keptQuestionIds.add(newQuestion.getId());
+            } else {
+                // Create new question
+                newQuestion.setJobId(jobId);
+                newQuestion.setId(null); // Ensure ID is null for new questions
+                jobCustomQuestionService.createCustomQuestion(newQuestion);
+            }
+        }
+        
+        // Delete questions that are no longer present
+        for (JobCustomQuestionDTO existingQuestion : existingQuestions) {
+            if (!keptQuestionIds.contains(existingQuestion.getId())) {
+                try {
+                    jobCustomQuestionService.deleteCustomQuestionById(existingQuestion.getId());
+                } catch (IllegalStateException e) {
+                    // Question has answers, cannot be deleted - log warning but continue
+                    logger.warn("Cannot delete custom question with ID: {} - {}", existingQuestion.getId(), e.getMessage());
+                }
+            }
         }
     }
 

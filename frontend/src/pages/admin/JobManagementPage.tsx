@@ -29,13 +29,14 @@ interface Job {
   workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
   jobStatus: 'DRAFT' | 'PUBLISHED' | 'EXPIRED' | 'CLOSED' | 'REOPENED';
   salaryRange: string;
+  customQuestions?: CustomQuestion[];
 }
 
 interface CustomQuestion {
   id: string;
   question: string;
   isRequired: boolean;
-  type: 'TEXT' | 'MULTIPLE_CHOICE' | 'CHECKBOX' | 'DROPDOWN';
+  type: 'TEXT' | 'MULTIPLE_CHOICE' | 'YES_NO' | 'RATING' | 'FILE_UPLOAD' | 'DATE';
   options?: string[];
 }
 
@@ -169,13 +170,31 @@ const JobManagementPage: React.FC = () => {
     e.preventDefault();
     
     try {
+      // Convert frontend custom questions format to backend format
+      const convertedCustomQuestions = formData.customQuestions.map(q => ({
+        id: q.id.startsWith('temp_') ? null : parseInt(q.id), // null for new questions with temp_ prefix
+        jobId: currentJobId,
+        questionText: q.question,
+        questionType: q.type,
+        options: q.options && q.options.length > 0 ? q.options : null,
+        required: q.isRequired,
+        active: true
+      }));
+
+      const submitData = {
+        ...formData,
+        customQuestions: convertedCustomQuestions
+      };
+
+      console.log('Submitting job data:', submitData);
+
       if (isEditing && currentJobId) {
         // Update existing job
-        await axios.put(`/api/jobs/${currentJobId}`, formData);
+        await axios.put(`/api/jobs/${currentJobId}`, submitData);
         toast.success('Job updated successfully!');
       } else {
         // Create new job
-        await axios.post('/api/jobs', formData);
+        await axios.post('/api/jobs', submitData);
         toast.success('Job created successfully!');
       }
       
@@ -198,7 +217,6 @@ const JobManagementPage: React.FC = () => {
     type: 'TEXT',
     options: []
   });
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [showQuestionForm, setShowQuestionForm] = useState<boolean>(false);
   const [newOption, setNewOption] = useState<string>('');
 
@@ -208,8 +226,8 @@ const JobManagementPage: React.FC = () => {
     
     const question: CustomQuestion = {
       ...newQuestion,
-      id: Date.now().toString(),
-      options: newQuestion.type !== 'TEXT' ? (newQuestion.options || []) : undefined
+      id: `temp_${Date.now()}`, // Use temp_ prefix for new questions
+      options: newQuestion.type === 'MULTIPLE_CHOICE' ? (newQuestion.options || []) : undefined
     };
     
     setFormData({
@@ -227,52 +245,33 @@ const JobManagementPage: React.FC = () => {
     setShowQuestionForm(false);
   };
 
-  // Update an existing question
-  const handleUpdateQuestion = () => {
-    if (!newQuestion.question.trim() || !editingQuestionId) return;
-    
-    setFormData({
-      ...formData,
-      customQuestions: formData.customQuestions.map(q => 
-        q.id === editingQuestionId 
-          ? { 
-              ...newQuestion, 
-              id: editingQuestionId,
-              options: newQuestion.type !== 'TEXT' ? (newQuestion.options || []) : undefined
-            } 
-          : q
-      )
-    });
-    
-    // Reset form
-    setNewQuestion({ 
-      question: '', 
-      isRequired: false, 
-      type: 'TEXT',
-      options: [] 
-    });
-    setEditingQuestionId(null);
-    setShowQuestionForm(false);
-  };
-
   // Delete a question
-  const handleDeleteQuestion = (id: string) => {
-    setFormData({
-      ...formData,
-      customQuestions: formData.customQuestions.filter(q => q.id !== id)
-    });
-  };
+  const handleDeleteQuestion = async (id: string) => {
+    // If it's a new question (temp_ prefix), delete immediately
+    if (id.startsWith('temp_')) {
+      setFormData({
+        ...formData,
+        customQuestions: formData.customQuestions.filter(q => q.id !== id)
+      });
+      return;
+    }
 
-  // Edit a question
-  const handleEditQuestion = (question: CustomQuestion) => {
-    setNewQuestion({
-      question: question.question,
-      isRequired: question.isRequired,
-      type: question.type,
-      options: [...(question.options || [])]
-    });
-    setEditingQuestionId(question.id);
-    setShowQuestionForm(true);
+    // For existing questions, check if they have answers
+    try {
+      await axios.delete(`/api/jobs/custom-questions/${id}`);
+      setFormData({
+        ...formData,
+        customQuestions: formData.customQuestions.filter(q => q.id !== id)
+      });
+      toast.success('Question deleted successfully!');
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        toast.error('Cannot delete question: it has already been answered by applicants');
+      } else {
+        toast.error('Failed to delete question. Please try again.');
+      }
+      console.error('Error deleting question:', error);
+    }
   };
 
   // Add option to question
@@ -296,28 +295,49 @@ const JobManagementPage: React.FC = () => {
   };
 
   // Open edit modal with job data
-  const handleEdit = (job: Job) => {
+  const handleEdit = async (job: Job) => {
     console.log('Editing job:', job);
     console.log('Job location:', job.location);
     
-    const updatedFormData = {
-      title: job.title || '',
-      department: job.department || '',
-      description: job.description || '',
-      location: job.location || '',
-      employmentType: job.employmentType || 'Full Time',
-      skills: job.skills || [],
-      workSetting: job.workSetting || 'ONSITE',
-      jobStatus: job.jobStatus || 'DRAFT',
-      salaryRange: job.salaryRange || '',
-      customQuestions: (job as any).customQuestions || []
-    };
-    
-    console.log('Setting form data:', updatedFormData);
-    setFormData(updatedFormData);
-    setIsEditing(true);
-    setCurrentJobId(job.id);
-    setShowModal(true);
+    try {
+      // Fetch the complete job details including custom questions
+      const response = await axios.get(`/api/jobs/${job.id}`);
+      const fullJobData = response.data;
+      
+      console.log('Full job data with custom questions:', fullJobData);
+      
+      // Convert backend custom questions format to frontend format
+      const convertedCustomQuestions = fullJobData.customQuestions ? 
+        fullJobData.customQuestions.map((q: any) => ({
+          id: q.id.toString(), // Convert number to string for frontend
+          question: q.questionText,
+          isRequired: q.required,
+          type: q.questionType,
+          options: q.options || []
+        })) : [];
+      
+      const updatedFormData = {
+        title: fullJobData.title || '',
+        department: fullJobData.department || '',
+        description: fullJobData.description || '',
+        location: fullJobData.location || '',
+        employmentType: fullJobData.employmentType || 'Full Time',
+        skills: fullJobData.skills || [],
+        workSetting: fullJobData.workSetting || 'ONSITE',
+        jobStatus: fullJobData.jobStatus || 'DRAFT',
+        salaryRange: fullJobData.salaryRange || '',
+        customQuestions: convertedCustomQuestions
+      };
+      
+      console.log('Setting form data with converted custom questions:', updatedFormData);
+      setFormData(updatedFormData);
+      setIsEditing(true);
+      setCurrentJobId(job.id);
+      setShowModal(true);
+    } catch (error) {
+      console.error('Error fetching job details for editing:', error);
+      toast.error('Failed to load job details for editing');
+    }
   };
 
   // Delete a job
@@ -867,7 +887,6 @@ const JobManagementPage: React.FC = () => {
                                 type: 'TEXT',
                                 options: [] 
                               });
-                              setEditingQuestionId(null);
                               setShowQuestionForm(true);
                             }}
                             className="text-sm text-indigo-600 hover:text-indigo-900"
@@ -897,13 +916,6 @@ const JobManagementPage: React.FC = () => {
                                 <div className="flex space-x-2">
                                   <button
                                     type="button"
-                                    onClick={() => handleEditQuestion(q)}
-                                    className="text-indigo-600 hover:text-indigo-900"
-                                  >
-                                    <PencilIcon className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    type="button"
                                     onClick={() => handleDeleteQuestion(q.id)}
                                     className="text-red-600 hover:text-red-900"
                                   >
@@ -920,7 +932,7 @@ const JobManagementPage: React.FC = () => {
                       {showQuestionForm && (
                         <div className="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50">
                           <h4 className="text-sm font-medium text-gray-700 mb-3">
-                            {editingQuestionId ? 'Edit Question' : 'Add New Question'}
+                            Add New Question
                           </h4>
                           
                           <div className="space-y-4">
@@ -954,13 +966,15 @@ const JobManagementPage: React.FC = () => {
                               >
                                 <option value="TEXT">Text</option>
                                 <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-                                <option value="CHECKBOX">Checkbox</option>
-                                <option value="DROPDOWN">Dropdown</option>
+                                <option value="YES_NO">Yes/No</option>
+                                <option value="RATING">Rating</option>
+                                <option value="FILE_UPLOAD">File Upload</option>
+                                <option value="DATE">Date</option>
                               </select>
                             </div>
 
-                            {/* Options for non-text questions */}
-                            {newQuestion.type !== 'TEXT' && (
+                            {/* Options for multiple choice questions */}
+                            {newQuestion.type === 'MULTIPLE_CHOICE' && (
                               <div>
                                 <label className="block text-sm font-medium text-gray-700">
                                   Options (one per line) *
@@ -1029,7 +1043,6 @@ const JobManagementPage: React.FC = () => {
                                     type: 'TEXT',
                                     options: [] 
                                   });
-                                  setEditingQuestionId(null);
                                 }}
                                 className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                               >
@@ -1037,11 +1050,11 @@ const JobManagementPage: React.FC = () => {
                               </button>
                               <button
                                 type="button"
-                                onClick={editingQuestionId ? handleUpdateQuestion : handleAddQuestion}
-                                disabled={!newQuestion.question.trim() || (newQuestion.type !== 'TEXT' && (!newQuestion.options || newQuestion.options.length === 0))}
-                                className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${(!newQuestion.question.trim() || (newQuestion.type !== 'TEXT' && (!newQuestion.options || newQuestion.options.length === 0))) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={handleAddQuestion}
+                                disabled={!newQuestion.question.trim() || (newQuestion.type === 'MULTIPLE_CHOICE' && (!newQuestion.options || newQuestion.options.length === 0))}
+                                className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${(!newQuestion.question.trim() || (newQuestion.type === 'MULTIPLE_CHOICE' && (!newQuestion.options || newQuestion.options.length === 0))) ? 'opacity-50 cursor-not-allowed' : ''}`}
                               >
-                                {editingQuestionId ? 'Update Question' : 'Add Question'}
+                                Add Question
                               </button>
                             </div>
                           </div>

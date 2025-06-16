@@ -21,11 +21,24 @@ import {
   EyeIcon,
   UserGroupIcon,
   XMarkIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
 import { ClockIcon as SolidClockIcon } from '@heroicons/react/24/solid';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+
+interface CustomQuestion {
+  id: number;
+  jobId: number;
+  questionText: string;
+  questionType: 'TEXT' | 'MULTIPLE_CHOICE' | 'YES_NO' | 'RATING' | 'FILE_UPLOAD' | 'DATE';
+  options?: string[];
+  required: boolean;
+  active: boolean;
+  displayOrder?: number;
+  maxCharacterLimit?: number;
+}
 
 interface Job {
   id: number;
@@ -39,6 +52,7 @@ interface Job {
   workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
   jobStatus: 'DRAFT' | 'PUBLISHED' | 'EXPIRED' | 'CLOSED' | 'REOPENED';
   salaryRange: string;
+  customQuestions?: CustomQuestion[];
 }
 
 interface ResumeAnalysis {
@@ -739,6 +753,57 @@ const AdminJobDetailsPage: React.FC = () => {
                 {job.description}
               </dd>
             </div>
+            {/* Custom Questions Section */}
+            {job.customQuestions && job.customQuestions.length > 0 && (
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500 flex items-center">
+                  <QuestionMarkCircleIcon className="h-5 w-5 mr-2 text-gray-400" /> Custom Questions
+                </dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  <div className="space-y-4">
+                    {job.customQuestions.map((question, index) => (
+                      <div key={question.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                Question {index + 1}
+                              </span>
+                              {question.required && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  Required
+                                </span>
+                              )}
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {question.questionType.replace('_', ' ').toLowerCase()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-700 mb-3">
+                              {question.questionText}
+                            </p>
+                            {question.options && question.options.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-gray-600 mb-1">Options:</p>
+                                <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
+                                  {question.options.map((option, optionIndex) => (
+                                    <li key={optionIndex}>{option}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {question.maxCharacterLimit && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                Character limit: {question.maxCharacterLimit}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </dd>
+              </div>
+            )}
           </dl>
         </div>
       </div>

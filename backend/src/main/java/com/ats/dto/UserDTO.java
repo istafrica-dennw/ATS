@@ -13,20 +13,6 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-// @Schema(
-//     description = "User Data Transfer Object - Contains user information for profile operations",
-//     example = "{\n" +
-//               "  \"id\": 1,\n" +
-//               "  \"email\": \"john.doe@example.com\",\n" +
-//               "  \"firstName\": \"John\",\n" +
-//               "  \"lastName\": \"Doe\",\n" +
-//               "  \"role\": \"CANDIDATE\",\n" +
-//               "  \"department\": \"Engineering\",\n" +
-//               "  \"linkedinProfileUrl\": \"https://linkedin.com/in/johndoe\",\n" +
-//               "  \"profilePictureUrl\": \"/api/files/profile-pictures/user-profile.jpg\",\n" +
-//               "  \"birthDate\": \"1990-01-16\"\n" +
-//               "}"
-// )
 public class UserDTO {
     @Schema(
         description = "User ID - Auto-generated, read-only", 

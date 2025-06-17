@@ -1,6 +1,7 @@
 package com.ats.controller;
 
 import com.ats.dto.ApplicationDTO;
+import com.ats.dto.JobOfferEmailRequest;
 import com.ats.exception.AtsCustomExceptions.BadRequestException;
 import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.ApplicationStatus;
@@ -38,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.mail.MessagingException;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -324,7 +326,6 @@ public class ApplicationController {
         }
     }
 
-
     @Operation(summary = "Delete an application", 
                description = "Delete an application (can be done by the candidate who submitted it or an admin)")
     @ApiResponses(value = {
@@ -371,6 +372,91 @@ public class ApplicationController {
             log.error("Error deleting application", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
                     "An error occurred while deleting the application", e);
+        }
+    }
+
+    @Operation(summary = "Send job offer email", 
+               description = "Send a job offer email to a candidate (admin only)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Email sent successfully"),
+        @ApiResponse(responseCode = "404", description = "Application not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid request or application not in OFFERED status"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - not authorized"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @PostMapping("/{id}/send-offer-email")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> sendJobOfferEmail(@PathVariable("id") Long applicationId) {
+        try {
+            applicationService.sendJobOfferEmail(applicationId);
+            return ResponseEntity.ok().build();
+        } catch (MessagingException e) {
+            log.error("Failed to send job offer email for application ID: {}: {}", applicationId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to send job offer email: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Respond to job offer", 
+               description = "Accept or reject a job offer (candidate only)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Offer response processed successfully"),
+        @ApiResponse(responseCode = "404", description = "Application not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid request or application not in OFFERED status"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - not authorized"),
+        @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @PostMapping("/{id}/respond-offer")
+    public ResponseEntity<?> respondToJobOffer(
+            @PathVariable("id") Long applicationId,
+            @RequestBody Map<String, String> response,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        try {
+            // Extract user ID from UserDetails
+            Long userId = extractUserIdFromUserDetails(userDetails);
+            
+            // Get the application
+            ApplicationDTO application = applicationService.getApplicationById(applicationId);
+            
+            // Verify the user is the candidate
+            if (!application.getCandidateId().equals(userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("You are not authorized to respond to this offer");
+            }
+            
+            // Verify the application is in OFFERED status
+            if (application.getStatus() != ApplicationStatus.OFFERED) {
+                return ResponseEntity.badRequest()
+                        .body("Can only respond to applications in OFFERED status");
+            }
+            
+            // Process the response
+            String action = response.get("action");
+            if (action == null || (!action.equals("ACCEPT") && !action.equals("REJECT"))) {
+                return ResponseEntity.badRequest()
+                        .body("Invalid action. Must be either 'ACCEPT' or 'REJECT'");
+            }
+            
+            // Update application status based on response
+            ApplicationStatus newStatus = action.equals("ACCEPT") ? 
+                    ApplicationStatus.OFFER_ACCEPTED : ApplicationStatus.OFFER_REJECTED;
+            
+            applicationService.updateApplicationStatus(applicationId, newStatus);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Offer response processed successfully",
+                "status", newStatus
+            ));
+            
+        } catch (NotFoundException e) {
+            log.warn("Application not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error processing offer response", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An error occurred while processing the offer response"));
         }
     }
     

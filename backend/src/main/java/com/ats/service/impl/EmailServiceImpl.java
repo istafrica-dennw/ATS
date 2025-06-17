@@ -52,7 +52,8 @@ public class EmailServiceImpl implements EmailService {
         EmailEvent.APPLICATION_REVIEWED, new EventConfig(RecipientType.CANDIDATE, "Application Status Update - %s"),
         EmailEvent.APPLICATION_SHORTLISTED, new EventConfig(RecipientType.CANDIDATE, "Congratulations! You've Been Shortlisted - %s"),
         EmailEvent.INTERVIEW_ASSIGNED_TO_INTERVIEWER, new EventConfig(RecipientType.INTERVIEWER, "New Interview Assignment - %s"),
-        EmailEvent.INTERVIEW_ASSIGNED_TO_CANDIDATE, new EventConfig(RecipientType.CANDIDATE, "Interview Scheduled - %s")
+        EmailEvent.INTERVIEW_ASSIGNED_TO_CANDIDATE, new EventConfig(RecipientType.CANDIDATE, "Interview Scheduled - %s"),
+        EmailEvent.JOB_OFFER, new EventConfig(RecipientType.CANDIDATE, "Job Offer - %s")
     );
 
     /**

@@ -26,6 +26,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import jakarta.mail.MessagingException;
+
 @Service
 @Slf4j
 public class ApplicationServiceImpl implements ApplicationService {
@@ -226,6 +228,10 @@ public class ApplicationServiceImpl implements ApplicationService {
                         emailService.sendApplicationEmail(updatedApplication, EmailEvent.APPLICATION_SHORTLISTED);
                         log.info("Application shortlisted email sent for application ID: {}", applicationId);
                         break;
+                    case OFFERED:
+                        emailService.sendApplicationEmail(updatedApplication, EmailEvent.JOB_OFFER);
+                        log.info("Job offer email sent for application ID: {}", applicationId);
+                        break;
                     // Add more cases if needed for other status changes
                 }
             }
@@ -418,5 +424,14 @@ public class ApplicationServiceImpl implements ApplicationService {
         dto.setAnswer(answer.getAnswer());
         dto.setCreatedAt(answer.getCreatedAt());
         return dto;
+    }
+
+    @Override
+    public void sendJobOfferEmail(Long applicationId) throws MessagingException {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new NotFoundException("Application not found with ID: " + applicationId));
+
+        // Send the email using the email service with the template
+        emailService.sendApplicationEmail(application, EmailEvent.JOB_OFFER);
     }
 }

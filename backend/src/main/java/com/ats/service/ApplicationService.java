@@ -1,7 +1,9 @@
 package com.ats.service;
 
 import com.ats.dto.ApplicationDTO;
+import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.ApplicationStatus;
+import jakarta.mail.MessagingException;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -100,4 +102,13 @@ public interface ApplicationService {
      * @return true if the candidate has already applied, false otherwise
      */
     boolean hasApplied(Long jobId, Long candidateId);
+
+    /**
+     * Send a job offer email to a candidate
+     * 
+     * @param applicationId the application ID
+     * @throws NotFoundException if the application is not found
+     * @throws MessagingException if there's an error sending the email
+     */
+    void sendJobOfferEmail(Long applicationId) throws MessagingException;
 }

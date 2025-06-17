@@ -42,5 +42,15 @@ public enum ApplicationStatus {
     /**
      * Candidate has withdrawn their application
      */
-    WITHDRAWN
+    WITHDRAWN,
+    
+    /**
+     * Candidate has accepted the offer
+     */
+    OFFER_ACCEPTED,
+    
+    /**
+     * Candidate has rejected the offer
+     */
+    OFFER_REJECTED
 }

@@ -22,11 +22,13 @@ import {
   UserGroupIcon,
   XMarkIcon,
   BriefcaseIcon,
-  QuestionMarkCircleIcon
+  QuestionMarkCircleIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 import { ClockIcon as SolidClockIcon } from '@heroicons/react/24/solid';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import JobOfferEmailModal from '../../components/JobOfferEmailModal';
 
 interface CustomQuestion {
   id: number;
@@ -133,6 +135,8 @@ const AdminJobDetailsPage: React.FC = () => {
   const [rescoringApplications, setRescoringApplications] = useState<Set<number>>(new Set());
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loadingInterviews, setLoadingInterviews] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
 
   // Sorting function
   const sortApplications = (apps: Application[], criteria: 'date' | 'score', order: 'asc' | 'desc') => {
@@ -637,6 +641,26 @@ const AdminJobDetailsPage: React.FC = () => {
       toast.error('Failed to cancel interview assignment');
     }
   };
+
+  const handleSendJobOfferEmail = async (applicationId: number) => {
+    const application = applications.find(app => app.id === applicationId);
+    if (!application) return;
+    
+    setSelectedApplication(application);
+    setIsEmailModalOpen(true);
+  };
+
+  const handleEmailSend = async () => {
+    if (!selectedApplication) return;
+    
+    try {
+      await axiosInstance.post(`/api/applications/${selectedApplication.id}/send-offer-email`);
+      toast.success('Job offer email sent successfully');
+    } catch (error) {
+      console.error('Error sending job offer email:', error);
+      toast.error('Failed to send job offer email');
+    }
+  };
   
   if (loading) {
     return (
@@ -842,10 +866,10 @@ const AdminJobDetailsPage: React.FC = () => {
           <div className="bg-white shadow rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Rejections</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.REJECTED || 0}</p>
+                <p className="text-sm font-medium text-gray-500">Accepted Offers</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.OFFER_ACCEPTED || 0}</p>
               </div>
-              <XMarkIcon className="h-8 w-8 text-red-500" />
+              <CheckCircleIcon className="h-8 w-8 text-green-500" />
             </div>
           </div>
         </div>
@@ -1117,22 +1141,6 @@ const AdminJobDetailsPage: React.FC = () => {
                                     : 'Date TBD'
                                   }
                                 </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => handleAssignInterview(application.id)}
-                                    className="inline-flex items-center px-2 py-1 border border-indigo-300 rounded-md text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
-                                    title="Re-assign interview"
-                                  >
-                                    Re-assign
-                                  </button>
-                                  <button
-                                    onClick={() => handleCancelInterview(interview.id)}
-                                    className="inline-flex items-center px-2 py-1 border border-red-300 rounded-md text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100"
-                                    title="Cancel interview assignment"
-                                  >
-                                    De-assign
-                                  </button>
-                                </div>
                               </div>
                             );
                           } else if (application.status === 'SHORTLISTED') {
@@ -1155,7 +1163,8 @@ const AdminJobDetailsPage: React.FC = () => {
                                 {application.status === 'REVIEWED' && 'Ready for shortlisting'}
                                 {application.status === 'INTERVIEWING' && 'Interview in progress'}
                                 {application.status === 'OFFERED' && 'Offer extended'}
-                                {application.status === 'ACCEPTED' && 'Offer accepted'}
+                                {application.status === 'OFFER_ACCEPTED' && 'Offer accepted'}
+                                {application.status === 'OFFER_REJECTED' && 'Offer rejected'}
                                 {application.status === 'REJECTED' && 'Application rejected'}
                                 {application.status === 'WITHDRAWN' && 'Application withdrawn'}
                               </span>
@@ -1219,92 +1228,99 @@ const AdminJobDetailsPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="relative inline-block text-left">
-                          <div>
+                        <div className="space-y-2">
+                          {application.status === 'OFFERED' && (
                             <button
-                              type="button"
-                              className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                              id={`options-menu-${application.id}`}
-                              aria-expanded="true"
-                              aria-haspopup="true"
-                              onClick={() => {
-                                const dropdown = document.getElementById(`status-dropdown-${application.id}`);
-                                if (dropdown) {
-                                  dropdown.classList.toggle('hidden');
-                                }
-                              }}
+                              onClick={() => handleSendJobOfferEmail(application.id)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700"
+                              title="Send job offer email"
                             >
-                              Change Status
-                              <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
+                              <EnvelopeIcon className="h-3 w-3 mr-1" />
+                              Send Offer Email
                             </button>
-                          </div>
-                          
-                          <div
-                            id={`status-dropdown-${application.id}`}
-                            className="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
-                            role="menu"
-                            aria-orientation="vertical"
-                            aria-labelledby={`options-menu-${application.id}`}
-                          >
-                            <div className="py-1" role="none">
-                              <button
-                                onClick={() => handleStatusChange(application.id, 'APPLIED')}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
+                          )}
+                          {application.status !== 'REJECTED' && application.status !== 'OFFER_ACCEPTED' && (
+                            <div className="relative inline-block text-left">
+                              <div>
+                                <button
+                                  type="button"
+                                  className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                  id={`options-menu-${application.id}`}
+                                  aria-expanded="true"
+                                  aria-haspopup="true"
+                                  onClick={() => {
+                                    const dropdown = document.getElementById(`status-dropdown-${application.id}`);
+                                    if (dropdown) {
+                                      dropdown.classList.toggle('hidden');
+                                    }
+                                  }}
+                                >
+                                  Change Status
+                                  <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
+                                </button>
+                              </div>
+                              
+                              <div
+                                id={`status-dropdown-${application.id}`}
+                                className="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                                role="menu"
+                                aria-orientation="vertical"
+                                aria-labelledby={`options-menu-${application.id}`}
                               >
-                                Applied
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(application.id, 'REVIEWED')}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
-                              >
-                                Reviewed
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(application.id, 'SHORTLISTED')}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
-                              >
-                                Shortlisted
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(application.id, 'INTERVIEWING')}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
-                              >
-                                Interviewing
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(application.id, 'OFFERED')}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
-                              >
-                                Offered
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(application.id, 'ACCEPTED')}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
-                              >
-                                Accepted
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(application.id, 'REJECTED')}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
-                              >
-                                Rejected
-                              </button>
-                              <button
-                                onClick={() => handleStatusChange(application.id, 'WITHDRAWN')}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                role="menuitem"
-                              >
-                                Withdrawn
-                              </button>
+                                <div className="py-1" role="none">
+                                  <button
+                                    onClick={() => handleStatusChange(application.id, 'APPLIED')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    role="menuitem"
+                                  >
+                                    Applied
+                                  </button>
+                                  <button
+                                    onClick={() => handleStatusChange(application.id, 'REVIEWED')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    role="menuitem"
+                                  >
+                                    Reviewed
+                                  </button>
+                                  <button
+                                    onClick={() => handleStatusChange(application.id, 'SHORTLISTED')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    role="menuitem"
+                                  >
+                                    Shortlisted
+                                  </button>
+                                  <button
+                                    onClick={() => handleStatusChange(application.id, 'INTERVIEWING')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    role="menuitem"
+                                  >
+                                    Interviewing
+                                  </button>
+                                  <button
+                                    onClick={() => handleStatusChange(application.id, 'OFFERED')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    role="menuitem"
+                                  >
+                                    Offered
+                                  </button>
+                                  <button
+                                    onClick={() => handleStatusChange(application.id, 'REJECTED')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    role="menuitem"
+                                  >
+                                    Rejected
+                                  </button>
+                                  <button
+                                    onClick={() => handleStatusChange(application.id, 'WITHDRAWN')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                    role="menuitem"
+                                  >
+                                    Withdrawn
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1527,6 +1543,21 @@ const AdminJobDetailsPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Job Offer Email Modal */}
+      {selectedApplication && (
+        <JobOfferEmailModal
+          isOpen={isEmailModalOpen}
+          onClose={() => {
+            setIsEmailModalOpen(false);
+            setSelectedApplication(null);
+          }}
+          onSend={handleEmailSend}
+          candidateName={selectedApplication?.candidateName || ''}
+          jobTitle={job?.title || ''}
+          applicationId={selectedApplication?.id.toString() || ''}
+        />
       )}
     </div>
   );

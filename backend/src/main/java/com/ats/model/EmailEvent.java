@@ -11,7 +11,8 @@ public enum EmailEvent {
     INTERVIEW_ASSIGNED_TO_CANDIDATE("interview-assigned-candidate"),
     USER_VERIFICATION("verification-email"),
     PASSWORD_RESET("password-reset-email"),
-    NEW_USER_CREATED("new-user-email");
+    NEW_USER_CREATED("new-user-email"),
+    JOB_OFFER("job-offer");
 
     private final String templateName;
 

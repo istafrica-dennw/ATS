@@ -16,12 +16,14 @@ import { interviewAPI } from '../../services/api';
 import { Interview } from '../../types/interview';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import JobOfferResponse from '../../components/JobOfferResponse';
 
 interface ApplicationStats {
   totalApplications: number;
   interviews: number;
   offers: number;
   rejections: number;
+  acceptedOffers?: number;
 }
 
 interface EnhancedApplicationDTO extends ApplicationDTO {
@@ -158,6 +160,24 @@ const CandidateDashboardPage: React.FC = () => {
       default:
         return status;
     }
+  };
+
+  const handleOfferResponse = (newStatus: string, applicationId: number) => {
+    // Update the application status in the local state
+    setApplications(prevApplications => 
+      prevApplications.map(app => 
+        app.id === applicationId 
+          ? { ...app, status: newStatus }
+          : app
+      )
+    );
+    
+    // Update stats
+    setStats(prevStats => ({
+      ...prevStats,
+      offers: prevStats.offers - 1,
+      ...(newStatus === 'OFFER_ACCEPTED' ? { acceptedOffers: (prevStats.acceptedOffers || 0) + 1 } : {})
+    }));
   };
 
   return (
@@ -319,50 +339,65 @@ const CandidateDashboardPage: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Job Title
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Department
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Applied On
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {applications.map((app) => (
-                    <tr key={app.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {app.jobTitle || 'Software Engineer Position'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{app.department || 'IST Africa'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {getStatusIcon(app.status.toLowerCase())}
-                          <span className="ml-2 text-sm text-gray-700">{getStatusLabel(app.status.toLowerCase())}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {app.appliedDate && !isNaN(new Date(app.appliedDate).getTime()) 
-                          ? new Date(app.appliedDate).toLocaleDateString() 
-                          : new Date().toLocaleDateString()}
-                      </td>
+            <div className="space-y-6">
+              {/* Show job offer response component for applications with OFFERED status */}
+              {applications
+                .filter(app => app.status === 'OFFERED')
+                .map(app => (
+                  <JobOfferResponse
+                    key={app.id}
+                    applicationId={app.id}
+                    jobTitle={app.jobTitle || 'Software Engineer Position'}
+                    onResponse={handleOfferResponse}
+                  />
+                ))}
+
+              {/* Applications table */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Job Title
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Department
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Applied On
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {applications.map((app) => (
+                      <tr key={app.id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {app.jobTitle || 'Software Engineer Position'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">{app.department || 'IST Africa'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            {getStatusIcon(app.status.toLowerCase())}
+                            <span className="ml-2 text-sm text-gray-700">{getStatusLabel(app.status.toLowerCase())}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {app.appliedDate && !isNaN(new Date(app.appliedDate).getTime()) 
+                            ? new Date(app.appliedDate).toLocaleDateString() 
+                            : new Date().toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

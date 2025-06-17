@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Job Offer</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb;">Congratulations! Job Offer from IST Africa</h2>
+        <p>Dear <span th:text="${candidateName}">Candidate</span>,</p>
+        
+        <p>We are delighted to extend you an offer for the position of:</p>
+        
+        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin: 0; color: #1f2937;" th:text="${jobTitle}">Job Title</h3>
+            <p style="margin: 5px 0 0 0; color: #6b7280;">Application ID: <span th:text="${applicationId}">#12345</span></p>
+        </div>
+        
+        <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #047857;">
+                <strong>🎉 Congratulations!</strong> We are excited to have you join our team!
+            </p>
+        </div>
+        
+        <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; color: #1e40af;">
+                <strong>Next Steps:</strong>
+            </p>
+            <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #1e40af;">
+                <li>Please review the offer details in your candidate portal</li>
+                <li>Accept or decline the offer through the portal</li>
+                <li>If you have any questions, please contact us</li>
+            </ul>
+        </div>
+        
+        <p>We believe your skills and experience will be a great addition to our team, and we're looking forward to having you on board!</p>
+        
+        <p style="margin-top: 30px;">
+            Best regards,<br>
+            <strong>IST Africa Recruiting Team</strong>
+        </p>
+        
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+        <p style="font-size: 0.9em; color: #666;">
+            If you have any questions about the offer, please contact us at <a href="mailto:careers@istafrica.com" style="color: #2563eb;">careers@istafrica.com</a>
+        </p>
+    </div>
+</body>
+</html> 

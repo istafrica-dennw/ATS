@@ -95,7 +95,7 @@ public class User extends BaseEntity {
     private LocalDateTime emailVerificationTokenExpiry;
     
     @Column(name = "mfa_enabled")
-    private Boolean mfaEnabled = false;
+    private Boolean mfaEnabled;
     
     @Column(name = "mfa_secret")
     private String mfaSecret;

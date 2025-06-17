@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ats.dto.MfaSetupResponse;
 import com.ats.service.TotpService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 @Service
 public class UserServiceImpl implements UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -83,8 +87,7 @@ public class UserServiceImpl implements UserService {
                 emailService.sendNewUserVerificationEmail(savedUser, savedUser.getEmailVerificationToken());
             } catch (Exception e) {
                 // Log the error but continue since the user was created successfully
-                System.err.println("Failed to send verification email to " + savedUser.getEmail());
-                e.printStackTrace();
+                logger.error("Failed to send verification email to " + savedUser.getEmail(), e);
             }
         }
         
@@ -306,6 +309,12 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserDTO convertToDTO(User user) {
+        logger.debug("=== MFA DEBUG START ===");
+        logger.debug("Converting user to DTO for email: {}", user.getEmail());
+        logger.debug("user.getMfaEnabled() = {}", user.getMfaEnabled());
+        logger.debug("user.getMfaSecret() = {}", (user.getMfaSecret() != null ? "NOT NULL (length: " + user.getMfaSecret().length() + ")" : "NULL"));
+        logger.debug("=== MFA DEBUG END ===");
+        
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());

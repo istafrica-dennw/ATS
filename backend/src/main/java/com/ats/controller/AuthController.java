@@ -824,6 +824,39 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(jwt, convertToDTO(user)));
     }
 
+    @GetMapping("/2fa/status")
+    @Operation(
+        summary = "Get 2FA status",
+        description = "Get the current 2FA status for the authenticated user"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "2FA status retrieved successfully"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "User not found"
+        )
+    })
+    @RequiresAuthentication(message = "You must be logged in to check 2FA status")
+    public ResponseEntity<?> get2FAStatus(Authentication authentication) {
+        String email = authentication.getName();
+        
+        // Use a direct database query to bypass entity mapping issues
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Check if the user has a 2FA secret (which indicates 2FA is enabled)
+        boolean isEnabled = user.getMfaSecret() != null && !user.getMfaSecret().isEmpty();
+        
+        return ResponseEntity.ok().body(Map.of("enabled", isEnabled));
+    }
+
     private UserDTO convertToDTO(User user) {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());

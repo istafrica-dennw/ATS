@@ -13,7 +13,7 @@ import axiosInstance from '../../utils/axios';
 import { useNavigate } from 'react-router-dom';
 
 const SecuritySettings: React.FC = () => {
-  const { user, disableMfa, token, validateTokenAndGetUser } = useAuth();
+  const { user, disableMfa, token } = useAuth();
   const [showMfaSetup, setShowMfaSetup] = useState(false);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -21,83 +21,48 @@ const SecuritySettings: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [isMfaEnabled, setIsMfaEnabled] = useState<boolean>(false);
+  const [statusLoading, setStatusLoading] = useState(true);
   const navigate = useNavigate();
   
   console.log("Current MFA state:", isMfaEnabled);
 
-  // Check actual MFA status on load rather than forcing to true
+  // Check MFA status using the dedicated endpoint
   useEffect(() => {
-    const checkActualMfaStatus = async () => {
+    const fetchMfaStatus = async () => {
       try {
-        console.log("Checking MFA status...");
-        // Check if we're being forced to use MFA when logging in
-        if (user) {
-          const response = await axiosInstance.get('/auth/me');
-          console.log("API response MFA status:", response.data.mfaEnabled);
-          console.log("User object MFA status:", user.mfaEnabled);
-          
-          // First check if mfaEnabled is explicitly true
-          if (response.data.mfaEnabled === true) {
-            console.log("Setting MFA enabled based on API response");
-            setIsMfaEnabled(true);
-            return;
-          }
-          
-          // If null but we know we had to use MFA to login, it's actually enabled
-          if (response.data.mfaEnabled === null && user.mfaEnabled) {
-            console.log("Setting MFA enabled based on user object");
-            setIsMfaEnabled(true);
-            return;
-          }
-          
-          // Default to whatever the user object says
-          console.log("Defaulting to user object MFA status");
-          setIsMfaEnabled(!!user.mfaEnabled);
-        }
+        setStatusLoading(true);
+        console.log("Fetching MFA status from dedicated endpoint...");
+        const response = await axiosInstance.get('/auth/2fa/status');
+        console.log("2FA status response:", response.data);
+        setIsMfaEnabled(response.data.enabled || false);
       } catch (err) {
         console.error('Failed to get MFA status:', err);
-        // If we can't determine, don't assume it's enabled
-        setIsMfaEnabled(false);
-      }
-    };
-
-    checkActualMfaStatus();
-  }, [user]);
-
-  // Ensure we have a valid token when the component mounts
-  useEffect(() => {
-    const refreshAuthIfNeeded = async () => {
-      // Check if token exists
-      if (token) {
-        try {
-          // Validate current token by making a request to /auth/me
-          await axiosInstance.get('/auth/me');
-          console.log('Token is valid, no need to refresh');
-        } catch (err) {
-          console.error('Error validating token, redirecting to login:', err);
-          window.location.href = '/login'; // Redirect to login if token is invalid
+        // Fallback to user object if available
+        if (user) {
+          setIsMfaEnabled(!!user.mfaEnabled);
+        } else {
+          setIsMfaEnabled(false);
         }
-      } else {
-        console.log('No token found, redirecting to login');
-        window.location.href = '/login';
+      } finally {
+        setStatusLoading(false);
       }
     };
 
-    refreshAuthIfNeeded();
-  }, [token]);
+    // Only fetch if we have a token
+    if (token) {
+      fetchMfaStatus();
+    } else {
+      setStatusLoading(false);
+    }
+  }, [user, token]);
 
   const handleSetupComplete = () => {
     console.log("MFA setup completed successfully");
     setShowMfaSetup(false);
     setSuccess('Two-factor authentication has been enabled successfully.');
     
-    // Explicitly set MFA as enabled
+    // Update the local state
     setIsMfaEnabled(true);
-    
-    // Actually reload the page to ensure latest status from the backend
-    setTimeout(() => {
-      window.location.reload();
-    }, 2000);
   };
   
   const handleDisable2FA = async () => {
@@ -105,27 +70,8 @@ const SecuritySettings: React.FC = () => {
     setLoading(true);
     
     try {
-      // Force token refresh - log out and log back in automatically if needed
       if (!token) {
         setError('You must be logged in to disable MFA. Please log in and try again.');
-        setLoading(false);
-        return;
-      }
-      
-      // Explicitly set the auth header for this request
-      const tokenHeader = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-      console.log('Using token for MFA disable:', tokenHeader.substring(0, 20) + '...');
-      
-      // Set authorization header for all future requests
-      axiosInstance.defaults.headers.common['Authorization'] = tokenHeader;
-      
-      // Try to validate the token first 
-      try {
-        await axiosInstance.get('/auth/me');
-        console.log('Token validated before MFA disable');
-      } catch (tokenErr) {
-        console.error('Token validation failed:', tokenErr);
-        setError('Session has expired. Please log in again and try disabling MFA.');
         setLoading(false);
         return;
       }
@@ -137,17 +83,12 @@ const SecuritySettings: React.FC = () => {
       setSuccess('Two-factor authentication has been disabled successfully.');
       setCurrentPassword('');
       
-      // Explicitly set MFA as disabled
+      // Update the local state
       setIsMfaEnabled(false);
-      
-      // Reload to ensure latest status from backend
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
     } catch (err: any) {
       console.error('Disable MFA error:', err);
       if (err.response?.status === 401) {
-        setError('Authentication failed. Please log in again and try disabling MFA.');
+        setError('Authentication failed. Please check your password and try again.');
       } else {
         setError(err.response?.data?.message || 'Failed to disable two-factor authentication.');
       }
@@ -155,6 +96,15 @@ const SecuritySettings: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Show loading state while fetching MFA status
+  if (statusLoading) {
+    return (
+      <Box sx={{ maxWidth: 800, mx: 'auto', p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', p: 2 }}>

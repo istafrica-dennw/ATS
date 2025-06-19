@@ -8,9 +8,10 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -64,6 +65,44 @@ const initialFormData: JobFormData = {
   jobStatus: 'DRAFT',
   salaryRange: '',
   customQuestions: []
+};
+
+// Add this before the JobManagementPage component
+const modules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+    ['link'],
+    ['clean']
+  ],
+  clipboard: {
+    matchVisual: false
+  }
+};
+
+const formats = [
+  'header',
+  'bold', 'italic', 'underline', 'strike',
+  'list', 'bullet',
+  'link'
+];
+
+const RichTextEditor: React.FC<{
+  value: string;
+  onChange: (content: string) => void;
+}> = ({ value, onChange }) => {
+  return (
+    <div className="border border-gray-300 rounded-md">
+      <ReactQuill
+        theme="snow"
+        value={value}
+        onChange={onChange}
+        modules={modules}
+        formats={formats}
+      />
+    </div>
+  );
 };
 
 const JobManagementPage: React.FC = () => {
@@ -130,12 +169,21 @@ const JobManagementPage: React.FC = () => {
   }, [location.state]);
 
   // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | string, name?: string) => {
+    if (typeof e === 'string') {
+      // Handle React Quill editor changes
+      setFormData({
+        ...formData,
+        description: e
+      });
+    } else {
+      // Handle regular input changes
+      const { name, value } = e.target;
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   // Add a skill to the skills array
@@ -724,14 +772,9 @@ const JobManagementPage: React.FC = () => {
                         <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                           Job Description *
                         </label>
-                        <textarea
-                          name="description"
-                          id="description"
-                          rows={4}
-                          required
+                        <RichTextEditor
                           value={formData.description}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          onChange={(content) => handleInputChange(content)}
                         />
                       </div>
 

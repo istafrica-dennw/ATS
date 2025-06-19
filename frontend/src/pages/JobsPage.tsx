@@ -377,7 +377,10 @@ const JobsPage: React.FC = () => {
                       <div className="mt-4 border-t border-gray-200 pt-4">
                         <div className="mb-4">
                           <h4 className="text-sm font-medium text-gray-900">Job Description</h4>
-                          <p className="mt-1 text-sm text-gray-600">{job.description}</p>
+                          <div 
+                            className="mt-1 text-sm text-gray-600 prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: job.description }}
+                          />
                         </div>
                         
                         <div className="mb-4">

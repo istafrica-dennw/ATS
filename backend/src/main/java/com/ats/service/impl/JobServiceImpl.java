@@ -47,6 +47,11 @@ public class JobServiceImpl implements JobService {
             job.setJobStatus(JobStatus.DRAFT);
         }
         
+        // Set posted date if the job is being published
+        if (job.getJobStatus() == JobStatus.PUBLISHED || job.getJobStatus() == JobStatus.REOPENED) {
+            job.setPostedDate(LocalDate.now());
+        }
+        
         job = jobRepository.save(job);
         return modelMapper.map(job, JobDTO.class);
     }
@@ -76,6 +81,8 @@ public class JobServiceImpl implements JobService {
         
         if (existingJob.isPresent()) {
             Job updatedJob = existingJob.get();
+            JobStatus oldStatus = updatedJob.getJobStatus();
+            
             updatedJob.setTitle(jobDTO.getTitle());
             updatedJob.setDescription(jobDTO.getDescription());
             updatedJob.setLocation(jobDTO.getLocation());
@@ -85,6 +92,12 @@ public class JobServiceImpl implements JobService {
             updatedJob.setSkills(jobDTO.getSkills());
             updatedJob.setWorkSetting(jobDTO.getWorkSetting());
             updatedJob.setJobStatus(jobDTO.getJobStatus());
+            
+            // Set posted date if job is being published for the first time or reopened
+            if ((oldStatus != JobStatus.PUBLISHED && oldStatus != JobStatus.REOPENED) && 
+                (jobDTO.getJobStatus() == JobStatus.PUBLISHED || jobDTO.getJobStatus() == JobStatus.REOPENED)) {
+                updatedJob.setPostedDate(LocalDate.now());
+            }
             
             // Save the job first
             Job savedJob = jobRepository.save(updatedJob);
@@ -214,12 +227,20 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public JobDTO updateJobStatus(JobStatus jobStatus, Long id) {
-
         Optional<Job> existingJob = jobRepository.findById(id);
         
         if (existingJob.isPresent()) {
             Job updatedJob = existingJob.get();
+            JobStatus oldStatus = updatedJob.getJobStatus();
+            
             updatedJob.setJobStatus(jobStatus);
+            
+            // Set posted date if job is being published for the first time or reopened
+            if ((oldStatus != JobStatus.PUBLISHED && oldStatus != JobStatus.REOPENED) && 
+                (jobStatus == JobStatus.PUBLISHED || jobStatus == JobStatus.REOPENED)) {
+                updatedJob.setPostedDate(LocalDate.now());
+            }
+            
             Job savedJob = jobRepository.save(updatedJob);
             return modelMapper.map(savedJob, JobDTO.class);
         } else {

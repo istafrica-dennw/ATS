@@ -10,17 +10,16 @@ import {
   Stepper,
   Step,
   StepLabel,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import FileUploader from './FileUploader';
 import CustomQuestionForm, { CustomQuestion, QuestionAnswer } from './CustomQuestionForm';
 import { applicationService, ApplicationDTO } from '../../services/applicationService';
 import axiosInstance from '../../utils/axios';
-import axios from 'axios';
+import StyledFileUploader from './StyledFileUploader';
 
 interface JobApplicationFormProps {
-  jobId: number;
+  jobId: string | number;
   jobTitle: string;
   department: string;
 }
@@ -30,8 +29,8 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   
   // Form state
   const [activeStep, setActiveStep] = useState<number>(0);
-  const [resumeUrl, setResumeUrl] = useState<string>('');
-  const [coverLetterUrl, setCoverLetterUrl] = useState<string>('');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [answers, setAnswers] = useState<QuestionAnswer[]>([]);
   
   // Loading and error states
@@ -55,15 +54,17 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
         setLoading(true);
         setError('');
         
+        const numericJobId = parseInt(String(jobId), 10);
+
         // Check if already applied
         try {
-          const applicationStatus = await applicationService.checkApplicationStatus(jobId);
-          if (applicationStatus.hasApplied) {
+          const response: any = await applicationService.checkApplicationStatus(numericJobId);
+          if (response && response.hasApplied) {
             setAlreadyApplied(true);
           }
-        } catch (error) {
+        } catch (error: any) {
           // If the error is not 404 (not found), set general error
-          if (axios.isAxiosError(error) && error.response?.status !== 404) {
+          if (error.response?.status !== 404) {
             setError('Failed to check application status');
           }
         }
@@ -71,7 +72,7 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
         // TODO: Replace with actual API endpoint when available
         try {
           // Attempt to fetch custom questions
-          const response = await axiosInstance.get(`/jobs/${jobId}/custom-questions`);
+          const response = await axiosInstance.get<CustomQuestion[]>(`/jobs/${numericJobId}/custom-questions`);
           setQuestions(response.data);
         } catch (error) {
           console.log('Custom questions API not implemented yet - using empty questions array');
@@ -91,19 +92,27 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
     fetchJobDetails();
   }, [jobId]);
   
-  // Handle file uploads
-  const handleResumeUploaded = (fileUrl: string) => {
-    console.log('Resume uploaded, URL:', fileUrl);
-    setResumeUrl(fileUrl);
-    // Clear any error related to resume
-    if (error === 'Resume is required') {
-      setError('');
+  const handleResumeSelect = (selectedFile: File | null) => {
+    if (selectedFile) {
+      const newName = `resume_${selectedFile.name}`;
+      const renamedFile = new File([selectedFile], newName, { type: selectedFile.type });
+      setResumeFile(renamedFile);
+      if (error === 'Resume is required') {
+        setError('');
+      }
+    } else {
+      setResumeFile(null);
     }
   };
-  
-  const handleCoverLetterUploaded = (fileUrl: string) => {
-    console.log('Cover letter uploaded, URL:', fileUrl);
-    setCoverLetterUrl(fileUrl);
+
+  const handleCoverLetterSelect = (selectedFile: File | null) => {
+    if (selectedFile) {
+      const newName = `cover-letter_${selectedFile.name}`;
+      const renamedFile = new File([selectedFile], newName, { type: selectedFile.type });
+      setCoverLetterFile(renamedFile);
+    } else {
+      setCoverLetterFile(null);
+    }
   };
   
   // Handle answers to custom questions
@@ -115,7 +124,7 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   const validateCurrentStep = (): boolean => {
     if (activeStep === 0) {
       // Resume is required
-      if (!resumeUrl) {
+      if (!resumeFile) {
         setError('Resume is required');
         return false;
       }
@@ -125,9 +134,9 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
       const newValidationErrors: Record<number, string> = {};
       let isValid = true;
       
-      questions.forEach(question => {
+      questions.forEach((question: CustomQuestion) => {
         if (question.required) {
-          const answer = answers.find(a => a.questionId === question.id);
+          const answer = answers.find((a: QuestionAnswer) => a.questionId === question.id);
           if (!answer || !answer.answer.trim()) {
             newValidationErrors[question.id] = 'This question is required';
             isValid = false;
@@ -151,13 +160,13 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   const handleNext = () => {
     if (validateCurrentStep()) {
       setError('');
-      setActiveStep((prev) => prev + 1);
+      setActiveStep((prevStep: number) => prevStep + 1);
     }
   };
   
   // Handle back
   const handleBack = () => {
-    setActiveStep((prev) => prev - 1);
+    setActiveStep((prevStep: number) => prevStep - 1);
     setError('');
   };
   
@@ -167,16 +176,28 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
       setSubmitLoading(true);
       setError('');
       
+      const numericJobId = parseInt(String(jobId), 10);
+
       // Create application object
       const application: ApplicationDTO = {
-        jobId: jobId,
-        resumeUrl,
-        coverLetterUrl,
+        jobId: numericJobId,
         answers: answers
       };
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('applicationDTO', new Blob([JSON.stringify(application)], { type: 'application/json' }));
       
-      // Submit application
-      await applicationService.submitApplication(application);
+      // Append files with correct names
+      if (resumeFile) {
+        formData.append('files', resumeFile);
+      }
+      if (coverLetterFile) {
+        formData.append('files', coverLetterFile);
+      }
+      
+      // Submit application with files
+      await applicationService.submitApplication(formData);
       
       setSubmitSuccess(true);
       
@@ -267,28 +288,22 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
         <Box>
           {activeStep === 0 && (
             <Box>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
                 Upload Documents
               </Typography>
               
-              {resumeUrl ? (
-                <Alert severity="success" sx={{ mb: 2 }}>
-                  Resume uploaded successfully! URL: {resumeUrl.substring(0, 40)}...
-                </Alert>
-              ) : null}
-              
-              <FileUploader
-                fileType="resume"
-                label="Resume"
-                onFileUploaded={handleResumeUploaded}
-                required={true}
-              />
-              
-              <FileUploader
-                fileType="coverLetter"
-                label="Cover Letter (Optional)"
-                onFileUploaded={handleCoverLetterUploaded}
-              />
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
+                <StyledFileUploader
+                  label="Resume"
+                  onFileSelect={handleResumeSelect}
+                  required
+                />
+
+                <StyledFileUploader
+                  label="Cover Letter (Optional)"
+                  onFileSelect={handleCoverLetterSelect}
+                />
+              </Box>
             </Box>
           )}
           
@@ -312,10 +327,10 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
                   Documents
                 </Typography>
                 <Typography variant="body2">
-                  Resume: {resumeUrl ? '✓ Uploaded' : '✗ Missing'}
+                  Resume: {resumeFile ? `✓ Selected (${resumeFile.name})` : '✗ Missing'}
                 </Typography>
                 <Typography variant="body2">
-                  Cover Letter: {coverLetterUrl ? '✓ Uploaded' : '✗ Not provided (optional)'}
+                  Cover Letter: {coverLetterFile ? `✓ Selected (${coverLetterFile.name})` : '✗ Not provided (optional)'}
                 </Typography>
               </Box>
               

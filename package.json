@@ -1,5 +1,17 @@
 {
   "dependencies": {
+    "@mui/icons-material": "^7.1.2",
+    "@types/axios": "^0.9.36",
     "react-hot-toast": "^2.5.2"
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^7.1.2",
+    "@types/material-ui": "^0.21.18",
+    "@types/node": "^24.0.3",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/react-router-dom": "^5.3.3"
   }
 }

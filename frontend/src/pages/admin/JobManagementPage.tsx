@@ -117,6 +117,7 @@ const JobManagementPage: React.FC = () => {
   const [currentJobId, setCurrentJobId] = useState<number | null>(null);
   const [skillInput, setSkillInput] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [openStatusJobId, setOpenStatusJobId] = useState<number | null>(null);
 
   // Fetch jobs
   const fetchJobs = async () => {
@@ -135,27 +136,6 @@ const JobManagementPage: React.FC = () => {
 
   useEffect(() => {
     fetchJobs();
-    
-    // Add click event listener to close dropdowns when clicking outside
-    const handleClickOutside = (event: MouseEvent) => {
-      const dropdowns = document.querySelectorAll('[id^="status-dropdown-"]');
-      dropdowns.forEach(dropdown => {
-        if (!(dropdown as HTMLElement).classList.contains('hidden')) {
-          // Check if the click is outside the dropdown
-          if (!(event.target as HTMLElement).closest(`#${dropdown.id}`) && 
-              !(event.target as HTMLElement).closest(`[data-dropdown-toggle="${dropdown.id}"]`)) {
-            (dropdown as HTMLElement).classList.add('hidden');
-          }
-        }
-      });
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    
-    // Clean up event listener on component unmount
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
   }, []);
 
   // Check if we should open the Create Job modal from dashboard navigation
@@ -570,94 +550,14 @@ const JobManagementPage: React.FC = () => {
                           {getWorkSettingBadge(job.workSetting)}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 relative">
-                          <div className="relative inline-block text-left">
-                            <div>
-                              <button 
-                                type="button"
-                                data-dropdown-toggle={`status-dropdown-${job.id}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Close all other dropdowns first
-                                  document.querySelectorAll('[id^="status-dropdown-"]').forEach(el => {
-                                    if (el.id !== `status-dropdown-${job.id}`) {
-                                      el.classList.add('hidden');
-                                    }
-                                  });
-                                  
-                                  // Toggle this dropdown visibility
-                                  const dropdownId = `status-dropdown-${job.id}`;
-                                  const dropdown = document.getElementById(dropdownId);
-                                  if (dropdown) {
-                                    dropdown.classList.toggle('hidden');
-                                  }
-                                }}
-                                className="inline-flex items-center"
-                              >
-                                {getStatusBadge(job.jobStatus)}
-                                <ChevronUpIcon className="ml-1 h-4 w-4 text-gray-400" aria-hidden="true" />
-                              </button>
-                            </div>
-
-                            <div 
-                              id={`status-dropdown-${job.id}`}
-                              className="absolute left-0 bottom-full z-50 mb-2 w-56 origin-bottom-left rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none hidden"
-                              style={{ minWidth: '200px', maxHeight: '300px', overflow: 'auto' }}
-                            >
-                              <div className="py-1">
-                                {job.jobStatus !== 'PUBLISHED' && (
-                                  <button
-                                    onClick={() => {
-                                      handleStatusChange(job.id, 'PUBLISHED');
-                                      document.getElementById(`status-dropdown-${job.id}`)?.classList.add('hidden');
-                                    }}
-                                    className="flex w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                  >
-                                    <CheckCircleIcon className="mr-3 h-5 w-5 text-green-500" aria-hidden="true" />
-                                    Publish
-                                  </button>
-                                )}
-                                
-                                {job.jobStatus !== 'DRAFT' && (
-                                  <button
-                                    onClick={() => {
-                                      handleStatusChange(job.id, 'DRAFT');
-                                      document.getElementById(`status-dropdown-${job.id}`)?.classList.add('hidden');
-                                    }}
-                                    className="flex w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                  >
-                                    <ClockIcon className="mr-3 h-5 w-5 text-gray-500" aria-hidden="true" />
-                                    Set as Draft
-                                  </button>
-                                )}
-                                
-                                {job.jobStatus !== 'CLOSED' && (
-                                  <button
-                                    onClick={() => {
-                                      handleStatusChange(job.id, 'CLOSED');
-                                      document.getElementById(`status-dropdown-${job.id}`)?.classList.add('hidden');
-                                    }}
-                                    className="flex w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                  >
-                                    <XCircleIcon className="mr-3 h-5 w-5 text-red-500" aria-hidden="true" />
-                                    Close
-                                  </button>
-                                )}
-                                
-                                {job.jobStatus === 'CLOSED' && (
-                                  <button
-                                    onClick={() => {
-                                      handleStatusChange(job.id, 'REOPENED');
-                                      document.getElementById(`status-dropdown-${job.id}`)?.classList.add('hidden');
-                                    }}
-                                    className="flex w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                                  >
-                                    <ArrowPathIcon className="mr-3 h-5 w-5 text-blue-500" aria-hidden="true" />
-                                    Reopen
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => setOpenStatusJobId(job.id)}
+                            className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                          >
+                            {getStatusBadge(job.jobStatus)}
+                            <ChevronUpIcon className="ml-2 h-4 w-4 text-gray-400 transition-transform duration-200" />
+                          </button>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {job.postedDate ? new Date(job.postedDate).toLocaleDateString() : 'Not posted'}
@@ -1122,6 +1022,103 @@ const JobManagementPage: React.FC = () => {
                     </form>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Job Status Change Popover - Fixed Overlay */}
+      {openStatusJobId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md transform transition-all duration-300 ease-out scale-100 opacity-100">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Change Job Status</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {jobs.find(job => job.id === openStatusJobId)?.title} • Current: <span className="font-medium text-indigo-600">{jobs.find(job => job.id === openStatusJobId)?.jobStatus}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setOpenStatusJobId(null)}
+                  className="text-gray-400 hover:text-gray-600 hover:bg-white hover:bg-opacity-50 rounded-lg p-2 transition-all duration-150"
+                >
+                  <XCircleIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="max-h-96 overflow-y-auto py-4">
+              <div className="px-6 space-y-2">
+                {[
+                  { value: 'DRAFT', label: 'Draft', icon: '📝', color: 'text-gray-600', bgColor: 'hover:bg-gray-50', desc: 'Job is being prepared and not visible to candidates' },
+                  { value: 'PUBLISHED', label: 'Published', icon: '🌟', color: 'text-green-600', bgColor: 'hover:bg-green-50', desc: 'Job is live and accepting applications' },
+                  { value: 'CLOSED', label: 'Closed', icon: '🔒', color: 'text-red-600', bgColor: 'hover:bg-red-50', desc: 'Job is no longer accepting applications' },
+                  { value: 'EXPIRED', label: 'Expired', icon: '⏰', color: 'text-yellow-600', bgColor: 'hover:bg-yellow-50', desc: 'Job posting has expired automatically' },
+                  { value: 'REOPENED', label: 'Reopened', icon: '🔄', color: 'text-blue-600', bgColor: 'hover:bg-blue-50', desc: 'Previously closed job is now accepting applications again' }
+                ].map((status) => {
+                  const currentJob = jobs.find(job => job.id === openStatusJobId);
+                  const isCurrentStatus = currentJob?.jobStatus === status.value;
+                  
+                  return (
+                    <button
+                      key={status.value}
+                      onClick={() => {
+                        if (openStatusJobId && !isCurrentStatus) {
+                          handleStatusChange(openStatusJobId, status.value as any);
+                          setOpenStatusJobId(null);
+                        }
+                      }}
+                      disabled={isCurrentStatus}
+                      className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center space-x-4 ${
+                        isCurrentStatus 
+                          ? 'bg-indigo-50 border-indigo-200 cursor-not-allowed opacity-75' 
+                          : `border-gray-100 ${status.bgColor} hover:border-gray-200 cursor-pointer hover:shadow-md transform hover:scale-[1.02]`
+                      }`}
+                    >
+                      <div className="flex-shrink-0">
+                        <span className="text-2xl">{status.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className={`text-base font-semibold ${status.color}`}>
+                            {status.label}
+                          </p>
+                          {isCurrentStatus && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                              <div className="w-2 h-2 bg-indigo-400 rounded-full mr-1.5"></div>
+                              Current Status
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 leading-relaxed">{status.desc}</p>
+                      </div>
+                      {!isCurrentStatus && (
+                        <div className="flex-shrink-0">
+                          <ArrowPathIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  💡 Status changes affect job visibility and application acceptance
+                </p>
+                <button
+                  onClick={() => setOpenStatusJobId(null)}
+                  className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>

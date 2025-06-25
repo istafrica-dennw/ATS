@@ -137,6 +137,7 @@ const AdminJobDetailsPage: React.FC = () => {
   const [loadingInterviews, setLoadingInterviews] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [openStatusDropdownId, setOpenStatusDropdownId] = useState<number | null>(null);
 
   // Sorting function
   const sortApplications = (apps: Application[], criteria: 'date' | 'score', order: 'asc' | 'desc') => {
@@ -1240,85 +1241,18 @@ const AdminJobDetailsPage: React.FC = () => {
                             </button>
                           )}
                           {application.status !== 'REJECTED' && application.status !== 'OFFER_ACCEPTED' && (
-                            <div className="relative inline-block text-left">
-                              <div>
-                                <button
-                                  type="button"
-                                  className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                  id={`options-menu-${application.id}`}
-                                  aria-expanded="true"
-                                  aria-haspopup="true"
-                                  onClick={() => {
-                                    const dropdown = document.getElementById(`status-dropdown-${application.id}`);
-                                    if (dropdown) {
-                                      dropdown.classList.toggle('hidden');
-                                    }
-                                  }}
-                                >
-                                  Change Status
-                                  <ChevronDownIcon className="-mr-1 ml-2 h-5 w-5" aria-hidden="true" />
-                                </button>
-                              </div>
-                              
-                              <div
-                                id={`status-dropdown-${application.id}`}
-                                className="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
-                                role="menu"
-                                aria-orientation="vertical"
-                                aria-labelledby={`options-menu-${application.id}`}
+                            <div className="relative">
+                              <button
+                                type="button"
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                                onClick={() => {
+                                  setOpenStatusDropdownId(openStatusDropdownId === application.id ? null : application.id);
+                                }}
                               >
-                                <div className="py-1" role="none">
-                                  <button
-                                    onClick={() => handleStatusChange(application.id, 'APPLIED')}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Applied
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(application.id, 'REVIEWED')}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Reviewed
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(application.id, 'SHORTLISTED')}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Shortlisted
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(application.id, 'INTERVIEWING')}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Interviewing
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(application.id, 'OFFERED')}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Offered
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(application.id, 'REJECTED')}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Rejected
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(application.id, 'WITHDRAWN')}
-                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                                    role="menuitem"
-                                  >
-                                    Withdrawn
-                                  </button>
-                                </div>
-                              </div>
+                                <ArrowsUpDownIcon className="h-4 w-4 mr-2" />
+                                Change Status
+                                <ChevronDownIcon className={`ml-2 h-4 w-4 transition-transform duration-200 ${openStatusDropdownId === application.id ? 'rotate-180' : ''}`} />
+                              </button>
                             </div>
                           )}
                         </div>
@@ -1558,6 +1492,105 @@ const AdminJobDetailsPage: React.FC = () => {
           jobTitle={job?.title || ''}
           applicationId={selectedApplication?.id.toString() || ''}
         />
+      )}
+
+      {/* Status Change Popover - Fixed Overlay */}
+      {openStatusDropdownId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md transform transition-all duration-300 ease-out scale-100 opacity-100">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Change Application Status</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Application #{openStatusDropdownId} • Current: <span className="font-medium text-indigo-600">{applications.find(app => app.id === openStatusDropdownId)?.status}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setOpenStatusDropdownId(null)}
+                  className="text-gray-400 hover:text-gray-600 hover:bg-white hover:bg-opacity-50 rounded-lg p-2 transition-all duration-150"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="max-h-96 overflow-y-auto py-4">
+              <div className="px-6 space-y-2">
+                {[
+                  { value: 'APPLIED', label: 'Applied', icon: '📝', color: 'text-blue-600', bgColor: 'hover:bg-blue-50', desc: 'Application received and pending review' },
+                  { value: 'REVIEWED', label: 'Reviewed', icon: '👀', color: 'text-purple-600', bgColor: 'hover:bg-purple-50', desc: 'Application has been reviewed by HR' },
+                  { value: 'SHORTLISTED', label: 'Shortlisted', icon: '⭐', color: 'text-indigo-600', bgColor: 'hover:bg-indigo-50', desc: 'Candidate selected for next round' },
+                  { value: 'INTERVIEWING', label: 'Interviewing', icon: '🎤', color: 'text-yellow-600', bgColor: 'hover:bg-yellow-50', desc: 'Interview process is ongoing' },
+                  { value: 'OFFERED', label: 'Offered', icon: '🎉', color: 'text-green-600', bgColor: 'hover:bg-green-50', desc: 'Job offer has been extended' },
+                  { value: 'REJECTED', label: 'Rejected', icon: '❌', color: 'text-red-600', bgColor: 'hover:bg-red-50', desc: 'Application has been rejected' },
+                  { value: 'WITHDRAWN', label: 'Withdrawn', icon: '🔙', color: 'text-gray-600', bgColor: 'hover:bg-gray-50', desc: 'Candidate withdrew application' }
+                ].map((status) => {
+                  const currentApplication = applications.find(app => app.id === openStatusDropdownId);
+                  const isCurrentStatus = currentApplication?.status === status.value;
+                  
+                  return (
+                    <button
+                      key={status.value}
+                      onClick={() => {
+                        if (openStatusDropdownId && !isCurrentStatus) {
+                          handleStatusChange(openStatusDropdownId, status.value);
+                          setOpenStatusDropdownId(null);
+                        }
+                      }}
+                      disabled={isCurrentStatus}
+                      className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center space-x-4 ${
+                        isCurrentStatus 
+                          ? 'bg-indigo-50 border-indigo-200 cursor-not-allowed opacity-75' 
+                          : `border-gray-100 ${status.bgColor} hover:border-gray-200 cursor-pointer hover:shadow-md transform hover:scale-[1.02]`
+                      }`}
+                    >
+                      <div className="flex-shrink-0">
+                        <span className="text-2xl">{status.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className={`text-base font-semibold ${status.color}`}>
+                            {status.label}
+                          </p>
+                          {isCurrentStatus && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                              <div className="w-2 h-2 bg-indigo-400 rounded-full mr-1.5"></div>
+                              Current Status
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 leading-relaxed">{status.desc}</p>
+                      </div>
+                      {!isCurrentStatus && (
+                        <div className="flex-shrink-0">
+                          <ArrowsUpDownIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  💡 Status changes are automatically logged and tracked
+                </p>
+                <button
+                  onClick={() => setOpenStatusDropdownId(null)}
+                  className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -9,7 +9,8 @@ import {
   ClockIcon,
   UserIcon,
   BriefcaseIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 const InterviewDetailPage: React.FC = () => {
@@ -20,6 +21,7 @@ const InterviewDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [responses, setResponses] = useState<{ [key: string]: { feedback: string; rating: number } }>({});
 
   // Backend URL for file downloads
@@ -74,11 +76,33 @@ const InterviewDetailPage: React.FC = () => {
     }
   };
 
+  const validateForm = (): boolean => {
+    if (!interview) return false;
+    
+    const errors: string[] = [];
+    
+    interview.skeleton.focusAreas.forEach(area => {
+      const response = responses[area.title];
+      
+      if (!response?.feedback || response.feedback.trim() === '') {
+        errors.push(`Feedback is required for "${area.title}"`);
+      }
+      
+      if (!response?.rating || response.rating <= 0) {
+        errors.push(`Rating is required for "${area.title}" (must be greater than 0)`);
+      }
+    });
+    
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
   const handleStartInterview = async () => {
     if (!interview) return;
     
     try {
       setSubmitting(true);
+      setError(null);
       await interviewAPI.startInterview(interview.id);
       await fetchInterview(interview.id); // Refresh data
     } catch (err) {
@@ -92,8 +116,16 @@ const InterviewDetailPage: React.FC = () => {
   const handleSubmitInterview = async () => {
     if (!interview) return;
 
+    // Validate all fields before submission
+    if (!validateForm()) {
+      setError('Please fill in all required fields before submitting.');
+      return;
+    }
+
     try {
       setSubmitting(true);
+      setError(null);
+      setValidationErrors([]);
       
       const submitData: SubmitInterviewRequest = {
         responses: Object.entries(responses).map(([title, data]) => ({
@@ -121,6 +153,28 @@ const InterviewDetailPage: React.FC = () => {
         [field]: value
       }
     }));
+    // Clear validation errors when user starts typing/updating
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
+  };
+
+  const isFieldInvalid = (areaTitle: string, field: 'feedback' | 'rating'): boolean => {
+    const response = responses[areaTitle];
+    if (field === 'feedback') {
+      return !response?.feedback || response.feedback.trim() === '';
+    } else {
+      return !response?.rating || response.rating <= 0;
+    }
+  };
+
+  const isFormValid = (): boolean => {
+    if (!interview) return false;
+    
+    return interview.skeleton.focusAreas.every(area => {
+      const response = responses[area.title];
+      return response?.feedback && response.feedback.trim() !== '' && response.rating > 0;
+    });
   };
 
   const getStatusColor = (status: InterviewStatus) => {
@@ -206,7 +260,29 @@ const InterviewDetailPage: React.FC = () => {
         {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-            <p className="text-red-800">{error}</p>
+            <div className="flex">
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+              <div className="ml-3">
+                <p className="text-red-800">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
+                <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
+                  {validationErrors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         )}
 
@@ -282,11 +358,16 @@ const InterviewDetailPage: React.FC = () => {
             {canSubmit && (
               <button
                 onClick={handleSubmitInterview}
-                disabled={submitting}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                disabled={!isFormValid() || submitting}
+                className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white ${
+                  !isFormValid() 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700'
+                } disabled:opacity-50`}
+                title={!isFormValid() ? 'Please fill in all required fields' : ''}
               >
                 <CheckCircleIcon className="h-5 w-5 mr-2" />
-                {submitting ? 'Submitting...' : 'Submit Interview'}
+                {submitting ? 'Submitting...' : !isFormValid() ? 'Complete All Fields to Submit' : 'Submit Interview'}
               </button>
             )}
           </div>
@@ -315,20 +396,26 @@ const InterviewDetailPage: React.FC = () => {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Feedback
+                        Feedback <span className="text-red-500">*</span>
                       </label>
                       <textarea
                         rows={4}
                         value={responses[area.title]?.feedback || ''}
                         onChange={(e) => updateResponse(area.title, 'feedback', e.target.value)}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${isFieldInvalid(area.title, 'feedback') ? 'border-red-300' : ''}`}
                         placeholder="Enter your feedback for this area..."
+                        required
                       />
+                      {validationErrors.includes(`Feedback is required for "${area.title}"`) && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {validationErrors.find(e => e === `Feedback is required for "${area.title}"`)}
+                        </p>
+                      )}
                     </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Rating (0-100)
+                        Rating (0-100) <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
@@ -336,8 +423,14 @@ const InterviewDetailPage: React.FC = () => {
                         max="100"
                         value={responses[area.title]?.rating || 0}
                         onChange={(e) => updateResponse(area.title, 'rating', parseInt(e.target.value) || 0)}
-                        className="mt-1 block w-24 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        className={`mt-1 block w-24 border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${isFieldInvalid(area.title, 'rating') ? 'border-red-300' : ''}`}
+                        required
                       />
+                      {validationErrors.includes(`Rating is required for "${area.title}" (must be greater than 0)`) && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {validationErrors.find(e => e === `Rating is required for "${area.title}" (must be greater than 0)`)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ) : (

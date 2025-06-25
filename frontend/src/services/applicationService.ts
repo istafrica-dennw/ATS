@@ -1,6 +1,6 @@
-import axiosInstance from '../utils/axios';
+import axiosInstance from "../utils/axios";
 
-const API_URL = '/applications';
+const API_URL = "/applications";
 
 export interface ApplicationDTO {
   id?: number;
@@ -20,9 +20,13 @@ export interface ApplicationAnswer {
 
 export const applicationService = {
   // Submit a job application
-  submitApplication: async (application: ApplicationDTO) => {
+  submitApplication: async (formData: FormData) => {
     try {
-      const response = await axiosInstance.post(API_URL, application);
+      const response = await axiosInstance.post(API_URL, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return response.data;
     } catch (error) {
       throw error;
@@ -32,7 +36,9 @@ export const applicationService = {
   // Check if user has already applied to a job
   checkApplicationStatus: async (jobId: number) => {
     try {
-      const response = await axiosInstance.get(`${API_URL}/check-status/${jobId}`);
+      const response = await axiosInstance.get(
+        `${API_URL}/check-status/${jobId}`
+      );
       return response.data;
     } catch (error) {
       throw error;
@@ -42,7 +48,9 @@ export const applicationService = {
   // Get user's applications
   getMyApplications: async (page = 0, size = 10) => {
     try {
-      const response = await axiosInstance.get(`${API_URL}/my-applications?page=${page}&size=${size}`);
+      const response = await axiosInstance.get(
+        `${API_URL}/my-applications?page=${page}&size=${size}`
+      );
       return response.data;
     } catch (error) {
       throw error;
@@ -67,7 +75,7 @@ export const applicationService = {
     } catch (error) {
       throw error;
     }
-  }
+  },
 };
 
 export default applicationService;

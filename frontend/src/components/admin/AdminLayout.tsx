@@ -16,6 +16,7 @@ import {
   SparklesIcon,
   Bars3Icon,
   XMarkIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Jobs', href: '/admin/jobs', icon: BriefcaseIcon, color: 'from-orange-500 to-orange-600' },
   { name: 'Interview Skeletons', href: '/admin/interview-skeletons', icon: DocumentTextIcon, color: 'from-teal-500 to-teal-600' },
   { name: 'Interview Assignments', href: '/admin/interview-assignments', icon: CalendarIcon, color: 'from-pink-500 to-pink-600' },
+  { name: 'Chat Support', href: '/admin/chat', icon: ChatBubbleLeftRightIcon, color: 'from-indigo-500 to-indigo-600' },
   { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon, color: 'from-indigo-500 to-indigo-600' },
   { name: 'Settings', href: '/admin/settings', icon: CogIcon, color: 'from-gray-500 to-gray-600' },
 ];

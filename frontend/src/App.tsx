@@ -13,6 +13,7 @@ import JobManagementPage from './pages/admin/JobManagementPage';
 import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
 import InterviewSkeletonManagementPage from './pages/admin/InterviewSkeletonManagementPage';
 import InterviewAssignmentPage from './pages/admin/InterviewAssignmentPage';
+import AdminChatPage from './pages/admin/AdminChatPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
@@ -209,6 +210,7 @@ const App: React.FC = () => {
               <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
               <Route path="interview-skeletons" element={<InterviewSkeletonManagementPage />} />
               <Route path="interview-assignments" element={<InterviewAssignmentPage />} />
+              <Route path="chat" element={<AdminChatPage />} />
             </Route>
             
             {/* Public routes */}

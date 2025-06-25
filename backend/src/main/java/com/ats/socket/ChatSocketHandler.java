@@ -102,9 +102,9 @@ public class ChatSocketHandler {
             // Join client to conversation room
             client.joinRoom("conversation_" + result.getConversation().getId());
             
-            // If this is a newly created conversation, notify all admins
+            // Notify admins immediately when client opens chat (revert to original behavior)
             if (result.isNewConversation()) {
-                log.info("Notifying admins about new unassigned conversation {}", result.getConversation().getId());
+                log.info("🔔 Notifying admins about new conversation {} as client opened chat", result.getConversation().getId());
                 server.getBroadcastOperations().sendEvent("new_unassigned_conversation", result.getConversation());
             }
             
@@ -181,14 +181,20 @@ public class ChatSocketHandler {
             Long conversationId = clientConversationMap.get(clientId);
             String content = data.get("content").toString();
             
+            log.info("📥 Received send_message event: clientId={}, userId={}, conversationId={}, content='{}'", 
+                    clientId, userId, conversationId, content);
+            
             if (userId == null || conversationId == null) {
+                log.error("❌ User not properly connected: userId={}, conversationId={}", userId, conversationId);
                 throw new RuntimeException("User not properly connected to conversation");
             }
             
-            log.info("Sending message from user {} to conversation {}", userId, conversationId);
+            log.info("🔄 Sending message from user {} to conversation {}", userId, conversationId);
             
-            // Send message through transactional service
+            // Send message through transactional service (this now includes the notification check)
             ChatMessageDTO messageDTO = socketChatService.sendMessage(conversationId, userId, content);
+            
+            log.info("📡 Broadcasting message to room 'conversation_{}': messageId={}", conversationId, messageDTO.getId());
             
             // Broadcast message to all participants in the conversation
             server.getRoomOperations("conversation_" + conversationId)
@@ -202,10 +208,10 @@ public class ChatSocketHandler {
                 ));
             }
             
-            log.info("Message sent successfully: {}", messageDTO.getId());
+            log.info("✅ Message sent successfully: {}", messageDTO.getId());
             
         } catch (Exception e) {
-            log.error("Error in send_message: {}", e.getMessage());
+            log.error("❌ Error in send_message: {}", e.getMessage(), e);
             if (ackRequest.isAckRequested()) {
                 ackRequest.sendAckData(Map.of("success", false, "error", e.getMessage()));
             }
@@ -305,6 +311,68 @@ public class ChatSocketHandler {
             
         } catch (Exception e) {
             log.error("Error closing all admin conversations: {}", e.getMessage());
+            if (ackRequest.isAckRequested()) {
+                ackRequest.sendAckData(Map.of("success", false, "error", e.getMessage()));
+            }
+        }
+    }
+
+    @OnEvent("join_admin_room")
+    public void onJoinAdminRoom(SocketIOClient client, Map<String, Object> data, AckRequest ackRequest) {
+        try {
+            Long adminId = Long.valueOf(data.get("adminId").toString());
+            Long conversationId = Long.valueOf(data.get("conversationId").toString());
+            String clientId = client.getSessionId().toString();
+            
+            log.info("🏠 Admin {} joining room for conversation {} for monitoring (clientId={})", adminId, conversationId, clientId);
+            
+            // Store admin-user mapping for this client
+            clientUserMap.put(clientId, adminId);
+            log.info("👤 Stored clientUserMap: {} -> {}", clientId, adminId);
+            
+            // Store client-conversation mapping so admin can send messages
+            clientConversationMap.put(clientId, conversationId);
+            log.info("💬 Stored clientConversationMap: {} -> {}", clientId, conversationId);
+            
+            // Join admin to conversation room for monitoring
+            client.joinRoom("conversation_" + conversationId);
+            log.info("🏠 Admin {} joined room 'conversation_{}'", adminId, conversationId);
+            
+            if (ackRequest.isAckRequested()) {
+                ackRequest.sendAckData(Map.of(
+                    "success", true,
+                    "message", "Successfully joined conversation room for monitoring"
+                ));
+            }
+            
+            log.info("✅ Admin {} successfully joined room for conversation {}", adminId, conversationId);
+            
+        } catch (Exception e) {
+            log.error("❌ Error in join_admin_room: {}", e.getMessage(), e);
+            if (ackRequest.isAckRequested()) {
+                ackRequest.sendAckData(Map.of("success", false, "error", e.getMessage()));
+            }
+        }
+    }
+
+    @OnEvent("get_admin_conversations")
+    public void onGetAdminConversations(SocketIOClient client, Map<String, Object> data, AckRequest ackRequest) {
+        try {
+            Long adminId = Long.valueOf(data.get("adminId").toString());
+            log.info("Fetching active conversations for admin {}", adminId);
+            
+            // Get active conversations for this admin through transactional service
+            List<ConversationDTO> conversationDTOs = socketChatService.getActiveConversationsByAdmin(adminId);
+            
+            if (ackRequest.isAckRequested()) {
+                ackRequest.sendAckData(Map.of(
+                    "success", true,
+                    "conversations", conversationDTOs
+                ));
+            }
+            
+        } catch (Exception e) {
+            log.error("Error fetching admin conversations: {}", e.getMessage());
             if (ackRequest.isAckRequested()) {
                 ackRequest.sendAckData(Map.of("success", false, "error", e.getMessage()));
             }

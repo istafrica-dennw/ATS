@@ -8,6 +8,8 @@ import com.ats.model.ConversationStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ public class SocketChatService {
 
     private final ChatService chatService;
     private final ConversationService conversationService;
+    private static final Logger log = LoggerFactory.getLogger(SocketChatService.class);
 
     @Autowired
     public SocketChatService(ChatService chatService, ConversationService conversationService) {
@@ -63,19 +66,35 @@ public class SocketChatService {
     }
 
     public ChatMessageDTO sendMessage(Long conversationId, Long userId, String content) {
+        log.info("🔄 SocketChatService: Processing message from user {} to conversation {}", userId, conversationId);
+        
         // Validate that the conversation is still active
         Optional<Conversation> conversationOpt = conversationService.getConversationById(conversationId);
         if (conversationOpt.isEmpty()) {
+            log.error("❌ Conversation not found: {}", conversationId);
             throw new RuntimeException("Conversation not found");
         }
         
         Conversation conversation = conversationOpt.get();
+        log.info("📋 Conversation details: ID={}, Status={}, Candidate={}, Admin={}", 
+                conversation.getId(), conversation.getStatus(), 
+                conversation.getCandidate().getId(), 
+                conversation.getAdmin() != null ? conversation.getAdmin().getId() : "null");
+        
         if (conversation.getStatus() == ConversationStatus.CLOSED) {
+            log.error("❌ Cannot send message: Conversation {} is closed", conversationId);
             throw new RuntimeException("Cannot send message: Conversation has been closed");
         }
         
+        // Save the message
         Chat savedMessage = chatService.sendMessage(conversationId, userId, content);
-        return mapToChatMessageDTO(savedMessage);
+        log.info("💾 Message saved successfully: ID={}, Content='{}'", savedMessage.getId(), savedMessage.getContent());
+        
+        ChatMessageDTO messageDTO = mapToChatMessageDTO(savedMessage);
+        log.info("📤 Message DTO created: ID={}, ConversationId={}, SenderId={}", 
+                messageDTO.getId(), messageDTO.getConversationId(), messageDTO.getSenderId());
+        
+        return messageDTO;
     }
 
     public ConversationDTO closeConversation(Long conversationId) {
@@ -85,7 +104,16 @@ public class SocketChatService {
 
     public List<ConversationDTO> getUnassignedConversations() {
         List<Conversation> unassignedConversations = conversationService.getUnassignedConversations();
+        
+        // Return all unassigned conversations (no message filtering)
         return unassignedConversations.stream()
+            .map(this::mapToConversationDTO)
+            .toList();
+    }
+
+    public List<ConversationDTO> getActiveConversationsByAdmin(Long adminId) {
+        List<Conversation> activeConversations = conversationService.getActiveConversationsByAdmin(adminId);
+        return activeConversations.stream()
             .map(this::mapToConversationDTO)
             .toList();
     }
@@ -105,6 +133,15 @@ public class SocketChatService {
         }
         
         return closedConversations;
+    }
+
+    public ConversationDTO getConversationDTO(Long conversationId) {
+        Optional<Conversation> conversationOpt = conversationService.getConversationById(conversationId);
+        if (conversationOpt.isEmpty()) {
+            return null;
+        }
+        
+        return mapToConversationDTO(conversationOpt.get());
     }
 
     private ChatMessageDTO mapToChatMessageDTO(Chat chat) {

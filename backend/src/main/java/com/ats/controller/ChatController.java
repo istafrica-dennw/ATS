@@ -34,6 +34,8 @@ public class ChatController {
         log.info("Fetching unassigned conversations");
         
         List<Conversation> conversations = conversationService.getUnassignedConversations();
+        
+        // Return all unassigned conversations (no message filtering)
         List<ConversationDTO> conversationDTOs = conversations.stream()
             .map(this::mapToConversationDTO)
             .collect(Collectors.toList());

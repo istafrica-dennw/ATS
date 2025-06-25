@@ -1,0 +1,159 @@
+# ATS System Cursor Rules
+
+## General Development Guidelines
+
+### Java Version
+- Use Java 17 features exclusively
+- Leverage records, pattern matching, text blocks, and sealed classes where appropriate
+- Use var for local variables when type is obvious
+
+### Code Reusability
+- Before creating any new class, check existing codebase for reusable components
+- Search through service/, util/, dto/, model/, and config/ packages first
+- Extend or compose existing classes rather than duplicating functionality
+- Create utility classes in com.ats.util for common functionality
+
+### DRY Principle (Don't Repeat Yourself)
+- Never write similar code twice
+- Extract common patterns into utility methods or base classes
+- Use inheritance and composition to avoid code duplication
+- Create shared interfaces for similar behaviors
+
+## Architecture Guidelines
+
+### Database Layer
+- **Primary**: All relationships should be defined in database schema with proper foreign keys
+- **Secondary**: Add JPA relationships in entity models for convenience
+- Use @JoinColumn with proper foreign key names
+- Always define cascade operations explicitly
+- Prefer database-level constraints over application-level validation
+
+### Package Structure (com.ats.*)
+```
+├── model/          # Entity classes (JPA entities)
+├── repository/     # Data access layer (Spring Data JPA)
+├── service/        # Business logic layer
+├── controller/     # REST API controllers
+├── dto/           # Data Transfer Objects
+├── config/        # Configuration classes
+├── security/      # Authentication & authorization
+├── util/          # Utility classes and helpers
+├── exception/     # Custom exceptions and handlers
+├── aspect/        # AOP aspects
+├── annotation/    # Custom annotations
+└── socket/        # WebSocket handlers
+```
+
+### Layered Architecture Rules
+1. **Controllers**: Only handle HTTP requests/responses, delegate to services
+2. **Services**: Contain business logic, orchestrate repositories
+3. **Repositories**: Data access only, no business logic
+4. **DTOs**: For data transfer between layers, never expose entities directly
+5. **Models**: JPA entities, minimal business logic
+
+## Code Standards
+
+### Naming Conventions
+- Classes: PascalCase (e.g., `UserService`, `JobController`)
+- Methods/Variables: camelCase (e.g., `findUserById`, `jobTitle`)
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_FILE_SIZE`)
+- Database columns: snake_case (e.g., `first_name`, `created_at`)
+- REST endpoints: kebab-case (e.g., `/api/job-applications`)
+
+### Entity Design
+- Extend BaseEntity for audit fields (created_at, updated_at)
+- Use proper JPA annotations (@Entity, @Table, @Column)
+- Map column names explicitly (@Column(name = "first_name"))
+- Use appropriate fetch types (@OneToMany(fetch = FetchType.LAZY))
+- Always define proper equals() and hashCode() for entities
+
+### Service Layer
+- Interface + Implementation pattern for all services
+- Use @Transactional for write operations
+- Validate input parameters at service entry points
+- Convert entities to DTOs before returning to controllers
+- Handle exceptions gracefully with custom exception types
+
+### Repository Layer
+- Extend JpaRepository<Entity, ID>
+- Use method name conventions for simple queries
+- Use @Query for complex queries
+- Never put business logic in repositories
+- Use proper return types (Optional<T> for single results)
+
+### Controller Layer
+- Use @RestController annotation
+- Map endpoints with @RequestMapping, @GetMapping, etc.
+- Use @Valid for request body validation
+- Return ResponseEntity<T> for better HTTP response control
+- Use DTOs for request/response bodies, never entities
+
+### Exception Handling
+- Create custom exceptions extending RuntimeException
+- Use @ControllerAdvice for global exception handling
+- Return proper HTTP status codes
+- Log exceptions with appropriate levels
+
+### Security
+- Use Spring Security for authentication/authorization
+- Implement JWT token-based authentication
+- Use @PreAuthorize for method-level security
+- Never expose sensitive data in APIs
+- Validate all user inputs
+
+## Testing Guidelines
+- Write unit tests for all service methods
+- Use @MockBean for mocking dependencies
+- Test controllers with @WebMvcTest
+- Test repositories with @DataJpaTest
+- Achieve minimum 80% code coverage
+
+## Performance Guidelines
+- Use pagination for list endpoints
+- Implement proper database indexing
+- Use @Cacheable for frequently accessed data
+- Optimize N+1 query problems with @EntityGraph
+- Use database-level constraints for data integrity
+
+## Documentation
+- Document all public APIs with Swagger/OpenAPI annotations
+- Write clear JavaDoc for public methods
+- Maintain README files for major features
+- Document database schema changes in migration files
+
+## File Organization
+- Keep related files in same package
+- Use sub-packages for feature-specific code
+- Separate concerns into appropriate layers
+- Follow Maven standard directory layout
+
+## Spring Boot Best Practices
+- Use @ConfigurationProperties for configuration
+- Implement proper health checks with Actuator
+- Use profiles for environment-specific configurations
+- Implement proper logging with SLF4J
+- Use @Component, @Service, @Repository appropriately
+
+## Database Migration Rules
+- Never modify existing migration files
+- Create sequential migration files (V1__, V2__, etc.)
+- Include proper rollback instructions
+- Test migrations on copy of production data
+- Document schema changes in comments
+
+## Error Handling Standards
+- Use specific exception types for different error scenarios
+- Include proper error messages for debugging
+- Log errors with correlation IDs for tracing
+- Return user-friendly error messages in APIs
+- Implement circuit breaker pattern for external services
+
+## Code Review Checklist
+- [ ] No code duplication
+- [ ] Proper error handling
+- [ ] Input validation implemented
+- [ ] Tests written and passing
+- [ ] Database relationships properly defined
+- [ ] Security considerations addressed
+- [ ] Performance implications considered
+- [ ] Documentation updated 

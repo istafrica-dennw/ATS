@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ChatBubbleLeftRightIcon, XMarkIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { useDynamicTime } from '../../hooks/use-dynamic-time';
 
 interface Message {
   id: number;
@@ -26,6 +27,45 @@ interface ChatWidgetProps {
   userId: number;
   userName: string;
   userRole: 'CANDIDATE' | 'ADMIN';
+}
+
+// Message component with dynamic timestamp
+function MessageBubble({ message, userId }: { message: Message; userId: number }) {
+  const dynamicTime = useDynamicTime(message.createdAt, true);
+  
+  return (
+    <div
+      className={`flex ${
+        message.senderId === userId ? 'justify-end' : 'justify-start'
+      }`}
+    >
+      <div
+        className={`max-w-xs px-3 py-2 rounded-lg ${
+          message.messageType === 'system'
+            ? 'bg-yellow-100 text-yellow-800 text-center text-xs'
+            : message.senderId === userId
+            ? 'bg-blue-600 text-white'
+            : 'bg-white border border-gray-200'
+        }`}
+      >
+        {message.messageType !== 'system' && message.senderId !== userId && (
+          <div className="text-xs text-gray-500 mb-1">
+            {message.senderName} ({message.senderRole})
+          </div>
+        )}
+        <div className="text-sm">{message.content}</div>
+        {message.messageType !== 'system' && (
+          <div
+            className={`text-xs mt-1 ${
+              message.senderId === userId ? 'text-blue-200' : 'text-gray-400'
+            }`}
+          >
+            {dynamicTime}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) => {
@@ -166,13 +206,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
     setIsConnected(false);
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
   return (
     <>
       {/* Chat Toggle Button */}
@@ -213,7 +246,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+          <div className="flex-1 p-4 overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center items-center h-full">
                 <div className="text-gray-500">Connecting to chat...</div>
@@ -227,38 +260,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
             ) : (
               <div className="space-y-3">
                 {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.senderId === userId ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
-                    <div
-                      className={`max-w-xs px-3 py-2 rounded-lg ${
-                        message.messageType === 'system'
-                          ? 'bg-yellow-100 text-yellow-800 text-center text-xs'
-                          : message.senderId === userId
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white border border-gray-200'
-                      }`}
-                    >
-                      {message.messageType !== 'system' && message.senderId !== userId && (
-                        <div className="text-xs text-gray-500 mb-1">
-                          {message.senderName} ({message.senderRole})
-                        </div>
-                      )}
-                      <div className="text-sm">{message.content}</div>
-                      {message.messageType !== 'system' && (
-                        <div
-                          className={`text-xs mt-1 ${
-                            message.senderId === userId ? 'text-blue-200' : 'text-gray-400'
-                          }`}
-                        >
-                          {formatTime(message.createdAt)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <MessageBubble key={message.id} message={message} userId={userId} />
                 ))}
                 <div ref={messagesEndRef} />
               </div>
@@ -266,21 +268,21 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
           </div>
 
           {/* Input Area */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t">
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={isConnected ? "Type a message..." : "Connecting..."}
-                disabled={!isConnected || isLoading}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                placeholder="Type your message..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                disabled={!isConnected}
               />
               <button
                 onClick={sendMessage}
-                disabled={!isConnected || !newMessage.trim() || isLoading}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-2 rounded-lg transition-colors"
+                disabled={!newMessage.trim() || !isConnected}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <PaperAirplaneIcon className="h-4 w-4" />
               </button>

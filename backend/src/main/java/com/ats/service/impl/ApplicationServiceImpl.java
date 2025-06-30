@@ -51,7 +51,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 	public ApplicationServiceImpl(ApplicationRepository applicationRepository,
 			ApplicationAnswerRepository applicationAnswerRepository, JobRepository jobRepository,
 			UserRepository userRepository, JobCustomQuestionRepository jobCustomQuestionRepository,
-			@Qualifier("freeResumeAnalysisService") ResumeAnalysisService resumeAnalysisService,
+			@Qualifier("genericResumeAnalysisService") ResumeAnalysisService resumeAnalysisService,
 			EmailService emailService, FileStorageService fileStorageService) {
 		this.applicationRepository = applicationRepository;
 		this.applicationAnswerRepository = applicationAnswerRepository;

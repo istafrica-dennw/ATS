@@ -617,7 +617,7 @@ const JobManagementPage: React.FC = () => {
 
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
               <div className="absolute top-0 right-0 pt-4 pr-4">
                 <button
                   type="button"
@@ -635,189 +635,198 @@ const JobManagementPage: React.FC = () => {
                   </h3>
                   <div className="mt-2">
                     <form onSubmit={handleSubmit} className="space-y-4">
-                      {/* Job Title */}
-                      <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                          Job Title *
-                        </label>
-                        <input
-                          type="text"
-                          name="title"
-                          id="title"
-                          required
-                          value={formData.title}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                      </div>
-
-                      {/* Department */}
-                      <div>
-                        <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                          Department *
-                        </label>
-                        <input
-                          type="text"
-                          name="department"
-                          id="department"
-                          required
-                          value={formData.department}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                      </div>
-
-                      {/* Job Description */}
-                      <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                          Job Description *
-                        </label>
-                        <RichTextEditor
-                          value={formData.description}
-                          onChange={(content) => handleInputChange(content)}
-                        />
-                      </div>
-
-                      {/* Location */}
-                      <div>
-                        <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                          Location *
-                        </label>
-                        <input
-                          type="text"
-                          name="location"
-                          id="location"
-                          required
-                          value={formData.location || ''}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                      </div>
-
-                      {/* Employment Type */}
-                      <div>
-                        <label htmlFor="employmentType" className="block text-sm font-medium text-gray-700">
-                          Employment Type *
-                        </label>
-                        <select
-                          name="employmentType"
-                          id="employmentType"
-                          required
-                          value={formData.employmentType}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        >
-                          <option value="Full Time">Full Time</option>
-                          <option value="Part Time">Part Time</option>
-                          <option value="Contract">Contract</option>
-                          <option value="Internship">Internship</option>
-                        </select>
-                      </div>
-
-                      {/* Work Setting */}
-                      <div>
-                        <label htmlFor="workSetting" className="block text-sm font-medium text-gray-700">
-                          Work Setting *
-                        </label>
-                        <select
-                          name="workSetting"
-                          id="workSetting"
-                          required
-                          value={formData.workSetting}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        >
-                          <option value="REMOTE">Remote</option>
-                          <option value="ONSITE">Onsite</option>
-                          <option value="HYBRID">Hybrid</option>
-                        </select>
-                      </div>
-
-                      {/* Job Status - Only shown when editing */}
-                      {isEditing && (
-                        <div>
-                          <label htmlFor="jobStatus" className="block text-sm font-medium text-gray-700">
-                            Job Status *
-                          </label>
-                          <select
-                            name="jobStatus"
-                            id="jobStatus"
-                            required
-                            value={formData.jobStatus}
-                            onChange={handleInputChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          >
-                            <option value="DRAFT">Draft</option>
-                            <option value="PUBLISHED">Published</option>
-                            <option value="EXPIRED">Expired</option>
-                            <option value="CLOSED">Closed</option>
-                            <option value="REOPENED">Reopened</option>
-                          </select>
-                        </div>
-                      )}
-
-                      {/* Salary Range */}
-                      <div>
-                        <label htmlFor="salaryRange" className="block text-sm font-medium text-gray-700">
-                          Salary Range
-                        </label>
-                        <input
-                          type="text"
-                          name="salaryRange"
-                          id="salaryRange"
-                          placeholder="e.g., $50,000 - $70,000"
-                          value={formData.salaryRange}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        />
-                      </div>
-
-                      {/* Skills */}
-                      <div>
-                        <label htmlFor="skills" className="block text-sm font-medium text-gray-700">
-                          Skills
-                        </label>
-                        <div className="mt-1 flex rounded-md shadow-sm">
-                          <input
-                            type="text"
-                            name="skills"
-                            id="skills"
-                            value={skillInput}
-                            onChange={(e) => setSkillInput(e.target.value)}
-                            onKeyPress={handleSkillKeyPress}
-                            placeholder="Add a skill and press Enter"
-                            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddSkill}
-                            className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 sm:text-sm"
-                          >
-                            Add
-                          </button>
-                        </div>
-                        {formData.skills.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {formData.skills.map((skill, index) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
-                              >
-                                {skill}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveSkill(skill)}
-                                  className="ml-1.5 inline-flex text-indigo-400 hover:text-indigo-600"
-                                >
-                                    <XCircleIcon className="h-4 w-4" aria-hidden="true" />
-                                </button>
-                              </span>
-                            ))}
+                      {/* Two-column layout for desktop */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-6">
+                        {/* Left Column - Job Title to Location */}
+                        <div className="space-y-4">
+                          {/* Job Title */}
+                          <div>
+                            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                              Job Title *
+                            </label>
+                            <input
+                              type="text"
+                              name="title"
+                              id="title"
+                              required
+                              value={formData.title}
+                              onChange={handleInputChange}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
                           </div>
-                        )}
+
+                          {/* Department */}
+                          <div>
+                            <label htmlFor="department" className="block text-sm font-medium text-gray-700">
+                              Department *
+                            </label>
+                            <input
+                              type="text"
+                              name="department"
+                              id="department"
+                              required
+                              value={formData.department}
+                              onChange={handleInputChange}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
+                          </div>
+
+                          {/* Job Description */}
+                          <div>
+                            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                              Job Description *
+                            </label>
+                            <RichTextEditor
+                              value={formData.description}
+                              onChange={(content) => handleInputChange(content)}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Right Column - Employment Type onwards */}
+                        <div className="space-y-4 lg:mt-0 mt-4">
+                          {/* Location */}
+                          <div>
+                            <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                              Location *
+                            </label>
+                            <input
+                              type="text"
+                              name="location"
+                              id="location"
+                              required
+                              value={formData.location || ''}
+                              onChange={handleInputChange}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
+                          </div>
+
+                          {/* Employment Type */}
+                          <div>
+                            <label htmlFor="employmentType" className="block text-sm font-medium text-gray-700">
+                              Employment Type *
+                            </label>
+                            <select
+                              name="employmentType"
+                              id="employmentType"
+                              required
+                              value={formData.employmentType}
+                              onChange={handleInputChange}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            >
+                              <option value="Full Time">Full Time</option>
+                              <option value="Part Time">Part Time</option>
+                              <option value="Contract">Contract</option>
+                              <option value="Internship">Internship</option>
+                            </select>
+                          </div>
+
+                          {/* Work Setting */}
+                          <div>
+                            <label htmlFor="workSetting" className="block text-sm font-medium text-gray-700">
+                              Work Setting *
+                            </label>
+                            <select
+                              name="workSetting"
+                              id="workSetting"
+                              required
+                              value={formData.workSetting}
+                              onChange={handleInputChange}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            >
+                              <option value="REMOTE">Remote</option>
+                              <option value="ONSITE">Onsite</option>
+                              <option value="HYBRID">Hybrid</option>
+                            </select>
+                          </div>
+
+                          {/* Job Status - Only shown when editing */}
+                          {isEditing && (
+                            <div>
+                              <label htmlFor="jobStatus" className="block text-sm font-medium text-gray-700">
+                                Job Status *
+                              </label>
+                              <select
+                                name="jobStatus"
+                                id="jobStatus"
+                                required
+                                value={formData.jobStatus}
+                                onChange={handleInputChange}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              >
+                                <option value="DRAFT">Draft</option>
+                                <option value="PUBLISHED">Published</option>
+                                <option value="EXPIRED">Expired</option>
+                                <option value="CLOSED">Closed</option>
+                                <option value="REOPENED">Reopened</option>
+                              </select>
+                            </div>
+                          )}
+
+                          {/* Salary Range */}
+                          <div>
+                            <label htmlFor="salaryRange" className="block text-sm font-medium text-gray-700">
+                              Salary Range
+                            </label>
+                            <input
+                              type="text"
+                              name="salaryRange"
+                              id="salaryRange"
+                              placeholder="e.g., $50,000 - $70,000"
+                              value={formData.salaryRange}
+                              onChange={handleInputChange}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
+                          </div>
+
+                          {/* Skills */}
+                          <div>
+                            <label htmlFor="skills" className="block text-sm font-medium text-gray-700">
+                              Skills
+                            </label>
+                            <div className="mt-1 flex rounded-md shadow-sm">
+                              <input
+                                type="text"
+                                name="skills"
+                                id="skills"
+                                value={skillInput}
+                                onChange={(e) => setSkillInput(e.target.value)}
+                                onKeyPress={handleSkillKeyPress}
+                                placeholder="Add a skill and press Enter"
+                                className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddSkill}
+                                className="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-500 sm:text-sm"
+                              >
+                                Add
+                              </button>
+                            </div>
+                            {formData.skills.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {formData.skills.map((skill, index) => (
+                                  <span
+                                    key={index}
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                                  >
+                                    {skill}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveSkill(skill)}
+                                      className="ml-1.5 inline-flex text-indigo-400 hover:text-indigo-600"
+                                    >
+                                        <XCircleIcon className="h-4 w-4" aria-hidden="true" />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Custom Questions */}
+                      {/* Custom Questions - Full width below the two columns */}
                       <div className="border-t border-gray-200 pt-4">
                         <div className="flex justify-between items-center">
                           <h4 className="text-sm font-medium text-gray-700">Custom Application Questions</h4>

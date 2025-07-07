@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -32,7 +31,6 @@ import java.util.stream.Collectors;
 @Service("genericResumeAnalysisService")
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "app.resume-analysis.provider", havingValue = "generic", matchIfMissing = true)
 public class FreeResumeAnalysisServiceImpl implements ResumeAnalysisService {
 
     private final ApplicationRepository applicationRepository;

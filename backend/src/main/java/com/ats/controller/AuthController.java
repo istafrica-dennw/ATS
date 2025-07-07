@@ -107,7 +107,7 @@ public class AuthController {
         user = userRepository.save(user);
 
         try {
-            emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+            emailService.sendNewUserVerificationEmail(user, verificationToken);
             return ResponseEntity.ok(new HashMap<String, String>() {{
                 put("message", "Registration successful. Please check your email for verification.");
             }});

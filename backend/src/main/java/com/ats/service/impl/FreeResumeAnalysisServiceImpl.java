@@ -257,7 +257,12 @@ public class FreeResumeAnalysisServiceImpl implements ResumeAnalysisService {
     private boolean isAiServiceAvailable() {
         try {
             String url = aiBaseUrl + healthEndpoint;
-            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            
+            // Create headers with authentication (needed for Gemini)
+            HttpHeaders headers = createHttpHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             return response.getStatusCode() == HttpStatus.OK;
         } catch (Exception e) {
             log.debug("{} AI service not available: {}", aiProvider, e.getMessage());
@@ -301,6 +306,19 @@ public class FreeResumeAnalysisServiceImpl implements ResumeAnalysisService {
                 request.put("messages", List.of(Map.of("role", "user", "content", prompt)));
                 request.put("temperature", temperature);
                 request.put("max_tokens", maxTokens);
+                break;
+                
+            case "gemini":
+                // Google Gemini format
+                Map<String, Object> content = Map.of(
+                    "parts", List.of(Map.of("text", prompt))
+                );
+                request.put("contents", List.of(content));
+                request.put("generationConfig", Map.of(
+                    "temperature", temperature,
+                    "maxOutputTokens", maxTokens,
+                    "candidateCount", 1
+                ));
                 break;
                 
             case "ollama":
@@ -366,6 +384,21 @@ public class FreeResumeAnalysisServiceImpl implements ResumeAnalysisService {
                         List<Map<String, Object>> contentList = (List<Map<String, Object>>) content;
                         if (!contentList.isEmpty()) {
                             return (String) contentList.get(0).get("text");
+                        }
+                    }
+                    break;
+                    
+                case "gemini":
+                    // Google Gemini response format
+                    List<Map<String, Object>> candidates = (List<Map<String, Object>>) responseBody.get("candidates");
+                    if (candidates != null && !candidates.isEmpty()) {
+                        Map<String, Object> candidate = candidates.get(0);
+                        Map<String, Object> geminiContent = (Map<String, Object>) candidate.get("content");
+                        if (geminiContent != null) {
+                            List<Map<String, Object>> parts = (List<Map<String, Object>>) geminiContent.get("parts");
+                            if (parts != null && !parts.isEmpty()) {
+                                return (String) parts.get(0).get("text");
+                            }
                         }
                     }
                     break;

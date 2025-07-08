@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ats-postgres-aws
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Memory optimization for 4GB instance
+      POSTGRES_SHARED_BUFFERS: 128MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 512MB
+      POSTGRES_WORK_MEM: 4MB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ats-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Memory limits for PostgreSQL
+    deploy:
+      resources:
+        limits:
+          memory: 640M
+        reservations:
+          memory: 256M
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: ats-backend-aws
+    ports:
+      - "8080:8080"
+      - "9092:9092"
+    env_file:
+      - .env
+    environment:
+      # Production Spring Profile
+      - SPRING_PROFILES_ACTIVE=prod
+      # Database Configuration
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      # Security Configuration
+      - JWT_SECRET=${JWT_SECRET}
+      - SPRING_SECURITY_USER_NAME=${SPRING_SECURITY_USER_NAME}
+      - SPRING_SECURITY_USER_PASSWORD=${SPRING_SECURITY_USER_PASSWORD}
+      - SPRING_SECURITY_USER_ROLES=${SPRING_SECURITY_USER_ROLES}
+      # Email Configuration
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      # OAuth Configuration
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+      # Gemini AI Configuration (no Ollama needed)
+      - AI_PROVIDER=${AI_PROVIDER}
+      - AI_BASE_URL=${AI_BASE_URL}
+      - AI_MODEL=${AI_MODEL}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_AUTH_TYPE=${AI_AUTH_TYPE}
+      - AI_AUTH_HEADER=${AI_AUTH_HEADER}
+      - AI_REQUEST_FORMAT=${AI_REQUEST_FORMAT}
+      - AI_GENERATION_ENDPOINT=${AI_GENERATION_ENDPOINT}
+      - AI_HEALTH_ENDPOINT=${AI_HEALTH_ENDPOINT}
+      - AI_RESPONSE_FIELD=${AI_RESPONSE_FIELD}
+      - AI_MAX_TOKENS=${AI_MAX_TOKENS}
+      - AI_TEMPERATURE=${AI_TEMPERATURE}
+      # Optimized JVM Settings for 4GB instance
+      - JAVA_OPTS=-Xmx1200m -Xms600m -XX:+UseG1GC -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=100 -XX:+DisableExplicitGC
+    volumes:
+      - profile_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ats-network
+    restart: unless-stopped
+    # Memory limits for Backend
+    deploy:
+      resources:
+        limits:
+          memory: 1600M
+        reservations:
+          memory: 800M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ats-frontend-aws
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_SOCKET_URL=${REACT_APP_SOCKET_URL:-http://localhost:9092}
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - ats-network
+    restart: unless-stopped
+    # Memory limits for Frontend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+networks:
+  ats-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ats-system_postgres_data
+  profile_uploads:
+    name: ats-system_ats_uploads 

@@ -2,7 +2,7 @@
 
 A comprehensive Applicant Tracking System built with Spring Boot and React, designed to streamline the recruitment process for organizations.
 
-## 🌟 Features
+## Features
 
 ### 📋 Job Management
 - **Job Posting Creation**: Rich job descriptions with formatting support

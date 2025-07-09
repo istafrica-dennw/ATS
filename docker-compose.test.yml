@@ -72,6 +72,20 @@ services:
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_LINKEDIN_CLIENT_ID: test-client-id
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_LINKEDIN_CLIENT_SECRET: test-client-secret
       
+      # AI Configuration (Mock/Test Configuration)
+      AI_PROVIDER: test
+      AI_BASE_URL: http://localhost:8080/test
+      AI_MODEL: test-model
+      AI_API_KEY: test-api-key
+      AI_AUTH_TYPE: api-key
+      AI_AUTH_HEADER: x-api-key
+      AI_REQUEST_FORMAT: test
+      AI_GENERATION_ENDPOINT: /test/generate
+      AI_HEALTH_ENDPOINT: /test/health
+      AI_RESPONSE_FIELD: test_response
+      AI_MAX_TOKENS: 1000
+      AI_TEMPERATURE: 0.1
+      
       # Logging Configuration
       LOGGING_LEVEL_ROOT: WARN
       LOGGING_LEVEL_COM_ATS: INFO

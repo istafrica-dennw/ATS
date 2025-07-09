@@ -196,10 +196,13 @@ jobs:
             echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
             echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
             echo "MAIL_FROM=${{ secrets.MAIL_FROM }}" >> .env
+            echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> .env
+            echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
             echo "" >> .env
             echo "# OAuth Configuration" >> .env
             echo "LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}" >> .env
             echo "LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}" >> .env
+            echo "BACKEND_URL=http://${{ secrets.EC2_HOST }}:8080" >> .env
             echo "" >> .env
             echo "# Gemini AI Configuration" >> .env
             echo "AI_PROVIDER=gemini" >> .env

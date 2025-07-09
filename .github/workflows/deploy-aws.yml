@@ -166,50 +166,48 @@ jobs:
             cd ${{ env.DEPLOYMENT_PATH }}
             
             # Create .env file with secrets
-            cat > .env << 'ENVEOF'
-            # Database Configuration
-            POSTGRES_DB=ats_db
-            POSTGRES_USER=ats_user
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/ats_db
-            
-            # Security Configuration
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            SPRING_SECURITY_USER_NAME=admin
-            SPRING_SECURITY_USER_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
-            SPRING_SECURITY_USER_ROLES=ADMIN
-            
-            # Email Configuration
-            MAIL_HOST=smtp.gmail.com
-            MAIL_PORT=587
-            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
-            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
-            MAIL_FROM=${{ secrets.MAIL_FROM }}
-            
-            # OAuth Configuration
-            LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}
-            LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}
-            
-            # Gemini AI Configuration
-            AI_PROVIDER=gemini
-            AI_BASE_URL=https://generativelanguage.googleapis.com
-            AI_MODEL=gemini-1.5-flash
-            AI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            AI_AUTH_TYPE=api-key
-            AI_AUTH_HEADER=x-goog-api-key
-            AI_REQUEST_FORMAT=gemini
-            AI_GENERATION_ENDPOINT=/v1beta/models/gemini-1.5-flash:generateContent
-            AI_HEALTH_ENDPOINT=/v1beta/models
-            AI_RESPONSE_FIELD=candidates
-            AI_MAX_TOKENS=1000
-            AI_TEMPERATURE=0.1
-            
-            # Application Configuration
-            REACT_APP_API_URL=http://${{ secrets.EC2_HOST }}:8080
-            REACT_APP_SOCKET_URL=http://${{ secrets.EC2_HOST }}:9092
-            UPLOADS_DIRECTORY=uploads
-            ENVEOF
-            
+            echo "# Database Configuration" > .env
+            echo "POSTGRES_DB=ats_db" >> .env
+            echo "POSTGRES_USER=ats_user" >> .env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+            echo "SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/ats_db" >> .env
+            echo "" >> .env
+            echo "# Security Configuration" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "SPRING_SECURITY_USER_NAME=admin" >> .env
+            echo "SPRING_SECURITY_USER_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
+            echo "SPRING_SECURITY_USER_ROLES=ADMIN" >> .env
+            echo "" >> .env
+            echo "# Email Configuration" >> .env
+            echo "MAIL_HOST=smtp.gmail.com" >> .env
+            echo "MAIL_PORT=587" >> .env
+            echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
+            echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
+            echo "MAIL_FROM=${{ secrets.MAIL_FROM }}" >> .env
+            echo "" >> .env
+            echo "# OAuth Configuration" >> .env
+            echo "LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}" >> .env
+            echo "LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}" >> .env
+            echo "" >> .env
+            echo "# Gemini AI Configuration" >> .env
+            echo "AI_PROVIDER=gemini" >> .env
+            echo "AI_BASE_URL=https://generativelanguage.googleapis.com" >> .env
+            echo "AI_MODEL=gemini-1.5-flash" >> .env
+            echo "AI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+            echo "AI_AUTH_TYPE=api-key" >> .env
+            echo "AI_AUTH_HEADER=x-goog-api-key" >> .env
+            echo "AI_REQUEST_FORMAT=gemini" >> .env
+            echo "AI_GENERATION_ENDPOINT=/v1beta/models/gemini-1.5-flash:generateContent" >> .env
+            echo "AI_HEALTH_ENDPOINT=/v1beta/models" >> .env
+            echo "AI_RESPONSE_FIELD=candidates" >> .env
+            echo "AI_MAX_TOKENS=1000" >> .env
+            echo "AI_TEMPERATURE=0.1" >> .env
+            echo "" >> .env
+            echo "# Application Configuration" >> .env
+            echo "REACT_APP_API_URL=http://${{ secrets.EC2_HOST }}:8080" >> .env
+            echo "REACT_APP_SOCKET_URL=http://${{ secrets.EC2_HOST }}:9092" >> .env
+            echo "UPLOADS_DIRECTORY=uploads" >> .env
+            echo "" >> .env
             chmod 600 .env
             echo "Environment file created successfully"
           EOF

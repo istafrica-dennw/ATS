@@ -6,9 +6,10 @@ interface LinkedInLoginButtonProps {
 
 const LinkedInLoginButton: React.FC<LinkedInLoginButtonProps> = ({ className = '' }) => {
   const handleLinkedInLogin = () => {
-    // Use environment variable for API URL, fallback to localhost for development
-    const apiUrl = process.env.BACKEND_URL || 'http://localhost:8080';
-    window.location.href = `${apiUrl}/oauth2/authorization/linkedin`;
+    // Use REACT_APP_API_URL environment variable, remove /api suffix if present
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+    const baseUrl = apiUrl.replace('/api', ''); // Remove /api suffix if present
+    window.location.href = `${baseUrl}/oauth2/authorization/linkedin`;
   };
 
   return (

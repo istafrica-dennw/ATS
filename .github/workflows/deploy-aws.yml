@@ -219,8 +219,10 @@ jobs:
             echo "AI_TEMPERATURE=0.1" >> .env
             echo "" >> .env
             echo "# Application Configuration" >> .env
-            echo "REACT_APP_API_URL=http://${{ secrets.EC2_HOST }}:8080" >> .env
+            echo "REACT_APP_API_URL=http://${{ secrets.EC2_HOST }}:8080/api" >> .env
             echo "REACT_APP_SOCKET_URL=http://${{ secrets.EC2_HOST }}:9092" >> .env
+            echo "FRONTEND_URL=http://${{ secrets.EC2_HOST }}:3001" >> .env
+            echo "BACKEND_URL=http://${{ secrets.EC2_HOST }}:8080" >> .env
             echo "UPLOADS_DIRECTORY=uploads" >> .env
             echo "" >> .env
             chmod 600 .env

@@ -195,7 +195,6 @@ jobs:
             echo "MAIL_PORT=587" >> .env
             echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
             echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
-            echo "MAIL_FROM=${{ secrets.MAIL_FROM }}" >> .env
             echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> .env
             echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
             echo "" >> .env
@@ -208,7 +207,7 @@ jobs:
             echo "AI_PROVIDER=gemini" >> .env
             echo "AI_BASE_URL=https://generativelanguage.googleapis.com" >> .env
             echo "AI_MODEL=gemini-1.5-flash" >> .env
-            echo "AI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+            echo "AI_API_KEY=${{ secrets.AI_API_KEY }}" >> .env
             echo "AI_AUTH_TYPE=api-key" >> .env
             echo "AI_AUTH_HEADER=x-goog-api-key" >> .env
             echo "AI_REQUEST_FORMAT=gemini" >> .env

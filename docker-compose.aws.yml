@@ -96,6 +96,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        REACT_APP_SOCKET_URL: ${REACT_APP_SOCKET_URL}
     container_name: ats-frontend-aws
     ports:
       - "3001:3001"

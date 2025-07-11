@@ -9,6 +9,11 @@ const LinkedInLoginButton: React.FC<LinkedInLoginButtonProps> = ({ className = '
     // Use REACT_APP_API_URL environment variable, remove /api suffix if present
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
     const baseUrl = apiUrl.replace('/api', ''); // Remove /api suffix if present
+    
+    // Debug log to see what's actually happening
+    console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+    console.log('Final baseUrl:', baseUrl);
+    
     window.location.href = `${baseUrl}/oauth2/authorization/linkedin`;
   };
 

@@ -16,6 +16,7 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
   className = ''
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   const sizeClasses = {
     small: 'h-8 w-8 text-xs',
@@ -27,6 +28,11 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
 
   const handleImageError = () => {
     setImageError(true);
+    setImageLoading(false);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
   };
 
   // Show initials if no profile picture URL or if image failed to load
@@ -40,14 +46,23 @@ const ProfilePicture: React.FC<ProfilePictureProps> = ({
     );
   }
 
-  // Show profile picture
+  // Show profile picture with loading state
   return (
-    <div className={`${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0 ${className}`}>
+    <div className={`${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0 relative ${className}`}>
+      {imageLoading && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-full flex items-center justify-center">
+          <span className="text-gray-400 font-medium text-xs">
+            {initials}
+          </span>
+        </div>
+      )}
       <img
         src={profilePictureUrl}
         alt={`${firstName} ${lastName}`}
-        className="h-full w-full object-cover"
+        className={`h-full w-full object-cover transition-opacity duration-200 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+        loading="lazy"
         onError={handleImageError}
+        onLoad={handleImageLoad}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { User, Role } from '../../types/user';
 import AddUserModal from '../../components/admin/AddUserModal';
 import UserDetailsModal from '../../components/admin/UserDetailsModal';
+import ProfilePicture from '../../components/common/ProfilePicture';
 import { toast } from 'react-toastify';
 import {
   PencilIcon,
@@ -212,13 +213,12 @@ const UserManagementPage: React.FC = () => {
                     <tr key={user.id}>
                       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-gray-500 text-sm">
-                                {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                              </span>
-                            </div>
-                          </div>
+                          <ProfilePicture 
+                            firstName={user.firstName}
+                            lastName={user.lastName}
+                            profilePictureUrl={user.profilePictureUrl}
+                            size="medium"
+                          />
                           <div className="ml-4">
                             <div className="font-medium text-gray-900">
                               {user.firstName} {user.lastName}

@@ -41,6 +41,7 @@ public class JobServiceImpl implements JobService {
     private ModelMapperUtil modelMapper;
 
     @Override
+    @Transactional
     public JobDTO createJob(JobDTO jobDTO) {
         Job job = modelMapper.map(jobDTO, Job.class);
         if (job.getJobStatus() == null){
@@ -52,8 +53,23 @@ public class JobServiceImpl implements JobService {
             job.setPostedDate(LocalDate.now());
         }
         
+        // Save the job first
         job = jobRepository.save(job);
-        return modelMapper.map(job, JobDTO.class);
+        
+        // Handle custom questions if provided
+        if (jobDTO.getCustomQuestions() != null && !jobDTO.getCustomQuestions().isEmpty()) {
+            logger.info("Processing {} custom questions for new job ID: {}", 
+                       jobDTO.getCustomQuestions().size(), job.getId());
+            
+            for (JobCustomQuestionDTO questionDTO : jobDTO.getCustomQuestions()) {
+                questionDTO.setJobId(job.getId());
+                questionDTO.setId(null); // Ensure ID is null for new questions
+                jobCustomQuestionService.createCustomQuestion(questionDTO);
+            }
+        }
+        
+        // Return the complete job with custom questions
+        return getJobById(job.getId());
     }
 
     @Override

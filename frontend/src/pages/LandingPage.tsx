@@ -317,7 +317,7 @@ const LandingPage: React.FC = () => {
           <div className="rounded-2xl bg-indigo-50 px-6 py-16 sm:p-16">
             <div className="mx-auto max-w-xl text-center">
               <h2 className="text-3xl font-bold tracking-tight text-indigo-900 sm:text-4xl">
-                Ready to streamline your hiring?
+                Let's move forward — together.
               </h2>
               <div className="mt-8">
                 <Link

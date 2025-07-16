@@ -3,30 +3,37 @@
 ## Table of Contents
 1. [System Overview](#system-overview)
 2. [Application Features](#application-features)
-3. [Database Schema](#database-schema)
-4. [Job Management System](#job-management-system)
-5. [Application Processing System](#application-processing-system)
-6. [Interview Management System](#interview-management-system)
-7. [Email Notification System](#email-notification-system)
-8. [Enhanced Admin UI](#enhanced-admin-ui)
-9. [API Documentation](#api-documentation)
-10. [Authentication & Security](#authentication--security)
-11. [Password Management](#password-management)
-12. [Deployment](#deployment)
+3. [AI Resume Analysis System](#ai-resume-analysis-system)
+4. [Real-time Chat Support System](#real-time-chat-support-system)
+5. [File Upload and Storage System](#file-upload-and-storage-system)
+6. [Database Schema](#database-schema)
+7. [Job Management System](#job-management-system)
+8. [Application Processing System](#application-processing-system)
+9. [Interview Management System](#interview-management-system)
+10. [Email Notification System](#email-notification-system)
+11. [Enhanced Admin UI](#enhanced-admin-ui)
+12. [Analytics and Dashboard](#analytics-and-dashboard)
+13. [API Documentation](#api-documentation)
+14. [Authentication & Security](#authentication--security)
+15. [Password Management](#password-management)
+16. [Deployment](#deployment)
 
 ## System Overview
 
-The Applicant Tracking System (ATS) is a comprehensive solution designed to streamline the recruitment process. It provides tools for job posting, candidate management, interview scheduling, evaluation, and comprehensive application tracking with automated email notifications.
+The Applicant Tracking System (ATS) is a comprehensive solution designed to streamline the recruitment process. It provides tools for job posting, candidate management, interview scheduling, evaluation, comprehensive application tracking with automated email notifications, AI-powered resume analysis, and real-time chat support.
 
 ### Technology Stack
 - **Backend**: Spring Boot 3.2.3
 - **Frontend**: React with TypeScript
 - **Database**: PostgreSQL
-- **Authentication**: JWT with role-based access
+- **Authentication**: JWT with role-based access and LinkedIn OAuth
 - **API Documentation**: Swagger/OpenAPI
 - **Containerization**: Docker
 - **UI Framework**: Tailwind CSS with enhanced animations
 - **Email System**: Thymeleaf templates with failure tracking
+- **AI Integration**: Generic AI service supporting Ollama, OpenAI, Gemini, Claude
+- **Real-time Communication**: Socket.IO for WebSocket connections
+- **File Storage**: Multi-format file upload and management system
 
 ## Application Features
 
@@ -34,7 +41,8 @@ The Applicant Tracking System (ATS) is a comprehensive solution designed to stre
 - User registration and authentication
 - Role-based access control (Admin, Recruiter, Interviewer, Candidate)
 - Comprehensive profile management with extended user attributes
-- LinkedIn integration
+- **LinkedIn OAuth Integration**: Social login with profile synchronization
+- **Profile Picture Management**: Upload, display, and fallback to initials
 - User preferences and settings
 - Default admin account system
 - User profile deactivation/reactivation
@@ -157,6 +165,228 @@ The Applicant Tracking System (ATS) is a comprehensive solution designed to stre
   - Interview assignment column in applications table
   - Re-assign and de-assign functionality
   - Comprehensive application status tracking
+
+## AI Resume Analysis System
+
+### Overview
+The ATS includes a comprehensive AI-powered resume analysis system that automatically extracts structured data from uploaded resumes and provides job-specific scoring and insights.
+
+### Core Features
+
+#### 1. Multi-Provider AI Support
+- **Generic AI Service Architecture**: Supports multiple AI providers
+- **Supported Providers**:
+  - **Ollama** (Local/Remote): Free, privacy-focused LLM hosting
+  - **OpenAI GPT-4**: Premium accuracy with cost per analysis
+  - **Google Gemini**: Free tier with rate limits
+  - **Claude (Anthropic)**: Advanced reasoning capabilities
+  - **Custom REST APIs**: Extensible to any AI service
+
+#### 2. Resume Processing Capabilities
+- **File Format Support**: PDF, DOC, DOCX, TXT
+- **Text Extraction**: Apache Tika for robust document parsing
+- **Language Processing**: Both AI and traditional NLP fallback
+- **Async Processing**: Non-blocking analysis with progress tracking
+
+#### 3. Data Extraction Features
+- **Experience Calculation**: Total years of work experience (excluding overlaps)
+- **Company History**: Number of companies worked for
+- **Current Employment**: Current company and position
+- **Skills Extraction**: Technical and soft skills identification
+- **Education Details**: Degrees, institutions, graduation years
+- **Previous Positions**: Detailed work history with durations
+
+#### 4. Job-Specific Scoring
+- **Overall Match Score**: 0-100 compatibility rating
+- **Skills Match**: Percentage of required skills found
+- **Experience Score**: Years of experience vs. job requirements
+- **Industry Relevance**: Domain-specific experience weighting
+- **Education Match**: Degree requirements alignment
+
+#### 5. Analysis Metadata
+- **Processing Time**: Performance metrics
+- **AI Model Used**: Provider and model information
+- **Confidence Score**: Analysis reliability indicator
+- **Error Handling**: Graceful fallback to traditional NLP
+
+### Implementation Architecture
+
+#### Database Integration
+```sql
+-- Resume analysis stored as JSONB in applications table
+ALTER TABLE applications 
+ADD COLUMN resume_analysis JSONB;
+
+-- Optimized indexing for analysis queries
+CREATE INDEX idx_applications_resume_analysis ON applications USING GIN (resume_analysis);
+```
+
+#### API Endpoints
+- `POST /api/resume-analysis/analyze` - Analyze uploaded resume file
+- `POST /api/resume-analysis/analyze-async` - Start async analysis
+- `POST /api/resume-analysis/applications/{id}/analyze` - Analyze existing application
+
+#### Configuration Options
+```properties
+# AI Service Configuration
+ai.service.provider=ollama|openai|gemini|claude
+ai.service.base-url=http://localhost:11434
+ai.service.model=llama3|gpt-4|gemini-pro|claude-3
+ai.service.api-key=${AI_API_KEY}
+ai.service.auth-type=none|bearer|api-key
+```
+
+### Free vs Premium Options
+
+#### Free Tier (Ollama + Traditional NLP)
+- **Cost**: $0 forever
+- **Privacy**: 100% local processing
+- **Setup**: Self-hosted Ollama instance
+- **Models**: phi3 (2.3GB), llama3 (4.7GB), codellama (3.8GB)
+- **Performance**: 2-8 seconds per resume
+
+#### Premium Tier (Cloud AI)
+- **OpenAI GPT-4**: ~$0.12 per resume analysis
+- **Google Gemini**: Free tier (15 requests/minute)
+- **High Accuracy**: Advanced language understanding
+- **Cloud Processing**: No local setup required
+
+## Real-time Chat Support System
+
+### Overview
+The ATS includes a comprehensive real-time chat support system using Socket.IO, enabling candidates to communicate with admin support staff in real-time.
+
+### Core Features
+
+#### 1. WebSocket Architecture
+- **Socket.IO Server**: Runs on port 9092
+- **Real-time Messaging**: Instant message delivery
+- **Connection Management**: Automatic reconnection and error handling
+- **Room-based Communication**: Isolated conversation channels
+
+#### 2. User Roles and Access
+- **Candidates**: Can initiate chat conversations
+- **Admins**: Can take and manage multiple conversations
+- **Conversation Assignment**: Admins can claim unassigned conversations
+- **Conversation Monitoring**: Real-time conversation oversight
+
+#### 3. Chat Widget (Candidate Side)
+- **Floating Chat Widget**: Non-intrusive interface
+- **Auto-connection**: Connects when widget is opened
+- **Message History**: Persistent conversation history
+- **Typing Indicators**: Real-time interaction feedback
+- **Connection Status**: Visual connection state indicators
+
+#### 4. Admin Chat Panel
+- **Conversation Dashboard**: Overview of all conversations
+- **Unassigned Queue**: New conversations awaiting assignment
+- **Active Conversations**: Currently handled conversations
+- **Multi-conversation Support**: Handle multiple chats simultaneously
+- **Conversation Taking**: Claim unassigned conversations
+
+#### 5. Conversation Management
+- **Automatic Conversation Creation**: When candidates open chat
+- **Admin Assignment**: Manual conversation claiming
+- **Conversation Closure**: End conversations with confirmation
+- **Message Broadcasting**: Real-time message distribution
+- **Conversation Status**: UNASSIGNED, ACTIVE, CLOSED
+
+### Database Schema
+```sql
+-- Conversations table
+CREATE TABLE conversations (
+    id BIGSERIAL PRIMARY KEY,
+    candidate_id BIGINT REFERENCES users(id),
+    admin_id BIGINT REFERENCES users(id),
+    status VARCHAR(20) DEFAULT 'UNASSIGNED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chat messages table
+CREATE TABLE chat_messages (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT REFERENCES conversations(id),
+    sender_id BIGINT REFERENCES users(id),
+    content TEXT NOT NULL,
+    message_type VARCHAR(20) DEFAULT 'text',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Socket.IO Events
+- **Connection Events**: `connect`, `disconnect`
+- **Chat Events**: `join_chat`, `send_message`, `close_conversation`
+- **Admin Events**: `admin_take_conversation`, `join_admin_room`
+- **Notification Events**: `new_unassigned_conversation`, `conversation_taken`
+
+### UI Components
+- **ChatWidget**: Floating chat interface for candidates
+- **AdminChatPanel**: Conversation management for admins
+- **ChatModal**: Dedicated chat windows for admins
+- **AdminChatNotifications**: Real-time conversation alerts
+
+## File Upload and Storage System
+
+### Overview
+Comprehensive file management system supporting multiple file types with organized storage, security validation, and URL-based access.
+
+### Supported File Types
+
+#### 1. Profile Pictures
+- **Formats**: JPEG, PNG, GIF
+- **Storage Path**: `/uploads/profile-pictures/`
+- **Validation**: Image MIME type checking
+- **Naming**: UUID-based to prevent conflicts
+- **Access URL**: `/api/files/profile-pictures/{filename}`
+
+#### 2. Resume Documents
+- **Formats**: PDF, DOC, DOCX, TXT
+- **Storage Path**: `/uploads/resumes/`
+- **Integration**: Connected to AI resume analysis
+- **Validation**: Document MIME type checking
+- **Security**: File content validation
+
+#### 3. Cover Letters
+- **Formats**: PDF, DOC, DOCX, TXT
+- **Storage Path**: `/uploads/cover-letters/`
+- **Purpose**: Application supporting documents
+- **Validation**: Document format verification
+
+### Storage Features
+
+#### 1. File Organization
+- **Directory Structure**: Organized by file type
+- **Auto-creation**: Directories created on-demand
+- **Permissions**: Configurable file permissions
+- **Cleanup**: Scheduled cleanup for orphaned files
+
+#### 2. Security Features
+- **MIME Type Validation**: Server-side format verification
+- **File Size Limits**: Configurable upload limits (default 10MB)
+- **Filename Sanitization**: UUID prefix for security
+- **Access Control**: URL-based controlled access
+
+#### 3. API Endpoints
+- `POST /api/files/upload/profile-picture` - Upload profile picture
+- `POST /api/files/upload/resume` - Upload resume document
+- `POST /api/files/upload/cover-letter` - Upload cover letter
+- `GET /api/files/profile-pictures/{filename}` - Access profile picture
+- `GET /api/files/info` - File storage system information
+
+#### 4. Error Handling
+- **Storage Failures**: Graceful error handling
+- **Format Validation**: Clear error messages
+- **Retry Mechanisms**: Built-in upload retry logic
+- **File Verification**: Post-upload integrity checks
+
+### Configuration
+```properties
+# File Upload Configuration
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+file.upload-dir=uploads
+```
 
 ## Database Schema
 
@@ -288,6 +518,7 @@ CREATE TABLE applications (
     current_company VARCHAR(255),
     current_position VARCHAR(255),
     expected_salary DECIMAL(10,2),
+    resume_analysis JSONB,                          -- AI-extracted resume analysis data
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -297,6 +528,7 @@ CREATE INDEX idx_applications_job_id ON applications(job_id);
 CREATE INDEX idx_applications_status ON applications(status);
 CREATE INDEX idx_applications_is_shortlisted ON applications(is_shortlisted);
 CREATE INDEX idx_applications_candidate_id ON applications(candidate_id);
+CREATE INDEX idx_applications_resume_analysis ON applications USING GIN (resume_analysis);
 ```
 
 #### Application Status Enum Values:
@@ -360,6 +592,36 @@ CREATE INDEX idx_interviews_interviewer_id ON interviews(interviewer_id);
 CREATE INDEX idx_interviews_status ON interviews(status);
 CREATE INDEX idx_interviews_assigned_by ON interviews(assigned_by);
 CREATE INDEX idx_interviews_skeleton_id ON interviews(skeleton_id);
+```
+
+### Real-time Chat Tables
+```sql
+-- Conversations table for chat support
+CREATE TABLE conversations (
+    id BIGSERIAL PRIMARY KEY,
+    candidate_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    admin_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    status VARCHAR(20) DEFAULT 'UNASSIGNED',        -- UNASSIGNED, ACTIVE, CLOSED
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Chat messages table
+CREATE TABLE chat_messages (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    message_type VARCHAR(20) DEFAULT 'text',        -- text, system, file
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for chat performance
+CREATE INDEX idx_conversations_candidate_id ON conversations(candidate_id);
+CREATE INDEX idx_conversations_admin_id ON conversations(admin_id);
+CREATE INDEX idx_conversations_status ON conversations(status);
+CREATE INDEX idx_chat_messages_conversation_id ON chat_messages(conversation_id);
+CREATE INDEX idx_chat_messages_sender_id ON chat_messages(sender_id);
 ```
 
 ### Evaluations Table
@@ -495,6 +757,7 @@ The application system handles the complete candidate application workflow with 
    - Structured data collection (experience, salary expectations)
    - Custom question responses
    - Real-time validation and feedback
+   - **Automatic AI Resume Analysis**: Triggered on resume upload
 
 2. **Advanced Status Tracking**:
    - 8-stage application workflow
@@ -508,6 +771,7 @@ The application system handles the complete candidate application workflow with 
    - Bulk status updates
    - Interview assignment integration
    - Re-assignment capabilities
+   - **Resume Analysis Display**: AI-extracted data in application details
 
 #### Application Status Flow:
 1. **APPLIED** → Application submitted by candidate (auto-email sent)
@@ -523,6 +787,7 @@ The application system handles the complete candidate application workflow with 
 - Application trends over time
 - Candidate source analysis
 - Performance metrics
+- **AI Analysis Insights**: Resume scoring distributions and skill matching analytics
 
 ## Interview Management System
 
@@ -640,6 +905,12 @@ The admin interface features a modern, beautiful design with advanced CSS animat
    - Adaptive layouts
    - Progressive enhancement
 
+5. **Profile Picture Integration**:
+   - **ProfilePicture Component**: Reusable component with fallback to initials
+   - **Lazy Loading**: Performance-optimized image loading
+   - **Error Handling**: Graceful fallback when images fail to load
+   - **Responsive Sizing**: Multiple size variants (small, medium, large)
+
 ### CSS Animation Features:
 - Custom keyframe animations
 - Glassmorphism effects
@@ -649,7 +920,179 @@ The admin interface features a modern, beautiful design with advanced CSS animat
 - Floating icon effects
 - Shimmer text effects
 
+## Analytics and Dashboard
+
+### Admin Dashboard Statistics
+The admin dashboard provides real-time insights into system usage and recruitment metrics.
+
+#### Core Metrics:
+1. **User Statistics**:
+   - Total users count
+   - Users by role (Admin, Recruiter, Interviewer, Candidate)
+   - Active users tracking
+   - User growth trends
+
+2. **Job Statistics**:
+   - Active jobs count
+   - Jobs by status breakdown
+   - Application per job metrics
+   - Job performance analytics
+
+3. **Interview Metrics**:
+   - Upcoming interviews count
+   - Interview completion rates
+   - Interviewer performance metrics
+   - Interview outcome statistics
+
+4. **Conversion Analytics**:
+   - Application to interview conversion rate
+   - Interview to offer conversion rate
+   - Overall hiring funnel metrics
+   - Time-to-hire analytics
+
+#### Dashboard Features:
+- **Real-time Updates**: Live data refresh
+- **Visual Charts**: Status breakdown visualizations
+- **Quick Actions**: Direct access to key functions
+- **Performance Indicators**: KPI tracking and trends
+- **Responsive Design**: Mobile and desktop optimized
+
+#### API Endpoints:
+- `GET /api/admin/dashboard/stats` - Dashboard statistics
+- `GET /api/applications/job/{jobId}/stats` - Job-specific application stats
+- `GET /api/applications/trends` - Application trends over time
+
 ## API Documentation
+
+### AI Resume Analysis APIs
+
+#### Resume Analysis Endpoints:
+1. **Analyze Resume File**: `POST /api/resume-analysis/analyze`
+   ```json
+   {
+     "file": "multipart/form-data",
+     "jobId": 123
+   }
+   ```
+   - Returns: Complete `ResumeAnalysisDTO` with AI-extracted data
+
+2. **Async Resume Analysis**: `POST /api/resume-analysis/analyze-async`
+   ```json
+   {
+     "filePath": "/api/files/resumes/uuid-filename.pdf",
+     "jobId": 123
+   }
+   ```
+   - Returns: Async processing confirmation
+
+3. **Analyze Application Resume**: `POST /api/resume-analysis/applications/{applicationId}/analyze`
+   - Triggers analysis for existing application
+   - Returns: Processing status
+
+#### Resume Analysis Response Format:
+```json
+{
+  "total_experience_years": 5.5,
+  "total_companies_worked": 3,
+  "current_company": "Tech Corp",
+  "current_position": "Senior Software Engineer",
+  "previous_positions": [
+    {
+      "company": "StartupXYZ",
+      "position": "Software Engineer",
+      "duration_months": 18,
+      "start_date": "2020-01",
+      "end_date": "2021-06",
+      "responsibilities": ["Backend development", "API design"]
+    }
+  ],
+  "skills_extracted": ["Java", "Spring Boot", "React", "PostgreSQL"],
+  "education": [
+    {
+      "degree": "Bachelor of Computer Science",
+      "institution": "University ABC",
+      "graduation_year": 2019,
+      "grade": "3.8 GPA"
+    }
+  ],
+  "resume_score": {
+    "overall_score": 85,
+    "job_match_score": 78,
+    "experience_score": 90,
+    "skills_match_score": 82,
+    "scoring_criteria": {
+      "required_skills_match": 0.85,
+      "experience_level_match": 0.90,
+      "industry_relevance": 0.75,
+      "education_level_match": 0.80
+    }
+  },
+  "analysis_metadata": {
+    "processed_at": "2024-06-02T10:30:00Z",
+    "ai_model_used": "gpt-4",
+    "confidence_score": 0.92,
+    "processing_time_ms": 2500,
+    "processing_notes": ["High confidence analysis", "Complete skill extraction"]
+  }
+}
+```
+
+### Real-time Chat APIs
+
+#### WebSocket Events:
+1. **Connection Management**:
+   - `connect` - Client connects to server
+   - `disconnect` - Client disconnects from server
+   - `join_chat` - Candidate joins chat conversation
+   - `join_admin_room` - Admin joins conversation for monitoring
+
+2. **Conversation Management**:
+   - `admin_take_conversation` - Admin claims unassigned conversation
+   - `close_conversation` - End conversation
+   - `send_message` - Send message in conversation
+
+3. **Real-time Notifications**:
+   - `new_unassigned_conversation` - New conversation available
+   - `conversation_taken` - Conversation claimed by admin
+   - `new_message` - New message in conversation
+   - `admin_assigned` - Admin assigned to conversation
+
+#### Chat REST APIs:
+1. **Get Conversations**: `GET /api/chat/conversations`
+   - Query Parameters: `status`, `adminId`
+   - Returns: List of conversations
+
+2. **Get Conversation Messages**: `GET /api/chat/conversations/{id}/messages`
+   - Returns: Message history for conversation
+
+3. **Update Conversation Status**: `PATCH /api/chat/conversations/{id}/status`
+   - Body: `{"status": "CLOSED"}`
+
+### File Upload APIs
+
+#### File Upload Endpoints:
+1. **Upload Profile Picture**: `POST /api/files/upload/profile-picture`
+   - Content-Type: `multipart/form-data`
+   - Body: `file` (JPEG, PNG, GIF)
+   - Returns: `{"url": "/api/files/profile-pictures/uuid-filename.jpg"}`
+
+2. **Upload Resume**: `POST /api/files/upload/resume`
+   - Content-Type: `multipart/form-data`
+   - Body: `file` (PDF, DOC, DOCX, TXT)
+   - Returns: `{"url": "/api/files/resumes/uuid-filename.pdf"}`
+
+3. **Upload Cover Letter**: `POST /api/files/upload/cover-letter`
+   - Content-Type: `multipart/form-data`
+   - Body: `file` (PDF, DOC, DOCX, TXT)
+   - Returns: `{"url": "/api/files/cover-letters/uuid-filename.pdf"}`
+
+#### File Access Endpoints:
+1. **Get Profile Picture**: `GET /api/files/profile-pictures/{filename}`
+   - Returns: Image binary data
+   - Content-Type: `image/jpeg`
+
+2. **Get File Storage Info**: `GET /api/files/info`
+   - Returns: Storage system status and file listings
 
 ### Enhanced Interview Management APIs
 
@@ -725,21 +1168,42 @@ The admin interface features a modern, beautiful design with advanced CSS animat
 2. **Get User by Role**: `GET /api/users/role/{role}`
    - Returns: Users with specified role
 
+3. **Update Profile Picture**: `PATCH /api/users/{id}/profile-picture`
+   - Body: `{"profilePictureUrl": "/api/files/profile-pictures/filename"}`
+
 ## Authentication & Security
 
 ### Enhanced Security Features
-- JWT-based authentication with role-based access
-- Protected routes for admin, interviewer, and candidate areas
-- File upload security with type validation
-- CSRF protection and XSS prevention
-- Rate limiting for API endpoints
-- Email verification for account security
+- **JWT-based authentication** with role-based access
+- **LinkedIn OAuth Integration**: Social login with profile synchronization
+- **Protected routes** for admin, interviewer, and candidate areas
+- **File upload security** with MIME type validation and size limits
+- **CSRF protection** and XSS prevention
+- **Rate limiting** for API endpoints
+- **Email verification** for account security
+- **WebSocket authentication** for real-time chat security
+
+### LinkedIn OAuth Configuration:
+```properties
+# LinkedIn OAuth Configuration
+spring.security.oauth2.client.registration.linkedin.client-id=${LINKEDIN_CLIENT_ID}
+spring.security.oauth2.client.registration.linkedin.client-secret=${LINKEDIN_CLIENT_SECRET}
+spring.security.oauth2.client.registration.linkedin.scope=openid,profile,email
+spring.security.oauth2.client.registration.linkedin.authorization-grant-type=authorization_code
+spring.security.oauth2.client.registration.linkedin.redirect-uri=${BACKEND_URL}/api/auth/oauth2/callback/linkedin
+```
 
 ### Role-Based Access Control:
-- **ADMIN**: Full system access, user management, job management
+- **ADMIN**: Full system access, user management, job management, chat support
 - **INTERVIEWER**: Interview management, evaluation access
-- **CANDIDATE**: Application submission, interview tracking
+- **CANDIDATE**: Application submission, interview tracking, chat support access
 - **RECRUITER**: Application review, candidate management
+
+### Security Features:
+- **File Upload Validation**: MIME type checking, file size limits
+- **AI Service Security**: API key protection, request validation
+- **WebSocket Security**: Connection authentication, room-based access control
+- **Data Privacy**: Resume text handling, GDPR compliance considerations
 
 ## Password Management
 
@@ -766,13 +1230,24 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/ats_database
+      # AI Configuration
+      - AI_PROVIDER=ollama
+      - AI_BASE_URL=http://ollama:11434
+      - AI_MODEL=llama3
+      # WebSocket Configuration
+      - SOCKETIO_HOST=0.0.0.0
+      - SOCKETIO_PORT=9092
     depends_on:
       - postgres
+      - ollama
 
   frontend:
     build: ./frontend
     ports:
       - "3001:3001"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080/api
+      - REACT_APP_SOCKET_URL=http://localhost:9092
     depends_on:
       - backend
 
@@ -784,6 +1259,16 @@ services:
       - POSTGRES_PASSWORD=ats_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  # AI Service (Optional - can use external providers)
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
 ```
 
 ### Environment Configuration:
@@ -792,12 +1277,25 @@ services:
 - Email service configuration
 - File upload directory management
 - JWT secret configuration
+- **AI service configuration** (multiple provider support)
+- **WebSocket configuration** for real-time features
+- **LinkedIn OAuth configuration**
+
+### Production Deployment Features:
+- **AWS EC2 optimization** for 4GB RAM instances
+- **GitHub Actions CI/CD** pipeline
+- **Docker multi-stage builds** for optimized images
+- **Health checks** for all services
+- **Memory optimization** for resource-constrained environments
+
 
 ### Health Checks:
 - Database connectivity monitoring
 - Application health endpoints
 - Container health verification
 - Service dependency checking
+- **AI service availability** monitoring
+- **WebSocket service** health checks
 
 ---
 

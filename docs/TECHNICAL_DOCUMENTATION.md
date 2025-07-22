@@ -1288,6 +1288,7 @@ services:
 - **Health checks** for all services
 - **Memory optimization** for resource-constrained environments
 
+
 ### Health Checks:
 - Database connectivity monitoring
 - Application health endpoints

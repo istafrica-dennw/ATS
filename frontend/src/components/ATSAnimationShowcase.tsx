@@ -92,9 +92,7 @@ const mockActivities = [
 const ATSAnimationShowcase: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
-  const [animatedStats, setAnimatedStats] = useState(mockStats.map(stat => ({ ...stat, animatedValue: 0 })));
-  const [showActivities, setShowActivities] = useState(0);
+  const [animationComplete, setAnimationComplete] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -102,24 +100,8 @@ const ATSAnimationShowcase: React.FC = () => {
     const timer = setInterval(() => {
       setCurrentStep((prev) => {
         if (prev >= animationSteps.length - 1) {
-          // Show dashboard at the end
-          setShowDashboard(true);
-          // Animate stats
-          animatedStats.forEach((stat, index) => {
-            setTimeout(() => {
-              setAnimatedStats(prevStats => 
-                prevStats.map((s, i) => 
-                  i === index ? { ...s, animatedValue: s.value } : s
-                )
-              );
-            }, index * 150);
-          });
-          // Show activities one by one
-          mockActivities.forEach((_, index) => {
-            setTimeout(() => {
-              setShowActivities(prev => prev + 1);
-            }, 500 + index * 200);
-          });
+          // Animation complete - stay at this stage with blinking
+          setAnimationComplete(true);
           return prev;
         }
         return prev + 1;
@@ -127,29 +109,25 @@ const ATSAnimationShowcase: React.FC = () => {
     }, 800);
 
     return () => clearInterval(timer);
-  }, [isPlaying, animatedStats]);
+  }, [isPlaying]);
 
   const startAnimation = () => {
     setIsPlaying(true);
     setCurrentStep(-1);
-    setShowDashboard(false);
-    setShowActivities(0);
-    setAnimatedStats(mockStats.map(stat => ({ ...stat, animatedValue: 0 })));
+    setAnimationComplete(false);
   };
 
   const resetAnimation = () => {
     setIsPlaying(false);
     setCurrentStep(-1);
-    setShowDashboard(false);
-    setShowActivities(0);
-    setAnimatedStats(mockStats.map(stat => ({ ...stat, animatedValue: 0 })));
+    setAnimationComplete(false);
   };
 
   return (
     <div className="relative w-full h-80 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 rounded-xl overflow-hidden shadow-2xl border border-white/20">
 
 
-      {!isPlaying && !showDashboard && (
+      {!isPlaying && (
         <motion.div 
           className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10"
           initial={{ opacity: 1 }}
@@ -205,7 +183,7 @@ const ATSAnimationShowcase: React.FC = () => {
       )}
 
       <>
-        {isPlaying && !showDashboard && (
+        {isPlaying && (
           <motion.div 
             className="absolute inset-0 p-6 z-10"
             initial={{ opacity: 0 }}
@@ -217,20 +195,46 @@ const ATSAnimationShowcase: React.FC = () => {
                 <motion.div
                   className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full shadow-sm"
                   initial={{ width: '0%' }}
-                  animate={{ width: `${((currentStep + 2) / (animationSteps.length + 1)) * 100}%` }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  animate={{ 
+                    width: `${((currentStep + 2) / (animationSteps.length + 1)) * 100}%`,
+                    // Add pulsing effect when animation is complete
+                    ...(animationComplete && {
+                      opacity: [1, 0.7, 1],
+                      scale: [1, 1.02, 1]
+                    })
+                  }}
+                  transition={{ 
+                    duration: 0.5, 
+                    ease: "easeOut",
+                    // Continuous pulsing when complete
+                    ...(animationComplete && {
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    })
+                  }}
                 />
               </div>
               <div className="flex justify-between mt-1">
                 <span className="text-xs text-gray-600 font-medium">Hiring Workflow</span>
-                <span className="text-xs text-gray-600 font-medium">
+                <motion.span 
+                  className="text-xs text-gray-600 font-medium"
+                  animate={animationComplete ? {
+                    opacity: [1, 0.6, 1]
+                  } : {}}
+                  transition={animationComplete ? {
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  } : {}}
+                >
                   {Math.round(((currentStep + 2) / (animationSteps.length + 1)) * 100)}%
-                </span>
+                </motion.span>
               </div>
             </div>
 
             {/* Main Animation Area */}
-            <div className="mt-8 flex items-center justify-center h-full">
+            <div className="mt-8 mb-6 flex items-center justify-center h-full">
               <div className="grid grid-cols-3 gap-2 max-w-5xl w-full">
                 {animationSteps.map((step, index) => {
                   const isActive = index <= currentStep;
@@ -252,24 +256,51 @@ const ATSAnimationShowcase: React.FC = () => {
                         opacity: isActive ? 1 : isPending ? 0.5 : 0.8,
                         scale: isCurrent ? 1.05 : isActive ? 1 : 0.9,
                         y: isActive ? 0 : isPending ? 10 : 0,
+                        // Add continuous blinking when animation is complete and step is active
+                        ...(animationComplete && isActive && {
+                          opacity: [1, 0.7, 1],
+                          scale: [isActive ? 1 : 0.9, isActive ? 1.05 : 0.95, isActive ? 1 : 0.9]
+                        })
                       }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      transition={{ 
+                        duration: 0.6, 
+                        ease: "easeOut",
+                        // Continuous blinking when complete
+                        ...(animationComplete && isActive && {
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: index * 0.3 // Stagger the blinking
+                        })
+                      }}
                     >
                       {/* Animated Icon Container */}
                       <motion.div
                         className={`inline-flex items-center justify-center w-8 h-8 rounded-lg mb-2 shadow-sm ${
                           isActive ? step.bgColor : 'bg-gray-100/50'
                         }`}
-                        animate={isCurrent ? {
-                          scale: [1, 1.2, 1],
-                          rotate: [0, 360],
-                        } : isActive ? {
-                          scale: [1, 1.05, 1],
-                        } : {}}
+                        animate={
+                          animationComplete && isActive 
+                            ? {
+                                scale: [1, 1.2, 1],
+                                rotate: [0, 5, -5, 0],
+                              }
+                            : isCurrent 
+                            ? {
+                                scale: [1, 1.2, 1],
+                                rotate: [0, 360],
+                              } 
+                            : isActive 
+                            ? {
+                                scale: [1, 1.05, 1],
+                              } 
+                            : {}
+                        }
                         transition={{ 
-                          duration: isCurrent ? 0.8 : 2,
-                          repeat: isCurrent ? 1 : isActive ? Infinity : 0,
-                          repeatDelay: 1
+                          duration: animationComplete && isActive ? 3 : isCurrent ? 0.8 : 2,
+                          repeat: animationComplete && isActive ? Infinity : isCurrent ? 1 : isActive ? Infinity : 0,
+                          repeatDelay: animationComplete && isActive ? 0 : 1,
+                          delay: animationComplete && isActive ? index * 0.5 : 0 // Stagger icon animations
                         }}
                       >
                         <step.icon className={`h-4 w-4 ${isActive ? step.color : 'text-gray-400'}`} />
@@ -297,43 +328,25 @@ const ATSAnimationShowcase: React.FC = () => {
                           animate={{ 
                             opacity: isActive ? 1 : 0.3, 
                             x: 0,
-                            scale: isCurrent ? [1, 1.2, 1] : 1
+                            scale: isCurrent ? [1, 1.2, 1] : 1,
+                            // Add pulsing to arrows when animation complete
+                            ...(animationComplete && isActive && {
+                              opacity: [1, 0.5, 1],
+                              scale: [1, 1.3, 1]
+                            })
                           }}
                           transition={{ 
-                            duration: 0.5, 
-                            repeat: isCurrent ? Infinity : 0,
-                            repeatDelay: 0.5
+                            duration: 0.5,
+                            // Continuous pulsing for arrows when complete
+                            ...(animationComplete && isActive && {
+                              duration: 2.5,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                              delay: index * 0.4
+                            })
                           }}
                         >
-                          <ArrowRightIcon className={`h-3 w-3 ${isActive ? 'text-indigo-600' : 'text-gray-300'}`} />
-                        </motion.div>
-                      )}
-
-                      {/* Active pulse effect */}
-                      {isCurrent && (
-                        <motion.div
-                          className={`absolute inset-0 rounded-lg border-2 ${step.borderColor}`}
-                          animate={{
-                            scale: [1, 1.02, 1],
-                            opacity: [0.5, 0.8, 0.5],
-                          }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                          }}
-                        />
-                      )}
-
-                      {/* Completion checkmark */}
-                      {isActive && !isCurrent && (
-                        <motion.div
-                          className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", delay: 0.2 }}
-                        >
-                          <CheckCircleIcon className="h-3 w-3 text-white" />
+                          <ArrowRightIcon className="h-3 w-3 text-indigo-500" />
                         </motion.div>
                       )}
                     </motion.div>
@@ -341,139 +354,43 @@ const ATSAnimationShowcase: React.FC = () => {
                 })}
               </div>
             </div>
-          </motion.div>
-        )}
-      </>
 
-      <>
-        {showDashboard && (
-          <motion.div
-            className="absolute inset-0 p-4 z-10"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            {/* Dashboard Header */}
-            <div className="text-center mb-4">
-              <motion.h3
-                className="text-lg font-bold text-gray-900 mb-1"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
+            {/* Centered Glass Replay Button - only show when animation is complete */}
+            {animationComplete && (
+              <motion.div
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 1, type: "spring", stiffness: 200 }}
               >
-                🎉 ATS Dashboard Overview
-              </motion.h3>
-              <motion.p
-                className="text-gray-600 text-xs"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                Real-time hiring metrics and team collaboration
-              </motion.p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {/* Stats Grid */}
-              <div className="space-y-2">
-                {animatedStats.map((stat, index) => (
+                <motion.button
+                  onClick={resetAnimation}
+                  className="group relative flex items-center justify-center w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg hover:bg-white/20 hover:scale-110 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  animate={{
+                    boxShadow: [
+                      "0 8px 20px rgba(99, 102, 241, 0.15)",
+                      "0 12px 30px rgba(99, 102, 241, 0.25)",
+                      "0 8px 20px rgba(99, 102, 241, 0.15)"
+                    ]
+                  }}
+                  transition={{
+                    boxShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                  }}
+                >
                   <motion.div
-                    key={stat.label}
-                    className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/50"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                          {stat.label}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <motion.p
-                            className="text-lg font-bold text-gray-900"
-                            key={stat.animatedValue}
-                            initial={{ scale: 1.3, color: '#059669' }}
-                            animate={{ scale: 1, color: '#111827' }}
-                            transition={{ duration: 0.5 }}
-                          >
-                            {stat.animatedValue}
-                          </motion.p>
-                          <motion.span
-                            className="text-xs font-medium text-green-600"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 1 + index * 0.1 }}
-                          >
-                            {stat.trend}
-                          </motion.span>
-                        </div>
-                      </div>
-                      <motion.div
-                        className="p-2 bg-indigo-100 rounded-lg"
-                        animate={{ 
-                          rotate: [0, 10, -10, 0],
-                          scale: [1, 1.1, 1]
-                        }}
-                        transition={{ 
-                          duration: 2,
-                          repeat: Infinity,
-                          delay: index * 0.3
-                        }}
-                      >
-                        <stat.icon className="h-4 w-4 text-indigo-600" />
-                      </motion.div>
-                    </div>
+                    <ArrowPathIcon className="h-8 w-8 text-indigo-600/40 group-hover:text-indigo-700/60" />
                   </motion.div>
-                ))}
-              </div>
-
-              {/* Recent Activity */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 shadow-sm border border-white/50">
-                <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
-                  <BellIcon className="h-4 w-4 mr-1 text-indigo-600" />
-                  Recent Activity
-                </h4>
-                <div className="space-y-2">
-                  {mockActivities.slice(0, showActivities).map((activity, index) => (
-                    <motion.div
-                      key={index}
-                      className="flex items-center space-x-2 text-xs"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.8 + index * 0.2 }}
-                    >
-                      <activity.icon className="h-3 w-3 text-indigo-500" />
-                      <span className="text-gray-700 flex-1">{activity.message}</span>
-                      <span className="text-gray-400">{activity.time}</span>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <motion.div
-              className="flex justify-center mt-4 space-x-2"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.4 }}
-            >
-              <button
-                onClick={resetAnimation}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                <ArrowPathIcon className="h-3 w-3 mr-1" />
-                Replay Demo
-              </button>
-              <button
-                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-              >
-                <MagnifyingGlassIcon className="h-3 w-3 mr-1" />
-                Explore Features
-              </button>
-            </motion.div>
-
+                  
+                  {/* Subtle glass shine effect */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-white/20 via-transparent to-transparent opacity-30" />
+                </motion.button>
+              </motion.div>
+            )}
 
           </motion.div>
         )}

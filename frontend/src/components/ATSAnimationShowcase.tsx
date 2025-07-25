@@ -129,56 +129,37 @@ const ATSAnimationShowcase: React.FC = () => {
 
       {!isPlaying && (
         <motion.div 
-          className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10"
+          className="absolute inset-0 z-10"
           initial={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <motion.div
-            className="mb-6"
-            animate={{ 
-              scale: [1, 1.1, 1],
-              rotate: [0, 5, -5, 0],
-            }}
-            transition={{ 
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          >
-            <SparklesIcon className="h-16 w-16 text-indigo-600" />
-          </motion.div>
+          {/* Dashboard Preview Background */}
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 w-full h-full flex flex-col items-center justify-center p-8 text-white">
+            <div className="text-2xl font-bold mb-4">ATS Dashboard Preview</div>
+            <div className="text-lg mb-8">Streamlined candidate management</div>
+            <div className="grid grid-cols-3 gap-4 w-full max-w-md">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white bg-opacity-20 rounded-lg p-3 h-16 flex items-center justify-center">
+                  <div className="text-sm">Feature {i}</div>
+                </div>
+              ))}
+            </div>
+          </div>
           
-          <motion.h3 
-            className="text-2xl font-bold text-gray-900 mb-2"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            ATS System in Action
-          </motion.h3>
-          <motion.p 
-            className="text-gray-600 mb-6 max-w-md text-sm"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            Experience our comprehensive Applicant Tracking System's complete hiring workflow in just 5 seconds
-          </motion.p>
-          
-          <motion.button
-            onClick={startAnimation}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <PlayIcon className="h-5 w-5 mr-2" />
-            Start 5-Second Demo
-          </motion.button>
-
-
+          {/* Play Button Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <motion.button
+              onClick={startAnimation}
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-white bg-opacity-75 text-indigo-600 shadow-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+            >
+              <PlayIcon className="h-8 w-8" />
+            </motion.button>
+          </div>
         </motion.div>
       )}
 

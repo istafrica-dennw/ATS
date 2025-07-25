@@ -26,48 +26,48 @@ interface AnimationStep {
 
 const animationSteps: AnimationStep[] = [
   {
-    title: 'Create & Post Jobs',
-    description: 'Rich text editor, multi-platform publishing',
-    icon: BriefcaseIcon,
+    title: 'Browse & Find Jobs',
+    description: 'Search positions, filter by location & skills',
+    icon: MagnifyingGlassIcon,
     color: 'text-blue-600',
     bgColor: 'bg-blue-50',
     borderColor: 'border-blue-200'
   },
   {
-    title: 'Receive Applications',
-    description: 'Resume uploads, cover letters, tracking',
+    title: 'Submit Application',
+    description: 'Upload resume, cover letter, fill details',
     icon: DocumentTextIcon,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
     borderColor: 'border-green-200'
   },
   {
-    title: 'AI Resume Analysis',
-    description: 'Smart ranking, skill matching, scoring',
+    title: 'Application Review',
+    description: 'AI screening, qualification matching',
     icon: SparklesIcon,
     color: 'text-purple-600',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200'
   },
   {
-    title: 'Schedule Interviews',
-    description: 'Calendar integration, automated coordination',
+    title: 'Interview Invitation',
+    description: 'Receive invite, schedule interview time',
     icon: CalendarIcon,
     color: 'text-orange-600',
     bgColor: 'bg-orange-50',
     borderColor: 'border-orange-200'
   },
   {
-    title: 'Team Collaboration',
-    description: 'Real-time chat, admin support, notifications',
+    title: 'Interview Process',
+    description: 'Video/in-person interviews, assessments',
     icon: ChatBubbleLeftRightIcon,
     color: 'text-indigo-600',
     bgColor: 'bg-indigo-50',
     borderColor: 'border-indigo-200'
   },
   {
-    title: 'Make Offers & Hire',
-    description: 'Decision tracking, offer management, onboarding',
+    title: 'Receive Decision',
+    description: 'Get offer notification, contract details',
     icon: CheckCircleIcon,
     color: 'text-emerald-600',
     bgColor: 'bg-emerald-50',
@@ -197,7 +197,7 @@ const ATSAnimationShowcase: React.FC = () => {
                 />
               </div>
               <div className="flex justify-between mt-1">
-                <span className="text-xs text-gray-600 font-medium">Hiring Workflow</span>
+                <span className="text-xs text-gray-600 font-medium">Application Journey</span>
                 <motion.span 
                   className="text-xs text-gray-600 font-medium"
                   animate={animationComplete ? {

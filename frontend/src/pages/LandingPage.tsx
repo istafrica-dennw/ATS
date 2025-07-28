@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MainLayout from '../layouts/MainLayout';
+import ATSAnimationShowcase from '../components/ATSAnimationShowcase';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
@@ -10,8 +11,7 @@ import {
   UserGroupIcon,
   DocumentPlusIcon,
   DocumentCheckIcon,
-  CheckBadgeIcon,
-  PlayIcon
+  CheckBadgeIcon
 } from '@heroicons/react/24/outline';
 
 interface Job {
@@ -93,24 +93,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
             <div className="relative flex items-center justify-center">
-              <div className="overflow-hidden rounded-xl shadow-xl">
-                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 w-full h-80 flex flex-col items-center justify-center p-8 text-white">
-                  <div className="text-2xl font-bold mb-4">ATS Dashboard Preview</div>
-                  <div className="text-lg mb-8">Streamlined candidate management</div>
-                  <div className="grid grid-cols-3 gap-4 w-full max-w-md">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <div key={i} className="bg-white bg-opacity-20 rounded-lg p-3 h-16 flex items-center justify-center">
-                        <div className="text-sm">Feature {i}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <button className="flex h-16 w-16 items-center justify-center rounded-full bg-white bg-opacity-75 text-indigo-600 shadow-md hover:bg-opacity-90">
-                    <PlayIcon className="h-8 w-8" />
-                  </button>
-                </div>
-              </div>
+              <ATSAnimationShowcase />
             </div>
           </div>
         </div>

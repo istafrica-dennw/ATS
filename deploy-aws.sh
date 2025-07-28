@@ -225,7 +225,7 @@ deploy_application() {
     
     # Check Frontend
     echo -n "Waiting for Frontend: "
-    until curl -s http://localhost:3001 > /dev/null; do
+    until curl -s http://localhost:80 > /dev/null; do
         echo -n "."
         sleep 3
     done
@@ -299,6 +299,15 @@ main() {
     
     echo ""
     print_success "Deployment completed successfully!"
+    echo ""
+    echo "Access your application at:"
+    if [ -n "$PUBLIC_IP" ]; then
+        echo "  Frontend: http://$PUBLIC_IP"
+        echo "  Backend API: http://$PUBLIC_IP:8080"
+    else
+        echo "  Frontend: http://localhost:80"
+        echo "  Backend API: http://localhost:8080"
+    fi
     print_info "The application is optimized for 4GB RAM and uses Gemini AI for resume analysis."
 }
 

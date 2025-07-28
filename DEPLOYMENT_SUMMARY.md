@@ -156,9 +156,9 @@ docker-compose -f docker-compose.aws.yml logs --tail=100
 
 1. **Set up GitHub Secrets** (see GITHUB_ACTIONS_SETUP.md)
 2. **Launch EC2 Instance** (t3.medium Ubuntu)
-3. **Configure Security Groups** (ports 22, 3001, 8080)
-4. **Test deployment** (manual or pipeline)
-5. **Monitor performance** (memory, response times)
+3. **Configure Security Groups** (ports 22, 80, 8080)
+4. **Run GitHub Actions deployment**
+5. **Verify deployment**
 
 ## 📚 **Documentation References**
 

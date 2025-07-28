@@ -220,7 +220,7 @@ jobs:
             echo "# Application Configuration" >> .env
             echo "REACT_APP_API_URL=http://${{ secrets.EC2_HOST }}:8080/api" >> .env
             echo "REACT_APP_SOCKET_URL=http://${{ secrets.EC2_HOST }}:9092" >> .env
-            echo "FRONTEND_URL=http://${{ secrets.EC2_HOST }}:3001" >> .env
+            echo "FRONTEND_URL=http://${{ secrets.EC2_HOST }}" >> .env
             echo "BACKEND_URL=http://${{ secrets.EC2_HOST }}:8080" >> .env
             echo "UPLOADS_DIRECTORY=uploads" >> .env
             echo "" >> .env
@@ -310,7 +310,7 @@ jobs:
             echo -n "Waiting for Frontend: "
             counter=0
             while [ $counter -lt $timeout ]; do
-              if curl -s http://localhost:3001 > /dev/null; then
+              if curl -s http://localhost:80 > /dev/null; then
                 echo " ✓"
                 break
               fi
@@ -341,12 +341,12 @@ jobs:
             curl -s http://localhost:8080/actuator/health | jq -r '.status' 2>/dev/null || echo "UNKNOWN"
             
             echo -n "Frontend Status: "
-            curl -s -o /dev/null -w "%{http_code}" http://localhost:3001 || echo "UNKNOWN"
+            curl -s -o /dev/null -w "%{http_code}" http://localhost:80 || echo "UNKNOWN"
             
             echo ""
             echo "Application URLs:"
             PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-            echo "Frontend: http://$PUBLIC_IP:3001"
+            echo "Frontend: http://$PUBLIC_IP:80"
             echo "Backend API: http://$PUBLIC_IP:8080"
             echo "API Documentation: http://$PUBLIC_IP:8080/swagger-ui.html"
             
@@ -380,7 +380,7 @@ jobs:
           echo "🖥️  **Instance**: ${{ secrets.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Access URLs:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend**: http://$PUBLIC_IP:3001" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: http://$PUBLIC_IP:80" >> $GITHUB_STEP_SUMMARY
           echo "- **Backend API**: http://$PUBLIC_IP:8080" >> $GITHUB_STEP_SUMMARY
           echo "- **API Documentation**: http://$PUBLIC_IP:8080/swagger-ui.html" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

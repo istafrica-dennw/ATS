@@ -101,7 +101,7 @@ services:
         REACT_APP_SOCKET_URL: ${REACT_APP_SOCKET_URL}
     container_name: ats-frontend-aws
     ports:
-      - "3001:3001"
+      - "80:3001"
     env_file:
       - .env
     environment:
@@ -117,9 +117,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: 512M
         reservations:
-          memory: 64M
+          memory: 256M
 
 networks:
   ats-network:

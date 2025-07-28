@@ -209,7 +209,7 @@ show_summary() {
     
     echo ""
     print_warning "Important Notes:"
-    echo "- Save your admin password: Use it to login at http://your-ec2-ip:3001"
+    echo "- Save your admin password: Use it to login at http://your-ec2-ip:80"
     echo "- Never commit secrets to your repository"
     echo "- Rotate secrets regularly for security"
 }

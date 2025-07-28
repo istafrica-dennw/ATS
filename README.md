@@ -72,13 +72,7 @@ A comprehensive Applicant Tracking System built with Spring Boot and React, desi
 - **Health checks** - Container monitoring
 - **Ollama + phi3** - Local AI models for resume analysis
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker and Docker Compose
-- Git
-
-### Installation
+## Quick Start
 
 1. **Clone the repository**
 ```bash
@@ -86,18 +80,15 @@ git clone <repository-url>
 cd ats-system
 ```
 
-2. **Start the application** (includes automatic AI setup)
+2. **Start with Docker Compose**
 ```bash
-docker-compose up --build
+docker-compose up -d
 ```
 
-*Note: On first startup, the system will automatically download the phi3 AI model (2.3GB) for resume analysis. This takes 2-5 minutes but only happens once.*
-
 3. **Access the application**
-- Frontend: http://localhost:3001
+- Frontend: http://localhost:3001 (development) / http://your-domain (production)
 - Backend API: http://localhost:8080
 - API Documentation: http://localhost:8080/swagger-ui.html
-- Ollama AI Service: http://localhost:11434
 
 ### Default Admin Account
 - Email: `admin@ats.istafrica`

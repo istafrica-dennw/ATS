@@ -52,7 +52,7 @@ Go to your GitHub repository → Settings → Secrets and Variables → Actions 
 # 2. Choose Ubuntu Server 22.04 LTS
 # 3. Instance type: t3.medium (4GB RAM minimum)
 # 4. Key pair: Create or select existing
-# 5. Security group: Allow SSH (22), HTTP (3001, 8080)
+# 5. Security group: Allow SSH (22), HTTP (80, 8080)
 # 6. Storage: 20GB minimum, 50GB recommended
 # 7. Launch instance
 ```
@@ -62,8 +62,9 @@ Go to your GitHub repository → Settings → Secrets and Variables → Actions 
 # Inbound Rules:
 Type        Port    Source      Description
 SSH         22      Your IP     SSH access
-Custom TCP  3001    0.0.0.0/0   Frontend application
+Custom TCP  80      0.0.0.0/0   Frontend application
 Custom TCP  8080    0.0.0.0/0   Backend API
+Custom TCP  9092    0.0.0.0/0   WebSocket server
 ```
 
 #### **Get SSH Key Content:**
@@ -224,7 +225,7 @@ docker-compose --version
 
 # Check application health
 curl http://localhost:8080/actuator/health
-curl -I http://localhost:3001
+curl -I http://localhost:80
 ```
 
 ## 🔄 **Rollback Strategy**

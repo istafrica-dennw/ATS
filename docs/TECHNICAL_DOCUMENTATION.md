@@ -1244,7 +1244,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3001:3001"
+      - "80:3001"
     environment:
       - REACT_APP_API_URL=http://localhost:8080/api
       - REACT_APP_SOCKET_URL=http://localhost:9092

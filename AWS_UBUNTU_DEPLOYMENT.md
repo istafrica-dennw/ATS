@@ -14,7 +14,7 @@ chmod +x deploy-aws.sh && ./deploy-aws.sh
 - **OS**: Ubuntu 22.04 LTS or Ubuntu 20.04 LTS
 - **Instance Type**: t3.medium (4GB RAM) or higher
 - **Storage**: 20GB minimum, 50GB recommended
-- **Security Group**: Ports 22, 3001, 8080 open
+- **Security Group**: Ports 22, 80, 8080 open
 
 ### **AWS Instance Setup**
 1. **Launch EC2 Instance**:
@@ -28,7 +28,7 @@ chmod +x deploy-aws.sh && ./deploy-aws.sh
    ```bash
    # Inbound Rules:
    SSH (22)     - Your IP
-   HTTP (3001)  - 0.0.0.0/0    # Frontend
+   HTTP (80)    - 0.0.0.0/0    # Frontend
    HTTP (8080)  - 0.0.0.0/0    # Backend API
    ```
 
@@ -179,7 +179,7 @@ docker-compose -f docker-compose.aws.yml logs -f postgres
 ```bash
 # Check service health
 curl http://localhost:8080/actuator/health    # Backend
-curl http://localhost:3001                     # Frontend
+curl http://localhost:80                          # Frontend
 docker exec ats-postgres-aws pg_isready -U ats_user -d ats_db  # Database
 ```
 

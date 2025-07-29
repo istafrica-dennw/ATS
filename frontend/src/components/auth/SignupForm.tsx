@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Card } from '../ui/card';
 
 const SignupForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -27,9 +28,7 @@ const SignupForm: React.FC = () => {
 
     try {
       await signup(email, password, firstName, lastName);
-
       console.log('Signup successful - after signup')
-      // The success message is already shown in AuthContext
       navigate('/login');
     } catch (err: any) {
       console.error('Signup error:', err);
@@ -40,55 +39,76 @@ const SignupForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        {/* Header */}
+        <div className="text-center">
+          <h2 className="mt-6 text-4xl font-bold text-gray-900">
             Create your account
           </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Join our platform and start your journey
+          </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+
+        {/* Form Card */}
+        <Card className="p-8 shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-red-800">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  First Name
+                </label>
+                <input
+                  id="first-name"
+                  name="firstName"
+                  type="text"
+                  autoComplete="given-name"
+                  required
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                  placeholder="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="last-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name
+                </label>
+                <input
+                  id="last-name"
+                  name="lastName"
+                  type="text"
+                  autoComplete="family-name"
+                  required
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                  placeholder="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
             </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
+
+            {/* Email Field */}
             <div>
-              <label htmlFor="first-name" className="sr-only">
-                First Name
-              </label>
-              <input
-                id="first-name"
-                name="firstName"
-                type="text"
-                autoComplete="given-name"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="First Name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="last-name" className="sr-only">
-                Last Name
-              </label>
-              <input
-                id="last-name"
-                name="lastName"
-                type="text"
-                autoComplete="family-name"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Last Name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
+              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
               </label>
               <input
                 id="email-address"
@@ -96,14 +116,16 @@ const SignupForm: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+
+            {/* Password Fields */}
             <div>
-              <label htmlFor="password" className="sr-only">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <input
@@ -112,14 +134,15 @@ const SignupForm: React.FC = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
+                className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                placeholder="Create a password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+
             <div>
-              <label htmlFor="confirm-password" className="sr-only">
+              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm Password
               </label>
               <input
@@ -128,33 +151,60 @@ const SignupForm: React.FC = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm Password"
+                className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                placeholder="Confirm your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
-          </div>
 
-          <div className="space-y-4">
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Signing up...' : 'Sign up'}
-            </button>
-            <p className="text-center text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link 
-                to="/login" 
-                className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+            {/* Submit Button */}
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
               >
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </form>
+                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                  {isLoading && (
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                </span>
+                {isLoading ? 'Creating Account...' : 'Sign up'}
+              </button>
+            </div>
+
+            {/* Sign In Link */}
+            <div className="text-center pt-4">
+              <p className="text-sm text-gray-600">
+                Already have an account?{' '}
+                <Link 
+                  to="/login" 
+                  className="font-semibold text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </form>
+        </Card>
+
+        {/* Additional Features */}
+        <div className="text-center">
+          <p className="text-xs text-gray-500">
+            By signing up, you agree to our{' '}
+            <a href="#" className="text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a href="#" className="text-indigo-600 hover:text-indigo-500 transition-colors duration-200">
+              Privacy Policy
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );

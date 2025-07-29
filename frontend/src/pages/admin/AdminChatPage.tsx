@@ -258,34 +258,34 @@ const AdminChatPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-gray-500">Loading...</div>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-gray-500 dark:text-gray-400">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ChatBubbleLeftRightIcon className="h-7 w-7 text-blue-600" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header Card */}
+      <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border-b border-gray-200 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <ChatBubbleLeftRightIcon className="h-7 w-7 text-blue-600 dark:text-blue-400" />
             Support Chat Management
           </h1>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          {/* Active Conversations Block */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+          {/* Active Conversations Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 transform hover:scale-[1.02] transition-transform">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 dark:from-green-900/20 to-emerald-50 dark:to-emerald-900/20 rounded-t-lg">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 dark:bg-green-400 rounded-full animate-pulse"></div>
                 Active Conversations
-                <span className="ml-auto bg-green-100 text-green-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                <span className="ml-auto bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-sm font-medium px-2.5 py-0.5 rounded-full">
                   {activeConversations.length}
                 </span>
               </h2>
@@ -304,20 +304,20 @@ const AdminChatPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <ChatBubbleLeftRightIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No active conversations</p>
+                  <ChatBubbleLeftRightIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">No active conversations</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Unassigned Conversations Block */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-amber-50">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <ClockIcon className="h-5 w-5 text-orange-500" />
+          {/* Unassigned Conversations Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 transform hover:scale-[1.02] transition-transform">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-orange-50 dark:from-orange-900/20 to-amber-50 dark:to-amber-900/20 rounded-t-lg">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <ClockIcon className="h-5 w-5 text-orange-500 dark:text-orange-400" />
                 Unassigned Conversations
-                <span className="ml-auto bg-orange-100 text-orange-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                <span className="ml-auto bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 text-sm font-medium px-2.5 py-0.5 rounded-full">
                   {unassignedConversations.length}
                 </span>
               </h2>
@@ -336,8 +336,8 @@ const AdminChatPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <UserIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No unassigned conversations</p>
+                  <UserIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">No unassigned conversations</p>
                 </div>
               )}
             </div>

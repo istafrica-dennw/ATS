@@ -237,7 +237,7 @@ const ProfileSettingsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full py-16">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 dark:border-indigo-400"></div>
       </div>
     );
   }
@@ -245,15 +245,15 @@ const ProfileSettingsPage: React.FC = () => {
   // Edit mode content (now the main content)
   return (
     <>
-      <div className="bg-white shadow sm:rounded-lg">
-        <div className="px-4 py-5 sm:px-6 border-b border-gray-200 flex justify-between items-center">
+      <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+        <div className="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Profile Settings</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">Update your personal information.</p>
+            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">Profile Settings</h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">Update your personal information.</p>
           </div>
           <button
             onClick={() => navigate('/profile')}
-            className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
           >
             Cancel
           </button>
@@ -262,21 +262,21 @@ const ProfileSettingsPage: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6 px-4 py-5 sm:p-6">
           {/* Profile Picture with File Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Profile Photo</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Photo</label>
             <div className="mt-2 flex justify-center">
               <div className="relative">
                 {profileData.profilePictureUrl ? (
                   <>
                     <div className="relative h-32 w-32">
                       {imageLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-full border-4 border-white shadow">
-                          <div className="animate-spin h-8 w-8 border-b-2 border-indigo-500"></div>
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-full border-4 border-white dark:border-gray-700 shadow">
+                          <div className="animate-spin h-8 w-8 border-b-2 border-indigo-500 dark:border-indigo-400"></div>
                         </div>
                       )}
                       <img 
                         src={profileData.profilePictureUrl} 
                         alt={`${profileData.firstName} ${profileData.lastName}`}
-                        className={`h-32 w-32 rounded-full object-cover border-4 border-white shadow ${imageError ? 'hidden' : ''}`}
+                        className={`h-32 w-32 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow ${imageError ? 'hidden' : ''}`}
                         onLoad={() => {
                           console.log('Profile image loaded successfully');
                           setImageLoading(false);
@@ -291,24 +291,24 @@ const ProfileSettingsPage: React.FC = () => {
                         }}
                       />
                       {imageError && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-red-100 rounded-full border-4 border-white shadow">
-                          <span className="text-red-500 text-sm text-center px-2">Image could not be loaded</span>
+                        <div className="absolute inset-0 flex items-center justify-center bg-red-100 dark:bg-red-900/30 rounded-full border-4 border-white dark:border-gray-700 shadow">
+                          <span className="text-red-500 dark:text-red-400 text-sm text-center px-2">Image could not be loaded</span>
                         </div>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 mt-2 text-center w-32 break-words">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center w-32 break-words">
                       {imageError && (
-                        <p className="text-red-500 mt-1">Error loading image. Please upload a new one.</p>
+                        <p className="text-red-500 dark:text-red-400 mt-1">Error loading image. Please upload a new one.</p>
                       )}
                     </div>
                   </>
                 ) : (
-                  <div className="h-32 w-32 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-800 text-3xl font-medium border-4 border-white shadow">
+                  <div className="h-32 w-32 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-800 dark:text-indigo-300 text-3xl font-medium border-4 border-white dark:border-gray-700 shadow">
                     {profileData.firstName?.[0]}{profileData.lastName?.[0]}
                   </div>
                 )}
                 <div 
-                  className="absolute bottom-0 right-0 h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center cursor-pointer"
+                  className="absolute bottom-0 right-0 h-10 w-10 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center cursor-pointer hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors"
                   onClick={handleImageClick}
                 >
                   {uploadingImage ? (
@@ -331,7 +331,7 @@ const ProfileSettingsPage: React.FC = () => {
           {/* Basic Information */}
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-3">
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 First name
               </label>
               <div className="mt-1">
@@ -342,13 +342,13 @@ const ProfileSettingsPage: React.FC = () => {
                   value={profileData.firstName || ''}
                   onChange={handleChange}
                   required
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-3">
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Last name
               </label>
               <div className="mt-1">
@@ -359,13 +359,13 @@ const ProfileSettingsPage: React.FC = () => {
                   value={profileData.lastName || ''}
                   onChange={handleChange}
                   required
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-6">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email address
               </label>
               <div className="mt-1">
@@ -375,14 +375,14 @@ const ProfileSettingsPage: React.FC = () => {
                   id="email"
                   value={profileData.email || ''}
                   disabled
-                  className="shadow-sm bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md cursor-not-allowed"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-gray-100 cursor-not-allowed shadow-sm"
                 />
-                <p className="mt-1 text-xs text-gray-500">Email address cannot be changed.</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Email address cannot be changed.</p>
               </div>
             </div>
 
             <div className="sm:col-span-6">
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Bio
               </label>
               <div className="mt-1">
@@ -392,14 +392,14 @@ const ProfileSettingsPage: React.FC = () => {
                   rows={3}
                   value={profileData.bio || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                   placeholder="Brief description about yourself"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-3">
-              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Phone number
               </label>
               <div className="mt-1">
@@ -409,29 +409,32 @@ const ProfileSettingsPage: React.FC = () => {
                   id="phoneNumber"
                   value={profileData.phoneNumber || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-3">
-              <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Birth date
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <input
                   type="date"
                   name="birthDate"
                   id="birthDate"
                   value={profileData.birthDate || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 [&::-webkit-calendar-picker-indicator]:dark:filter [&::-webkit-calendar-picker-indicator]:dark:invert [&::-webkit-calendar-picker-indicator]:dark:opacity-70 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  style={{
+                    colorScheme: 'light dark'
+                  }}
                 />
               </div>
             </div>
 
             <div className="sm:col-span-6">
-              <label htmlFor="linkedinProfileUrl" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="linkedinProfileUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 LinkedIn Profile URL
               </label>
               <div className="mt-1">
@@ -441,7 +444,7 @@ const ProfileSettingsPage: React.FC = () => {
                   id="linkedinProfileUrl"
                   value={profileData.linkedinProfileUrl || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
@@ -449,13 +452,13 @@ const ProfileSettingsPage: React.FC = () => {
 
           {/* Address Information */}
           <div className="pt-6">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Address Information</h3>
-            <p className="mt-1 text-sm text-gray-500">Use a permanent address where you can receive mail.</p>
+            <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">Address Information</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Use a permanent address where you can receive mail.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             <div className="sm:col-span-6">
-              <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Street address
               </label>
               <div className="mt-1">
@@ -465,13 +468,13 @@ const ProfileSettingsPage: React.FC = () => {
                   id="addressLine1"
                   value={profileData.addressLine1 || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-6">
-              <label htmlFor="addressLine2" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="addressLine2" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Apartment, suite, etc.
               </label>
               <div className="mt-1">
@@ -481,13 +484,13 @@ const ProfileSettingsPage: React.FC = () => {
                   id="addressLine2"
                   value={profileData.addressLine2 || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-3">
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="city" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 City
               </label>
               <div className="mt-1">
@@ -497,13 +500,13 @@ const ProfileSettingsPage: React.FC = () => {
                   id="city"
                   value={profileData.city || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-3">
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="state" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 State / Province
               </label>
               <div className="mt-1">
@@ -513,13 +516,13 @@ const ProfileSettingsPage: React.FC = () => {
                   id="state"
                   value={profileData.state || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-3">
-              <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 ZIP / Postal code
               </label>
               <div className="mt-1">
@@ -529,13 +532,13 @@ const ProfileSettingsPage: React.FC = () => {
                   id="postalCode"
                   value={profileData.postalCode || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
 
             <div className="sm:col-span-3">
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Country
               </label>
               <div className="mt-1">
@@ -545,7 +548,7 @@ const ProfileSettingsPage: React.FC = () => {
                   id="country"
                   value={profileData.country || ''}
                   onChange={handleChange}
-                  className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
               </div>
             </div>
@@ -556,14 +559,14 @@ const ProfileSettingsPage: React.FC = () => {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
             
             <button
               type="button"
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all"
               onClick={() => setShowDeactivateModal(true)}
             >
               Deactivate Account
@@ -577,28 +580,28 @@ const ProfileSettingsPage: React.FC = () => {
         <div className="fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+              <div className="absolute inset-0 bg-gray-500 dark:bg-gray-900 opacity-75 dark:opacity-85"></div>
             </div>
 
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 border border-gray-200/50 dark:border-gray-700/50">
               <div>
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                  <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                  <svg className="h-6 w-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
                 <div className="mt-3 text-center sm:mt-5">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
                     Deactivate Account
                   </h3>
                   <div className="mt-2">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       Are you sure you want to deactivate your account? This action cannot be undone. All of your data will be inaccessible until an administrator reactivates your account.
                     </p>
                     <div className="mt-4">
-                      <label htmlFor="deactivationReason" className="block text-sm font-medium text-gray-700 text-left">
+                      <label htmlFor="deactivationReason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 text-left mb-2">
                         Please tell us why you're leaving:
                       </label>
                       <textarea
@@ -608,7 +611,7 @@ const ProfileSettingsPage: React.FC = () => {
                         required
                         value={deactivationReason}
                         onChange={(e) => setDeactivationReason(e.target.value)}
-                        className="mt-1 shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                        className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                         placeholder="Your feedback helps us improve our service"
                       />
                     </div>
@@ -619,14 +622,14 @@ const ProfileSettingsPage: React.FC = () => {
                 <button
                   type="button"
                   disabled={deactivating}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 sm:col-start-2 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all"
                   onClick={handleDeactivateAccount}
                 >
                   {deactivating ? 'Deactivating...' : 'Deactivate'}
                 </button>
                 <button
                   type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:mt-0 sm:col-start-1 sm:text-sm transition-colors"
                   onClick={() => setShowDeactivateModal(false)}
                 >
                   Cancel

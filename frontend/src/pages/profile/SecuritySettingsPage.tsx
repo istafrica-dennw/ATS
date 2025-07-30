@@ -14,8 +14,8 @@ const SecuritySettingsPage: React.FC = () => {
   if (!user) {
     return (
       <div className="text-center py-10">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Profile not found</h2>
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <h2 className="text-xl font-semibold text-gray-900">Profile not found</h2>
+        <p className="mt-2 text-sm text-gray-500">
           Please log in to view your profile settings.
         </p>
       </div>
@@ -23,15 +23,8 @@ const SecuritySettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <Paper sx={{ 
-        borderRadius: 2, 
-        overflow: 'hidden',
-        backgroundColor: 'background.paper',
-        boxShadow: (theme) => theme.palette.mode === 'dark' 
-          ? '0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -2px rgba(0,0,0,0.2)'
-          : theme.shadows[3]
-      }}>
+    <div className="container mx-auto px-4 py-8">
+      <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs 
             value={location.pathname}

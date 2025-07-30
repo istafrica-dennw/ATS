@@ -12,14 +12,14 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   console.log('MainLayout: Current location:', location.pathname);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="h-screen bg-gray-100 flex flex-col">
       {/* Top Navigation - Fixed */}
-      <nav className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <nav className="bg-white shadow-sm flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <Link to="/" className="text-xl font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
+                <Link to="/" className="text-xl font-bold text-indigo-600">
                   ATS System
                 </Link>
               </div>
@@ -27,20 +27,20 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 {/* Common navigation items */}
                 <Link 
                   to="/dashboard" 
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     location.pathname === '/dashboard' 
-                      ? 'border-indigo-500 dark:border-indigo-400 text-gray-900 dark:text-gray-100' 
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? 'border-indigo-500 text-gray-900' 
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
                   Dashboard
                 </Link>
                 <Link 
                   to="/profile" 
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     location.pathname.startsWith('/profile') 
-                      ? 'border-indigo-500 dark:border-indigo-400 text-gray-900 dark:text-gray-100' 
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? 'border-indigo-500 text-gray-900' 
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
                   Profile
@@ -48,10 +48,10 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
                 <Link 
                   to="/jobs" 
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     location.pathname.startsWith('/jobs') 
-                      ? 'border-indigo-500 dark:border-indigo-400 text-gray-900 dark:text-gray-100' 
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? 'border-indigo-500 text-gray-900' 
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
                 >
                   Jobs
@@ -59,10 +59,10 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 {user?.role === 'ADMIN' && (
                   <Link 
                     to="/admin" 
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                       location.pathname.startsWith('/admin') 
-                        ? 'border-indigo-500 dark:border-indigo-400 text-gray-900 dark:text-gray-100' 
-                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
+                        ? 'border-indigo-500 text-gray-900' 
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                     }`}
                   >
                     Admin
@@ -71,7 +71,7 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
               </div>
             </div>
             <div className="flex items-center">
-              <span className="text-gray-700 dark:text-gray-300 mr-4">
+              <span className="text-gray-700 mr-4">
                 Welcome, {user?.firstName} {user?.lastName}
               </span>
               <UserProfileDropdown />
@@ -81,7 +81,7 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       </nav>
 
       {/* Main Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {children || <Outlet />}
         </div>

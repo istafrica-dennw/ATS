@@ -25,44 +25,14 @@ const SecurityRoleSettings: React.FC = () => {
   };
   
   return (
-    <Card 
-      variant="outlined" 
-      sx={{ 
-        mb: 3,
-        backgroundColor: 'background.paper',
-        borderColor: 'divider',
-        boxShadow: (theme) => theme.palette.mode === 'dark' 
-          ? '0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -2px rgba(0,0,0,0.2)'
-          : theme.shadows[1]
-      }}
-    >
-      <CardContent sx={{ p: 3 }}>
-        <Typography 
-          variant="h6" 
-          gutterBottom 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            mb: 2,
-            color: 'text.primary',
-            fontWeight: 600
-          }}
-        >
-          <AdminPanelSettingsIcon sx={{ mr: 1, color: 'primary.main' }} />
+    <Card variant="outlined" sx={{ mb: 3 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <AdminPanelSettingsIcon sx={{ mr: 1 }} color="primary" />
           Two-Factor Authentication Requirements
         </Typography>
         
-        <Alert 
-          severity="info" 
-          sx={{ 
-            mb: 3,
-            backgroundColor: 'info.light',
-            color: 'info.contrastText',
-            '& .MuiAlert-icon': {
-              color: 'info.main'
-            }
-          }}
-        >
+        <Alert severity="info" sx={{ mb: 3 }}>
           As an administrator, you can set which user roles are required to have two-factor authentication enabled.
         </Alert>
         
@@ -73,141 +43,69 @@ const SecurityRoleSettings: React.FC = () => {
                 checked={requirementByRole.ADMIN} 
                 onChange={handleToggle('ADMIN')}
                 disabled={true} // Admin 2FA is always required and can't be toggled
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: 'primary.main',
-                  },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                    backgroundColor: 'primary.main',
-                  },
-                  '& .MuiSwitch-switchBase.Mui-disabled': {
-                    color: 'action.disabled',
-                  },
-                  '& .MuiSwitch-track': {
-                    backgroundColor: 'action.disabled',
-                  }
-                }}
               />
             }
             label={
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <AdminPanelSettingsIcon sx={{ mr: 1, color: 'primary.main' }} fontSize="small" />
-                <Typography sx={{ color: 'text.primary' }}>
-                  Administrators (Always Required)
-                </Typography>
+                <AdminPanelSettingsIcon sx={{ mr: 1 }} fontSize="small" />
+                <Typography>Administrators (Always Required)</Typography>
               </Box>
             }
-            sx={{
-              '& .MuiFormControlLabel-label': {
-                color: 'text.primary'
-              }
-            }}
           />
           
-          <Divider sx={{ my: 2, borderColor: 'divider' }} />
+          <Divider sx={{ my: 2 }} />
           
           <FormControlLabel
             control={
               <Switch 
                 checked={requirementByRole.HIRING_MANAGER || false} 
                 onChange={handleToggle('HIRING_MANAGER')}
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: 'primary.main',
-                  },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                    backgroundColor: 'primary.main',
-                  }
-                }}
               />
             }
             label={
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <BusinessCenterIcon sx={{ mr: 1, color: 'primary.main' }} fontSize="small" />
-                <Typography sx={{ color: 'text.primary' }}>
-                  Hiring Managers
-                </Typography>
+                <BusinessCenterIcon sx={{ mr: 1 }} fontSize="small" />
+                <Typography>Hiring Managers</Typography>
               </Box>
             }
-            sx={{
-              '& .MuiFormControlLabel-label': {
-                color: 'text.primary'
-              }
-            }}
           />
           
-          <Divider sx={{ my: 2, borderColor: 'divider' }} />
+          <Divider sx={{ my: 2 }} />
           
           <FormControlLabel
             control={
               <Switch 
                 checked={requirementByRole.INTERVIEWER || false} 
                 onChange={handleToggle('INTERVIEWER')}
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: 'primary.main',
-                  },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                    backgroundColor: 'primary.main',
-                  }
-                }}
               />
             }
             label={
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <GroupsIcon sx={{ mr: 1, color: 'primary.main' }} fontSize="small" />
-                <Typography sx={{ color: 'text.primary' }}>
-                  Interviewers
-                </Typography>
+                <GroupsIcon sx={{ mr: 1 }} fontSize="small" />
+                <Typography>Interviewers</Typography>
               </Box>
             }
-            sx={{
-              '& .MuiFormControlLabel-label': {
-                color: 'text.primary'
-              }
-            }}
           />
           
-          <Divider sx={{ my: 2, borderColor: 'divider' }} />
+          <Divider sx={{ my: 2 }} />
           
           <FormControlLabel
             control={
               <Switch 
                 checked={requirementByRole.CANDIDATE || false} 
                 onChange={handleToggle('CANDIDATE')}
-                sx={{
-                  '& .MuiSwitch-switchBase.Mui-checked': {
-                    color: 'primary.main',
-                  },
-                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                    backgroundColor: 'primary.main',
-                  }
-                }}
               />
             }
             label={
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <PersonIcon sx={{ mr: 1, color: 'primary.main' }} fontSize="small" />
-                <Typography sx={{ color: 'text.primary' }}>
-                  Candidates
-                </Typography>
+                <PersonIcon sx={{ mr: 1 }} fontSize="small" />
+                <Typography>Candidates</Typography>
               </Box>
             }
-            sx={{
-              '& .MuiFormControlLabel-label': {
-                color: 'text.primary'
-              }
-            }}
           />
         </Box>
         
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            color: 'text.secondary',
-            fontSize: '0.875rem'
-          }}
-        >
+        <Typography variant="body2" color="textSecondary">
           Changes will take effect immediately for new logins. Users who need to enable 2FA will be 
           prompted to do so when accessing restricted areas.
         </Typography>

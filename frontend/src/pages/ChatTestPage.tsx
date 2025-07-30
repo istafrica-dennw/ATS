@@ -21,21 +21,21 @@ const ChatTestPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Chat System Test</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <h1 className="text-3xl font-bold text-gray-900">Chat System Test</h1>
+              <p className="text-sm text-gray-600 mt-1">
                 Test the Socket.io chat functionality between candidates and admins
               </p>
             </div>
             
             {/* User Role Switcher */}
             <div className="flex items-center space-x-4">
-              <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+              <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => {
                     setUserRole('CANDIDATE');
@@ -44,8 +44,8 @@ const ChatTestPage: React.FC = () => {
                   }}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     userRole === 'CANDIDATE'
-                      ? 'bg-white dark:bg-gray-600 text-blue-700 dark:text-blue-300 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   Test as Candidate
@@ -58,8 +58,8 @@ const ChatTestPage: React.FC = () => {
                   }}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     userRole === 'ADMIN'
-                      ? 'bg-white dark:bg-gray-600 text-blue-700 dark:text-blue-300 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   Test as Admin
@@ -72,12 +72,12 @@ const ChatTestPage: React.FC = () => {
 
       {/* Instructions */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-lg p-6 mb-8">
-          <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">🧪 Testing Instructions</h2>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-semibold text-blue-900 mb-4">🧪 Testing Instructions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
             <div>
-              <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-2">As Candidate:</h3>
-              <ol className="list-decimal list-inside space-y-1 text-blue-700 dark:text-blue-300">
+              <h3 className="font-medium text-blue-800 mb-2">As Candidate:</h3>
+              <ol className="list-decimal list-inside space-y-1 text-blue-700">
                 <li>Click the chat button (bottom right)</li>
                 <li>Send your first message</li>
                 <li>A conversation will be created automatically</li>
@@ -86,8 +86,8 @@ const ChatTestPage: React.FC = () => {
               </ol>
             </div>
             <div>
-              <h3 className="font-medium text-blue-800 dark:text-blue-200 mb-2">As Admin:</h3>
-              <ol className="list-decimal list-inside space-y-1 text-blue-700 dark:text-blue-300">
+              <h3 className="font-medium text-blue-800 mb-2">As Admin:</h3>
+              <ol className="list-decimal list-inside space-y-1 text-blue-700">
                 <li>View unassigned conversations</li>
                 <li>Click "Take Conversation" to join</li>
                 <li>Chat with the candidate</li>
@@ -99,33 +99,33 @@ const ChatTestPage: React.FC = () => {
         </div>
 
         {/* Current User Info */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Current Test User</h2>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4">Current Test User</h2>
           <div className="flex items-center space-x-4">
             <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold ${
-              userRole === 'CANDIDATE' ? 'bg-green-500 dark:bg-green-600' : 'bg-blue-500 dark:bg-blue-600'
+              userRole === 'CANDIDATE' ? 'bg-green-500' : 'bg-blue-500'
             }`}>
               {userName.charAt(0)}
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-gray-100">{userName}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Role: {userRole}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">User ID: {userId}</p>
+              <h3 className="font-medium">{userName}</h3>
+              <p className="text-sm text-gray-600">Role: {userRole}</p>
+              <p className="text-sm text-gray-600">User ID: {userId}</p>
             </div>
           </div>
         </div>
 
         {/* Backend Connection Status */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Backend Services</h2>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <h2 className="text-lg font-semibold mb-4">Backend Services</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Spring Boot API</span>
-              <span className="text-sm text-gray-600 dark:text-gray-400">http://localhost:8080</span>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="text-sm font-medium">Spring Boot API</span>
+              <span className="text-sm text-gray-600">http://localhost:8080</span>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Socket.IO Server</span>
-              <span className="text-sm text-gray-600 dark:text-gray-400">http://localhost:9092</span>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="text-sm font-medium">Socket.IO Server</span>
+              <span className="text-sm text-gray-600">http://localhost:9092</span>
             </div>
           </div>
         </div>
@@ -134,17 +134,17 @@ const ChatTestPage: React.FC = () => {
         {userRole === 'ADMIN' ? (
           <AdminChatPanel adminId={userId} adminName={userName} />
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Candidate Test Area</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold mb-4">Candidate Test Area</h2>
+            <p className="text-gray-600 mb-4">
               As a candidate, you'll see the chat widget in the bottom right corner. 
               Click it to start a conversation with support.
             </p>
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg border border-gray-200/50 dark:border-gray-600/50">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">🔧 Backend Services</h4>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">🔧 Backend Services</h4>
               <div className="space-y-1 text-sm">
-                <div className="text-gray-700 dark:text-gray-300">REST API: <span className="text-sm text-gray-600 dark:text-gray-400">{process.env.REACT_APP_API_URL || 'http://localhost:8080'}</span></div>
-                <div className="text-gray-700 dark:text-gray-300">Socket.io: <span className="text-sm text-gray-600 dark:text-gray-400">{process.env.REACT_APP_SOCKET_URL || 'http://localhost:9092'}</span></div>
+                <div>REST API: <span className="text-sm text-gray-600">{process.env.REACT_APP_API_URL || 'http://localhost:8080'}</span></div>
+                <div>Socket.io: <span className="text-sm text-gray-600">{process.env.REACT_APP_SOCKET_URL || 'http://localhost:9092'}</span></div>
               </div>
             </div>
           </div>

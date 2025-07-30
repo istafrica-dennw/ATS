@@ -53,14 +53,14 @@ function MessageBubble({ message, adminId }: { message: Message; adminId: number
       <div
         className={`max-w-[70%] rounded-lg p-3 ${
           message.messageType === 'system'
-            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 text-center text-sm border border-yellow-200 dark:border-yellow-800/50'
+            ? 'bg-yellow-100 text-yellow-800 text-center text-sm border border-yellow-200'
             : message.senderId === adminId
-            ? 'bg-blue-500 dark:bg-blue-600 text-white'
-            : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'
+            ? 'bg-blue-500 text-white'
+            : 'bg-gray-100 text-gray-900'
         }`}
       >
         {message.messageType !== 'system' && message.senderId !== adminId && (
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">
+          <div className="text-xs text-gray-600 mb-2 font-medium">
             {message.senderName} ({message.senderRole})
           </div>
         )}
@@ -68,7 +68,7 @@ function MessageBubble({ message, adminId }: { message: Message; adminId: number
         {message.messageType !== 'system' && (
           <p
             className={`text-xs mt-1 ${
-              message.senderId === adminId ? "text-blue-100 dark:text-blue-200" : "text-gray-500 dark:text-gray-400"
+              message.senderId === adminId ? "text-blue-100" : "text-gray-500"
             }`}
           >
             {dynamicTime}
@@ -388,28 +388,28 @@ export function ChatModal({
   if (!conversation || !isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 dark:bg-black/90 flex items-center justify-center p-4">
-      <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] border border-gray-200/50 dark:border-gray-700/50 transition-all flex flex-col ${
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+      <div className={`bg-white rounded-lg shadow-xl transition-all flex flex-col ${
         isMinimized ? 'h-16 w-80' : 'h-[600px] w-full max-w-2xl'
       }`}>
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-t-lg">
+        <div className="p-6 pb-4 border-b bg-gray-50 rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
                 {conversation.avatar || getAvatarInitials(conversation.candidateName)}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">
                   {conversation.candidateName}
                 </h3>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={handleMinimize} className="hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400">
+              <Button variant="ghost" size="sm" onClick={handleMinimize}>
                 <MinusIcon className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleClose} className="hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400">
+              <Button variant="ghost" size="sm" onClick={handleClose}>
                 <XMarkIcon className="h-4 w-4" />
               </Button>
             </div>
@@ -419,15 +419,15 @@ export function ChatModal({
         {!isMinimized && (
           <>
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-white dark:bg-gray-800">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {isLoading ? (
                 <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400 mx-auto mb-4"></div>
-                  <p className="text-gray-500 dark:text-gray-400">Loading messages...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading messages...</p>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 dark:text-gray-400">No messages yet. Start the conversation!</p>
+                  <p className="text-gray-500">No messages yet. Start the conversation!</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -440,25 +440,25 @@ export function ChatModal({
             </div>
 
             {/* Message Input */}
-            <div className="p-6 pt-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+            <div className="p-6 pt-4 border-t bg-gray-50">
               <div className="flex gap-3">
                 <Textarea
                   placeholder="Type your reply..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="flex-1 min-h-[80px] resize-none bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-blue-500 dark:focus:ring-blue-400"
+                  className="flex-1 min-h-[80px] resize-none"
                   disabled={!isConnected}
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={!newMessage.trim() || !isConnected}
-                  className="px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:from-blue-500 dark:to-blue-600 dark:hover:from-blue-600 dark:hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-300 dark:disabled:from-gray-600 dark:disabled:to-gray-600"
+                  className="px-4"
                 >
                   <PaperAirplaneIcon className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <p className="text-xs text-gray-500 mt-2">
                 Press Enter to send, Shift+Enter for new line
               </p>
             </div>

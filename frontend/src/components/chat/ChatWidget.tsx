@@ -42,14 +42,14 @@ function MessageBubble({ message, userId }: { message: Message; userId: number }
       <div
         className={`max-w-xs px-3 py-2 rounded-lg ${
           message.messageType === 'system'
-            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 text-center text-xs'
+            ? 'bg-yellow-100 text-yellow-800 text-center text-xs'
             : message.senderId === userId
-            ? 'bg-blue-600 dark:bg-blue-500 text-white'
-            : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100'
+            ? 'bg-blue-600 text-white'
+            : 'bg-white border border-gray-200'
         }`}
       >
         {message.messageType !== 'system' && message.senderId !== userId && (
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+          <div className="text-xs text-gray-500 mb-1">
             {message.senderName} ({message.senderRole})
           </div>
         )}
@@ -57,7 +57,7 @@ function MessageBubble({ message, userId }: { message: Message; userId: number }
         {message.messageType !== 'system' && (
           <div
             className={`text-xs mt-1 ${
-              message.senderId === userId ? 'text-blue-200 dark:text-blue-300' : 'text-gray-400 dark:text-gray-500'
+              message.senderId === userId ? 'text-blue-200' : 'text-gray-400'
             }`}
           >
             {dynamicTime}
@@ -212,7 +212,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white p-4 rounded-full shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] transition-all duration-300 hover:scale-110 z-50"
+          className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-50"
         >
           <ChatBubbleLeftRightIcon className="h-6 w-6" />
         </button>
@@ -220,9 +220,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
 
       {/* Chat Widget */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-96 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700/50 rounded-lg shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] flex flex-col z-50">
+        <div className="fixed bottom-6 right-6 w-96 h-96 bg-white border border-gray-300 rounded-lg shadow-xl flex flex-col z-50">
           {/* Header */}
-          <div className="bg-blue-600 dark:bg-blue-500 text-white p-4 rounded-t-lg flex justify-between items-center">
+          <div className="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
             <div>
               <h3 className="font-semibold">Support Chat</h3>
               <p className="text-xs opacity-90">
@@ -238,21 +238,21 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
               </p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400 dark:bg-green-300' : 'bg-red-400 dark:bg-red-300'}`} />
-              <button onClick={closeChat} className="hover:bg-blue-700 dark:hover:bg-blue-600 p-1 rounded transition-colors">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`} />
+              <button onClick={closeChat} className="hover:bg-blue-700 p-1 rounded">
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-700/50">
+          <div className="flex-1 p-4 overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center items-center h-full">
-                <div className="text-gray-500 dark:text-gray-400">Connecting to chat...</div>
+                <div className="text-gray-500">Connecting to chat...</div>
               </div>
             ) : messages.length === 0 ? (
-              <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
+              <div className="text-center text-gray-500 mt-8">
                 <ChatBubbleLeftRightIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>Start a conversation!</p>
                 <p className="text-xs">Send a message and we'll connect you with support.</p>
@@ -268,7 +268,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
           </div>
 
           {/* Input Area */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-t">
             <div className="flex space-x-2">
               <input
                 type="text"
@@ -276,13 +276,13 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userId, userName, userRole }) =
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm transition-all duration-200"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 disabled={!isConnected}
               />
               <button
                 onClick={sendMessage}
                 disabled={!newMessage.trim() || !isConnected}
-                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <PaperAirplaneIcon className="h-4 w-4" />
               </button>

@@ -231,15 +231,15 @@ const JobsPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="bg-gray-50 min-h-screen">
       {/* Header with search and filters */}
-      <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-0">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4 md:mb-0">
               Find Your Next Opportunity
             </h1>
-            <Link to="/" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-medium transition-colors">
+            <Link to="/" className="text-indigo-600 hover:text-indigo-500 font-medium">
               Back to Home
             </Link>
           </div>
@@ -247,11 +247,11 @@ const JobsPage: React.FC = () => {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:placeholder-gray-400 dark:focus:placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm transition-all"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="Search jobs by title, company, or keywords"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -261,7 +261,7 @@ const JobsPage: React.FC = () => {
             <div className="mt-4 flex items-center">
               <button
                 type="button"
-                className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <AdjustmentsHorizontalIcon className="h-4 w-4 mr-2" />
@@ -272,7 +272,7 @@ const JobsPage: React.FC = () => {
               {selectedWorkSetting !== 'ALL' && (
                 <button
                   type="button"
-                  className="ml-3 inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+                  className="ml-3 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   onClick={resetFilters}
                 >
                   <XMarkIcon className="h-4 w-4 mr-1" />
@@ -280,23 +280,23 @@ const JobsPage: React.FC = () => {
                 </button>
               )}
               
-              <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+              <div className="ml-auto text-sm text-gray-500">
                 {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'} found
               </div>
             </div>
             
             {/* Filter options */}
             {showFilters && (
-              <div className="mt-4 grid grid-cols-1 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div className="mt-4 grid grid-cols-1 gap-4">
                 {/* Work Setting filter */}
                 <div>
-                  <label htmlFor="work-setting" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label htmlFor="work-setting" className="block text-sm font-medium text-gray-700">
                     Work Setting
                   </label>
                   <select
                     id="work-setting"
                     name="work-setting"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm rounded-md transition-all"
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                     value={selectedWorkSetting}
                     onChange={(e) => setSelectedWorkSetting(e.target.value)}
                   >
@@ -315,39 +315,39 @@ const JobsPage: React.FC = () => {
       
       {/* Job listings */}
       <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] overflow-hidden sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <ul className="divide-y divide-gray-200">
             {loading ? (
               <li className="px-4 py-12 text-center">
                 <div className="animate-pulse flex flex-col items-center">
-                  <div className="h-8 w-8 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
-                  <div className="mt-4 h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/4"></div>
-                  <div className="mt-2 h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
+                  <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                  <div className="mt-4 h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="mt-2 h-4 bg-gray-200 rounded w-1/2"></div>
                 </div>
               </li>
             ) : error ? (
-              <li className="px-4 py-12 text-center text-red-600 dark:text-red-400">{error}</li>
+              <li className="px-4 py-12 text-center text-red-600">{error}</li>
             ) : filteredJobs.length > 0 ? (
               filteredJobs.map(job => (
-                <li key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <li key={job.id}>
                   <div className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
-                          <BuildingOfficeIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                        <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                          <BuildingOfficeIcon className="h-6 w-6 text-indigo-600" />
                         </div>
                         <div className="ml-4">
-                          <h3 className="text-lg font-medium text-indigo-600 dark:text-indigo-400">{job.title}</h3>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{job.department}</p>
+                          <h3 className="text-lg font-medium text-indigo-600">{job.title}</h3>
+                          <p className="text-sm font-medium text-gray-900">{job.department}</p>
                         </div>
                       </div>
                       <div className="flex items-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           {job.employmentType}
                         </span>
                         <button
                           type="button"
-                          className="ml-4 inline-flex items-center px-3 py-2 border border-indigo-600 dark:border-indigo-500 text-sm font-medium rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+                          className="ml-4 inline-flex items-center px-3 py-2 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                           onClick={() => toggleJobDetails(job.id)}
                         >
                           {selectedJob === job.id ? 'Hide Details' : 'View Details'}
@@ -357,35 +357,35 @@ const JobsPage: React.FC = () => {
                     
                     <div className="mt-2 sm:flex sm:justify-between">
                       <div className="sm:flex">
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                          <MapPinIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                        <div className="flex items-center text-sm text-gray-500">
+                          <MapPinIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
                           {job.location}
                         </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0 sm:ml-6">
-                          <CurrencyDollarIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                          <CurrencyDollarIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
                           {job.salaryRange}
                         </div>
                       </div>
-                      <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0">
-                        <ClockIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                        <ClockIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
                         <p>Posted {new Date(job.postedDate).toLocaleDateString()}</p>
                       </div>
                     </div>
                     
                     {/* Job details (expanded view) */}
                     {selectedJob === job.id && (
-                      <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                      <div className="mt-4 border-t border-gray-200 pt-4">
                         <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Job Description</h4>
+                          <h4 className="text-sm font-medium text-gray-900">Job Description</h4>
                           <div 
-                            className="mt-1 text-sm text-gray-500 dark:text-gray-400 prose prose-sm dark:prose-invert max-w-none"
+                            className="mt-1 text-sm text-gray-600 prose prose-sm max-w-none"
                             dangerouslySetInnerHTML={{ __html: job.description }}
                           />
                         </div>
                         
                         <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Requirements</h4>
-                          <ul className="mt-1 list-disc list-inside text-sm text-gray-500 dark:text-gray-400">
+                          <h4 className="text-sm font-medium text-gray-900">Requirements</h4>
+                          <ul className="mt-1 list-disc list-inside text-sm text-gray-600">
                             {job.requirements?.map((req, index) => (
                               <li key={index}>{req}</li>
                             ))}
@@ -393,8 +393,8 @@ const JobsPage: React.FC = () => {
                         </div>
 
                         <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Responsibilities</h4>
-                          <ul className="mt-1 list-disc list-inside text-sm text-gray-500 dark:text-gray-400">
+                          <h4 className="text-sm font-medium text-gray-900">Responsibilities</h4>
+                          <ul className="mt-1 list-disc list-inside text-sm text-gray-600">
                             {job.responsibilities?.map((resp, index) => (
                               <li key={index}>{resp}</li>
                             ))}
@@ -402,8 +402,8 @@ const JobsPage: React.FC = () => {
                         </div>
 
                         <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Benefits</h4>
-                          <ul className="mt-1 list-disc list-inside text-sm text-gray-500 dark:text-gray-400">
+                          <h4 className="text-sm font-medium text-gray-900">Benefits</h4>
+                          <ul className="mt-1 list-disc list-inside text-sm text-gray-600">
                             {job.benefits?.map((benefit, index) => (
                               <li key={index}>{benefit}</li>
                             ))}
@@ -413,7 +413,7 @@ const JobsPage: React.FC = () => {
                         <div className="mt-6">
                           <Link
                             to={`/jobs/${job.id}`}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transform hover:scale-[1.02] transition-all"
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                           >
                             View Full Details →
                           </Link>
@@ -426,14 +426,14 @@ const JobsPage: React.FC = () => {
             ) : (
               <li className="px-4 py-12 text-center">
                 <div className="flex flex-col items-center">
-                  <BriefcaseIcon className="h-12 w-12 text-gray-400 dark:text-gray-500" />
-                  <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-100">No jobs found</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  <BriefcaseIcon className="h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-lg font-medium text-gray-900">No jobs found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
                     Try adjusting your search or filter criteria
                   </p>
                   <button
                     type="button"
-                    className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+                    className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     onClick={resetFilters}
                   >
                     Clear all filters
@@ -446,10 +446,10 @@ const JobsPage: React.FC = () => {
       </div>
       
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 mt-8 border-t border-gray-200 dark:border-gray-700">
+      <footer className="bg-white mt-8 border-t border-gray-200">
         <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="text-center">
-            <p className="text-base text-gray-400 dark:text-gray-500">
+            <p className="text-base text-gray-400">
               &copy; {new Date().getFullYear()} ATS System. All rights reserved.
             </p>
           </div>

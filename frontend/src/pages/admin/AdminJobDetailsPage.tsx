@@ -665,30 +665,19 @@ const AdminJobDetailsPage: React.FC = () => {
   
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <CircularProgress sx={{ color: 'primary.main' }} />
+      <div className="flex justify-center items-center min-h-screen">
+        <CircularProgress />
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
-        <Alert 
-          severity="error"
-          sx={{
-            backgroundColor: 'error.light',
-            color: 'error.contrastText',
-            '& .MuiAlert-icon': {
-              color: 'error.main'
-            }
-          }}
-        >
-          {error}
-        </Alert>
+      <div className="container mx-auto px-4 py-8">
+        <Alert severity="error">{error}</Alert>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 transform hover:scale-[1.02] transition-all"
+          className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
         >
           <ArrowLeftIcon className="h-5 w-5 mr-2" /> Back
         </button>
@@ -698,22 +687,11 @@ const AdminJobDetailsPage: React.FC = () => {
   
   if (!job) {
     return (
-      <div className="container mx-auto px-4 py-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
-        <Alert 
-          severity="warning"
-          sx={{
-            backgroundColor: 'warning.light',
-            color: 'warning.contrastText',
-            '& .MuiAlert-icon': {
-              color: 'warning.main'
-            }
-          }}
-        >
-          Job not found
-        </Alert>
+      <div className="container mx-auto px-4 py-8">
+        <Alert severity="warning">Job not found</Alert>
         <button
           onClick={() => navigate('/admin/jobs')}
-          className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 transform hover:scale-[1.02] transition-all"
+          className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
         >
           <ArrowLeftIcon className="h-5 w-5 mr-2" /> Back to Jobs
         </button>
@@ -722,908 +700,898 @@ const AdminJobDetailsPage: React.FC = () => {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('/admin/jobs')}
-            className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-1" /> Back to Job Management
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{job.title}</h1>
-          <p className="text-lg text-gray-500 dark:text-gray-400">{job.department || 'IST Africa'}</p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <button
+          onClick={() => navigate('/admin/jobs')}
+          className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-900"
+        >
+          <ArrowLeftIcon className="h-5 w-5 mr-1" /> Back to Job Management
+        </button>
+        <h1 className="text-3xl font-bold text-gray-900 mt-2">{job.title}</h1>
+        <p className="text-lg text-gray-500">{job.department || 'IST Africa'}</p>
+      </div>
+      
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+        <div className="px-4 py-5 sm:px-6">
+          <h2 className="text-xl font-semibold text-gray-900">Job Details</h2>
         </div>
-        
-        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] overflow-hidden sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50 mb-8">
-          <div className="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Job Details</h2>
-          </div>
-          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-0">
-            <dl className="sm:divide-y sm:divide-gray-200 dark:sm:divide-gray-700">
+        <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
+          <dl className="sm:divide-y sm:divide-gray-200">
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt className="text-sm font-medium text-gray-500 flex items-center">
+                <MapPinIcon className="h-5 w-5 mr-2 text-gray-400" /> Location
+              </dt>
+              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                {job.location || 'Remote'} ({job.workSetting})
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt className="text-sm font-medium text-gray-500 flex items-center">
+                <BriefcaseIcon className="h-5 w-5 mr-2 text-gray-400" /> Department
+              </dt>
+              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                {job.department}
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt className="text-sm font-medium text-gray-500 flex items-center">
+                <ClockIcon className="h-5 w-5 mr-2 text-gray-400" /> Employment Type
+              </dt>
+              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                {job.employmentType}
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt className="text-sm font-medium text-gray-500 flex items-center">
+                <CurrencyDollarIcon className="h-5 w-5 mr-2 text-gray-400" /> Salary Range
+              </dt>
+              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                {job.salaryRange || 'Competitive'}
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt className="text-sm font-medium text-gray-500 flex items-center">
+                <ClockIcon className="h-5 w-5 mr-2 text-gray-400" /> Posted Date
+              </dt>
+              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                {formatDate(job.postedDate)}
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt className="text-sm font-medium text-gray-500 flex items-center">
+                <ArrowsUpDownIcon className="h-5 w-5 mr-2 text-gray-400" /> Skills
+              </dt>
+              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <div className="flex flex-wrap gap-2">
+                  {job.skills && job.skills.map((skill, index) => (
+                    <span key={index} className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <dt className="text-sm font-medium text-gray-500">Description</dt>
+              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 whitespace-pre-line">
+                <div dangerouslySetInnerHTML={{ __html: job.description }} />
+              </dd>
+            </div>
+            {/* Custom Questions Section */}
+            {job.customQuestions && job.customQuestions.length > 0 && (
               <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                  <MapPinIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Location
+                <dt className="text-sm font-medium text-gray-500 flex items-center">
+                  <QuestionMarkCircleIcon className="h-5 w-5 mr-2 text-gray-400" /> Custom Questions
                 </dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {job.location || 'Remote'} ({job.workSetting})
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                  <BriefcaseIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Department
-                </dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {job.department}
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                  <ClockIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Employment Type
-                </dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {job.employmentType}
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                  <CurrencyDollarIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Salary Range
-                </dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {job.salaryRange || 'Competitive'}
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                  <ClockIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Posted Date
-                </dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {formatDate(job.postedDate)}
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                  <ArrowsUpDownIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Skills
-                </dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  <div className="flex flex-wrap gap-2">
-                    {job.skills && job.skills.map((skill, index) => (
-                      <span key={index} className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 text-xs px-2 py-1 rounded-full">
-                        {skill}
-                      </span>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  <div className="space-y-4">
+                    {job.customQuestions.map((question, index) => (
+                      <div key={question.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                Question {index + 1}
+                              </span>
+                              {question.required && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  Required
+                                </span>
+                              )}
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {question.questionType.replace('_', ' ').toLowerCase()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-700 mb-3">
+                              {question.questionText}
+                            </p>
+                            {question.options && question.options.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-gray-600 mb-1">Options:</p>
+                                <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
+                                  {question.options.map((option, optionIndex) => (
+                                    <li key={optionIndex}>{option}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {question.maxCharacterLimit && (
+                              <p className="text-xs text-gray-500 mt-2">
+                                Character limit: {question.maxCharacterLimit}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </dd>
               </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2 whitespace-pre-line">
-                  <div dangerouslySetInnerHTML={{ __html: job.description }} />
-                </dd>
+            )}
+          </dl>
+        </div>
+      </div>
+      
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Applications</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white shadow rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Total Applications</p>
+                <p className="text-2xl font-semibold text-gray-900">{applications.length}</p>
               </div>
-              {/* Custom Questions Section */}
-              {job.customQuestions && job.customQuestions.length > 0 && (
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                    <QuestionMarkCircleIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Custom Questions
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                    <div className="space-y-4">
-                      {job.customQuestions.map((question, index) => (
-                        <div key={question.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  Question {index + 1}
-                                </span>
-                                {question.required && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                                    Required
-                                  </span>
-                                )}
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                  {question.questionType.replace('_', ' ').toLowerCase()}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                                {question.questionText}
-                              </p>
-                              {question.options && question.options.length > 0 && (
-                                <div className="mt-2">
-                                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Options:</p>
-                                  <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                                    {question.options.map((option, optionIndex) => (
-                                      <li key={optionIndex}>{option}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {question.maxCharacterLimit && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                  Character limit: {question.maxCharacterLimit}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </dd>
-                </div>
-              )}
-            </dl>
+              <DocumentTextIcon className="h-8 w-8 text-indigo-600" />
+            </div>
+          </div>
+          <div className="bg-white shadow rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Interviews Scheduled</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.INTERVIEWING || 0}</p>
+              </div>
+              <UserGroupIcon className="h-8 w-8 text-yellow-500" />
+            </div>
+          </div>
+          <div className="bg-white shadow rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Offers Extended</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.OFFERED || 0}</p>
+              </div>
+              <DocumentTextIcon className="h-8 w-8 text-green-500" />
+            </div>
+          </div>
+          <div className="bg-white shadow rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Accepted Offers</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.OFFER_ACCEPTED || 0}</p>
+              </div>
+              <CheckCircleIcon className="h-8 w-8 text-green-500" />
+            </div>
           </div>
         </div>
         
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Applications</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applications</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{applications.length}</p>
-                </div>
-                <DocumentTextIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Interviews Scheduled</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.INTERVIEWING || 0}</p>
-                </div>
-                <UserGroupIcon className="h-8 w-8 text-yellow-500 dark:text-yellow-400" />
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Offers Extended</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.OFFERED || 0}</p>
-                </div>
-                <DocumentTextIcon className="h-8 w-8 text-green-500 dark:text-green-400" />
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Accepted Offers</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.OFFER_ACCEPTED || 0}</p>
-                </div>
-                <CheckCircleIcon className="h-8 w-8 text-green-500 dark:text-green-400" />
-              </div>
-            </div>
+        {applications.length === 0 ? (
+          <div className="bg-white shadow rounded-lg p-8 text-center">
+            <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">No Applications Yet</h3>
+            <p className="mt-2 text-sm text-gray-500">
+              There are no applications for this job posting yet.
+            </p>
           </div>
-          
-          {applications.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-8 text-center">
-              <DocumentTextIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Applications Yet</h3>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                There are no applications for this job posting yet.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] overflow-hidden sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-              {/* Sorting Controls */}
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Applications ({applications.length})</h3>
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
+        ) : (
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            {/* Sorting Controls */}
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">Applications ({applications.length})</h3>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-500">Sort by:</span>
+                  <button
+                    onClick={() => handleSortChange('date')}
+                    className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
+                      sortBy === 'date' 
+                        ? 'bg-indigo-100 text-indigo-700' 
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Date Applied
+                    {sortBy === 'date' && (
+                      <ArrowsUpDownIcon className={`ml-1 h-4 w-4 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleSortChange('score')}
+                    className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
+                      sortBy === 'score' 
+                        ? 'bg-indigo-100 text-indigo-700' 
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Resume Score
+                    {sortBy === 'score' && (
+                      <ArrowsUpDownIcon className={`ml-1 h-4 w-4 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
+                  
+                  {/* Bulk Rescore Button */}
+                  <div className="border-l border-gray-300 pl-4">
                     <button
-                      onClick={() => handleSortChange('date')}
-                      className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'date' 
-                          ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
+                      onClick={handleBulkRescore}
+                      disabled={rescoringApplications.size > 0}
+                      className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Rescore all resumes for this job"
                     >
-                      Date Applied
-                      {sortBy === 'date' && (
-                        <ArrowsUpDownIcon className={`ml-1 h-4 w-4 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                      {rescoringApplications.size > 0 ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Rescoring...
+                        </>
+                      ) : (
+                        <>
+                          <ChartBarIcon className="h-4 w-4 mr-2" />
+                          Rescore All
+                        </>
                       )}
                     </button>
-                    <button
-                      onClick={() => handleSortChange('score')}
-                      className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'score' 
-                          ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      Resume Score
-                      {sortBy === 'score' && (
-                        <ArrowsUpDownIcon className={`ml-1 h-4 w-4 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
-                      )}
-                    </button>
-                    
-                    {/* Bulk Rescore Button */}
-                    <div className="border-l border-gray-300 dark:border-gray-600 pl-4">
-                      <button
-                        onClick={handleBulkRescore}
-                        disabled={rescoringApplications.size > 0}
-                        className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        title="Rescore all resumes for this job"
-                      >
-                        {rescoringApplications.size > 0 ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Rescoring...
-                          </>
-                        ) : (
-                          <>
-                            <ChartBarIcon className="h-4 w-4 mr-2" />
-                            Rescore All
-                          </>
-                        )}
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
-              
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Candidate
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Applied On
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Current Position
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Resume Analysis
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Interview Assignment
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Documents
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {sortedApplications.map((application) => (
-                      <tr key={application.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {application.candidateName || 
-                                 (candidateDetails[application.candidateId]?.name) || 
-                                 `Candidate ${application.candidateId}`}
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {application.candidateEmail || 
-                                 candidateDetails[application.candidateId]?.email || 
-                                 'No email available'}
-                              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Candidate
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Applied On
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Current Position
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Resume Analysis
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Interview Assignment
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Documents
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {sortedApplications.map((application) => (
+                    <tr key={application.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {application.candidateName || 
+                               (candidateDetails[application.candidateId]?.name) || 
+                               `Candidate ${application.candidateId}`}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {application.candidateEmail || 
+                               candidateDetails[application.candidateId]?.email || 
+                               'No email available'}
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(application.createdAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {application.currentPosition || 'Not specified'} 
-                          {application.currentCompany && `at ${application.currentCompany}`}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {application.resumeAnalysis ? (
-                            <div className="relative">
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => openAnalysisModal(application.resumeAnalysis!)}
-                                  onMouseEnter={() => setHoveredApplication(application.id)}
-                                  onMouseLeave={() => setHoveredApplication(null)}
-                                  className="group flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 p-2 rounded-md transition-colors duration-150"
-                                >
-                                  <ChartBarIcon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-                                  {getScoreBadge(application.resumeAnalysis.resume_score.overall_score)}
-                                  <span className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400">
-                                    View Details
-                                  </span>
-                                </button>
-                                
-                                {/* Rescore Button */}
-                                <button
-                                  onClick={() => handleRescore(application.id)}
-                                  disabled={rescoringApplications.has(application.id)}
-                                  className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                  title="Rescore resume analysis"
-                                >
-                                  {rescoringApplications.has(application.id) ? (
-                                    <>
-                                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                      </svg>
-                                      Rescoring...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ArrowsUpDownIcon className="h-3 w-3 mr-1" />
-                                      Rescore
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                              
-                              {/* Hover Tooltip */}
-                              {hoveredApplication === application.id && (
-                                <div className="absolute z-10 w-64 p-3 mt-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)]">
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">Overall Score:</span>
-                                      <span className={getScoreColor(application.resumeAnalysis.resume_score.overall_score)}>
-                                        {application.resumeAnalysis.resume_score.overall_score.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">Job Match:</span>
-                                      <span className={getScoreColor(application.resumeAnalysis.resume_score.job_match_score)}>
-                                        {application.resumeAnalysis.resume_score.job_match_score.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">Experience:</span>
-                                      <span className={getScoreColor(application.resumeAnalysis.resume_score.experience_score)}>
-                                        {application.resumeAnalysis.resume_score.experience_score.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">Skills Match:</span>
-                                      <span className={getScoreColor(application.resumeAnalysis.resume_score.skills_match_score)}>
-                                        {application.resumeAnalysis.resume_score.skills_match_score.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        Experience: {application.resumeAnalysis.total_experience_years} years
-                                      </div>
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        Companies: {application.resumeAnalysis.total_companies_worked}
-                                      </div>
-                                    </div>
-                                    <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                                      Click to view full analysis
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(application.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {application.currentPosition || 'Not specified'} 
+                        {application.currentCompany && `at ${application.currentCompany}`}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {application.resumeAnalysis ? (
+                          <div className="relative">
                             <div className="flex items-center space-x-2">
-                              <div className="flex items-center space-x-2 text-gray-400 dark:text-gray-500">
-                                <ChartBarIcon className="h-4 w-4" />
-                                <span className="text-xs">
-                                  {rescoringApplications.has(application.id) ? 'Rescoring...' : 'Processing...'}
+                              <button
+                                onClick={() => openAnalysisModal(application.resumeAnalysis!)}
+                                onMouseEnter={() => setHoveredApplication(application.id)}
+                                onMouseLeave={() => setHoveredApplication(null)}
+                                className="group flex items-center space-x-2 hover:bg-gray-50 p-2 rounded-md transition-colors duration-150"
+                              >
+                                <ChartBarIcon className="h-4 w-4 text-indigo-500" />
+                                {getScoreBadge(application.resumeAnalysis.resume_score.overall_score)}
+                                <span className="text-xs text-gray-400 group-hover:text-gray-600">
+                                  View Details
                                 </span>
-                              </div>
+                              </button>
                               
-                              {/* Rescore Button for when no analysis exists yet */}
-                              {application.resumeUrl && (
-                                <button
-                                  onClick={() => handleRescore(application.id)}
-                                  disabled={rescoringApplications.has(application.id)}
-                                  className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                  title="Trigger resume analysis"
-                                >
-                                  {rescoringApplications.has(application.id) ? (
-                                    <>
-                                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                      </svg>
-                                      Analyzing...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ChartBarIcon className="h-3 w-3 mr-1" />
-                                      Analyze
-                                    </>
-                                  )}
-                                </button>
-                              )}
+                              {/* Rescore Button */}
+                              <button
+                                onClick={() => handleRescore(application.id)}
+                                disabled={rescoringApplications.has(application.id)}
+                                className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Rescore resume analysis"
+                              >
+                                {rescoringApplications.has(application.id) ? (
+                                  <>
+                                    <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Rescoring...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ArrowsUpDownIcon className="h-3 w-3 mr-1" />
+                                    Rescore
+                                  </>
+                                )}
+                              </button>
                             </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {(() => {
-                            const interview = getInterviewForApplication(application.id);
-                            console.log('Interview check for application', application.id, ':', interview);
-                            if (interview) {
-                              // Show current interview assignment
-                              return (
+                            
+                            {/* Hover Tooltip */}
+                            {hoveredApplication === application.id && (
+                              <div className="absolute z-10 w-64 p-3 mt-1 text-xs bg-white border border-gray-200 rounded-lg shadow-lg">
                                 <div className="space-y-2">
-                                  <div className="flex items-center space-x-2">
-                                    <UserGroupIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                      {interview.interviewerName}
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">Overall Score:</span>
+                                    <span className={getScoreColor(application.resumeAnalysis.resume_score.overall_score)}>
+                                      {application.resumeAnalysis.resume_score.overall_score.toFixed(1)}%
                                     </span>
                                   </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {interview.scheduledAt 
-                                      ? formatDate(interview.scheduledAt)
-                                      : 'Date TBD'
-                                    }
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">Job Match:</span>
+                                    <span className={getScoreColor(application.resumeAnalysis.resume_score.job_match_score)}>
+                                      {application.resumeAnalysis.resume_score.job_match_score.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">Experience:</span>
+                                    <span className={getScoreColor(application.resumeAnalysis.resume_score.experience_score)}>
+                                      {application.resumeAnalysis.resume_score.experience_score.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">Skills Match:</span>
+                                    <span className={getScoreColor(application.resumeAnalysis.resume_score.skills_match_score)}>
+                                      {application.resumeAnalysis.resume_score.skills_match_score.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                  <div className="pt-2 border-t border-gray-100">
+                                    <div className="text-xs text-gray-500">
+                                      Experience: {application.resumeAnalysis.total_experience_years} years
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      Companies: {application.resumeAnalysis.total_companies_worked}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-indigo-600 font-medium">
+                                    Click to view full analysis
                                   </div>
                                 </div>
-                              );
-                            } else if (application.status === 'SHORTLISTED') {
-                              // Show assign button for shortlisted applications
-                              return (
-                                <button
-                                  onClick={() => handleAssignInterview(application.id)}
-                                  className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-xs font-medium text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 transform hover:scale-[1.02] transition-all"
-                                  title="Assign interview"
-                                >
-                                  <CalendarIcon className="h-3 w-3 mr-1" />
-                                  Assign Interview
-                                </button>
-                              );
-                            } else {
-                              // Show status info for non-shortlisted applications
-                              return (
-                                <span className="text-xs text-gray-400 dark:text-gray-500">
-                                  {application.status === 'APPLIED' && 'Application under review'}
-                                  {application.status === 'REVIEWED' && 'Ready for shortlisting'}
-                                  {application.status === 'INTERVIEWING' && 'Interview in progress'}
-                                  {application.status === 'OFFERED' && 'Offer extended'}
-                                  {application.status === 'OFFER_ACCEPTED' && 'Offer accepted'}
-                                  {application.status === 'OFFER_REJECTED' && 'Offer rejected'}
-                                  {application.status === 'REJECTED' && 'Application rejected'}
-                                  {application.status === 'WITHDRAWN' && 'Application withdrawn'}
-                                </span>
-                              );
-                            }
-                          })()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {getStatusBadge(application.status)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          <div className="space-y-1">
-                            {application.resumeUrl && (
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleViewResume(application.resumeUrl!)}
-                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
-                                >
-                                  <PaperClipIcon className="h-4 w-4 mr-1" /> Resume
-                                </button>
-                                <button
-                                  onClick={() => handleDownloadResume(application.resumeUrl!)}
-                                  className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 text-xs transition-colors"
-                                >
-                                  ↓
-                                </button>
                               </div>
-                            )}
-                            
-                            {application.coverLetterUrl && (
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleViewCoverLetter(application.coverLetterUrl!)}
-                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
-                                >
-                                  <PaperClipIcon className="h-4 w-4 mr-1" /> Cover Letter
-                                </button>
-                                <button
-                                  onClick={() => handleDownloadCoverLetter(application.coverLetterUrl!)}
-                                  className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 text-xs transition-colors"
-                                >
-                                  ↓
-                                </button>
-                              </div>
-                            )}
-                            
-                            {application.portfolioUrl && (
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleViewPortfolio(application.portfolioUrl!)}
-                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
-                                >
-                                  <PaperClipIcon className="h-4 w-4 mr-1" /> Portfolio
-                                </button>
-                              </div>
-                            )}
-                            
-                            {!application.resumeUrl && !application.coverLetterUrl && !application.portfolioUrl && (
-                              <span className="text-gray-400 dark:text-gray-500 text-xs">No documents</span>
                             )}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          <div className="space-y-2">
-                            {application.status === 'OFFERED' && (
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 text-gray-400">
+                              <ChartBarIcon className="h-4 w-4" />
+                              <span className="text-xs">
+                                {rescoringApplications.has(application.id) ? 'Rescoring...' : 'Processing...'}
+                              </span>
+                            </div>
+                            
+                            {/* Rescore Button for when no analysis exists yet */}
+                            {application.resumeUrl && (
                               <button
-                                onClick={() => handleSendJobOfferEmail(application.id)}
-                                className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-xs font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 transform hover:scale-[1.02] transition-all"
-                                title="Send job offer email"
+                                onClick={() => handleRescore(application.id)}
+                                disabled={rescoringApplications.has(application.id)}
+                                className="inline-flex items-center px-2 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Trigger resume analysis"
                               >
-                                <EnvelopeIcon className="h-3 w-3 mr-1" />
-                                Send Offer Email
+                                {rescoringApplications.has(application.id) ? (
+                                  <>
+                                    <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Analyzing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChartBarIcon className="h-3 w-3 mr-1" />
+                                    Analyze
+                                  </>
+                                )}
                               </button>
                             )}
-                            {application.status !== 'REJECTED' && application.status !== 'OFFER_ACCEPTED' && (
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors duration-200"
-                                  onClick={() => {
-                                    setOpenStatusDropdownId(openStatusDropdownId === application.id ? null : application.id);
-                                  }}
-                                >
-                                  <ArrowsUpDownIcon className="h-4 w-4 mr-2" />
-                                  Change Status
-                                  <ChevronDownIcon className={`ml-2 h-4 w-4 transition-transform duration-200 ${openStatusDropdownId === application.id ? 'rotate-180' : ''}`} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {/* Resume Analysis Modal */}
-        {isModalOpen && selectedAnalysis && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-                <div className="absolute inset-0 bg-gray-500 dark:bg-gray-900 opacity-75 dark:opacity-85" onClick={closeAnalysisModal}></div>
-              </div>
-
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-              <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg border border-gray-200/50 dark:border-gray-700/50 text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-                <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 sm:mx-0 sm:h-10 sm:w-10">
-                      <ChartBarIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-                    </div>
-                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100" id="modal-title">
-                          Resume Analysis Details
-                        </h3>
-                        <button
-                          onClick={closeAnalysisModal}
-                          className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 rounded-full p-1 transition-colors"
-                        >
-                          <XMarkIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                      <div className="mt-4">
-                        {/* Score Overview */}
-                        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
-                          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Score Overview</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.overall_score)}`}>
-                                {selectedAnalysis.resume_score.overall_score.toFixed(1)}%
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">Overall Score</div>
-                            </div>
-                            <div className="text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.job_match_score)}`}>
-                                {selectedAnalysis.resume_score.job_match_score.toFixed(1)}%
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">Job Match</div>
-                            </div>
-                            <div className="text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.experience_score)}`}>
-                                {selectedAnalysis.resume_score.experience_score.toFixed(1)}%
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">Experience</div>
-                            </div>
-                            <div className="text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.skills_match_score)}`}>
-                                {selectedAnalysis.resume_score.skills_match_score.toFixed(1)}%
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">Skills Match</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Detailed Scoring Criteria */}
-                        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-6">
-                          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Detailed Scoring Criteria</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">Required Skills Match:</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedAnalysis.resume_score.scoring_criteria.required_skills_match.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">Experience Level Match:</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedAnalysis.resume_score.scoring_criteria.experience_level_match.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">Industry Relevance:</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedAnalysis.resume_score.scoring_criteria.industry_relevance.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">Education Level Match:</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedAnalysis.resume_score.scoring_criteria.education_level_match.toFixed(1)}%</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Professional Summary */}
-                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Professional Summary</h4>
-                            <div className="space-y-2">
-                              <div>
-                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Experience:</span>
-                                <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{selectedAnalysis.total_experience_years} years</span>
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Companies Worked:</span>
-                                <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{selectedAnalysis.total_companies_worked}</span>
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Company:</span>
-                                <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{selectedAnalysis.current_company || 'Not specified'}</span>
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Position:</span>
-                                <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{selectedAnalysis.current_position || 'Not specified'}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Skills */}
-                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Extracted Skills</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedAnalysis.skills_extracted?.map((skill, index) => (
-                                <span key={index} className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs px-2 py-1 rounded-full">
-                                  {skill}
-                                </span>
-                              )) || <span className="text-sm text-gray-500 dark:text-gray-400">No skills extracted</span>}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Previous Positions */}
-                        {selectedAnalysis.previous_positions && selectedAnalysis.previous_positions.length > 0 && (
-                          <div className="mt-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Work Experience</h4>
-                            <div className="space-y-4">
-                              {selectedAnalysis.previous_positions.map((position, index) => (
-                                <div key={index} className="border-l-4 border-indigo-200 dark:border-indigo-700 pl-4">
-                                  <div className="flex justify-between items-start">
-                                    <div>
-                                      <h5 className="text-sm font-medium text-gray-900 dark:text-gray-100">{position.position}</h5>
-                                      <p className="text-sm text-gray-600 dark:text-gray-400">{position.company}</p>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">{position.start_date} - {position.end_date}</p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">{position.duration_months} months</p>
-                                    </div>
-                                  </div>
-                                  {position.responsibilities && position.responsibilities.length > 0 && (
-                                    <ul className="mt-2 list-disc list-inside text-xs text-gray-600 dark:text-gray-400">
-                                      {position.responsibilities.slice(0, 3).map((resp, respIndex) => (
-                                        <li key={respIndex}>{resp}</li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
                           </div>
                         )}
-
-                        {/* Education */}
-                        {selectedAnalysis.education && selectedAnalysis.education.length > 0 && (
-                          <div className="mt-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Education</h4>
-                            <div className="space-y-3">
-                              {selectedAnalysis.education.map((edu, index) => (
-                                <div key={index} className="flex justify-between items-center">
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{edu.degree}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{edu.institution}</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-sm text-gray-900 dark:text-gray-100">{edu.graduation_year}</p>
-                                    {edu.grade && <p className="text-xs text-gray-500 dark:text-gray-400">{edu.grade}</p>}
-                                  </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {(() => {
+                          const interview = getInterviewForApplication(application.id);
+                          console.log('Interview check for application', application.id, ':', interview);
+                          if (interview) {
+                            // Show current interview assignment
+                            return (
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2">
+                                  <UserGroupIcon className="h-4 w-4 text-blue-500" />
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {interview.interviewerName}
+                                  </span>
                                 </div>
-                              ))}
+                                <div className="text-xs text-gray-500">
+                                  {interview.scheduledAt 
+                                    ? formatDate(interview.scheduledAt)
+                                    : 'Date TBD'
+                                  }
+                                </div>
+                              </div>
+                            );
+                          } else if (application.status === 'SHORTLISTED') {
+                            // Show assign button for shortlisted applications
+                            return (
+                              <button
+                                onClick={() => handleAssignInterview(application.id)}
+                                className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                                title="Assign interview"
+                              >
+                                <CalendarIcon className="h-3 w-3 mr-1" />
+                                Assign Interview
+                              </button>
+                            );
+                          } else {
+                            // Show status info for non-shortlisted applications
+                            return (
+                              <span className="text-xs text-gray-400">
+                                {application.status === 'APPLIED' && 'Application under review'}
+                                {application.status === 'REVIEWED' && 'Ready for shortlisting'}
+                                {application.status === 'INTERVIEWING' && 'Interview in progress'}
+                                {application.status === 'OFFERED' && 'Offer extended'}
+                                {application.status === 'OFFER_ACCEPTED' && 'Offer accepted'}
+                                {application.status === 'OFFER_REJECTED' && 'Offer rejected'}
+                                {application.status === 'REJECTED' && 'Application rejected'}
+                                {application.status === 'WITHDRAWN' && 'Application withdrawn'}
+                              </span>
+                            );
+                          }
+                        })()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {getStatusBadge(application.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="space-y-1">
+                          {application.resumeUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewResume(application.resumeUrl!)}
+                                className="text-indigo-600 hover:text-indigo-900 flex items-center text-xs"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Resume
+                              </button>
+                              <button
+                                onClick={() => handleDownloadResume(application.resumeUrl!)}
+                                className="text-green-600 hover:text-green-900 text-xs"
+                              >
+                                ↓
+                              </button>
                             </div>
-                          </div>
-                        )}
-
-                        {/* Analysis Metadata */}
-                        <div className="mt-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Analysis Information</h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-400">Processed:</span>
-                              <span className="ml-2 text-gray-900 dark:text-gray-100">{new Date(selectedAnalysis.analysis_metadata.processed_at).toLocaleString()}</span>
+                          )}
+                          
+                          {application.coverLetterUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewCoverLetter(application.coverLetterUrl!)}
+                                className="text-indigo-600 hover:text-indigo-900 flex items-center text-xs"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Cover Letter
+                              </button>
+                              <button
+                                onClick={() => handleDownloadCoverLetter(application.coverLetterUrl!)}
+                                className="text-green-600 hover:text-green-900 text-xs"
+                              >
+                                ↓
+                              </button>
                             </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-400">AI Model:</span>
-                              <span className="ml-2 text-gray-900 dark:text-gray-100">{selectedAnalysis.analysis_metadata.ai_model_used}</span>
+                          )}
+                          
+                          {application.portfolioUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewPortfolio(application.portfolioUrl!)}
+                                className="text-indigo-600 hover:text-indigo-900 flex items-center text-xs"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Portfolio
+                              </button>
                             </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-400">Confidence:</span>
-                              <span className="ml-2 text-gray-900 dark:text-gray-100">{(selectedAnalysis.analysis_metadata.confidence_score * 100).toFixed(1)}%</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-400">Processing Time:</span>
-                              <span className="ml-2 text-gray-900 dark:text-gray-100">{selectedAnalysis.analysis_metadata.processing_time_ms}ms</span>
-                            </div>
-                          </div>
-                          {selectedAnalysis.analysis_metadata.processingNotes && selectedAnalysis.analysis_metadata.processingNotes.length > 0 && (
-                            <div className="mt-3">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">Processing Notes:</span>
-                              <ul className="mt-1 list-disc list-inside text-xs text-gray-600 dark:text-gray-400">
-                                {selectedAnalysis.analysis_metadata.processingNotes.map((note, index) => (
-                                  <li key={index}>{note}</li>
-                                ))}
-                              </ul>
+                          )}
+                          
+                          {!application.resumeUrl && !application.coverLetterUrl && !application.portfolioUrl && (
+                            <span className="text-gray-400 text-xs">No documents</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="space-y-2">
+                          {application.status === 'OFFERED' && (
+                            <button
+                              onClick={() => handleSendJobOfferEmail(application.id)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-xs font-medium text-white bg-green-600 hover:bg-green-700"
+                              title="Send job offer email"
+                            >
+                              <EnvelopeIcon className="h-3 w-3 mr-1" />
+                              Send Offer Email
+                            </button>
+                          )}
+                          {application.status !== 'REJECTED' && application.status !== 'OFFER_ACCEPTED' && (
+                            <div className="relative">
+                              <button
+                                type="button"
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                                onClick={() => {
+                                  setOpenStatusDropdownId(openStatusDropdownId === application.id ? null : application.id);
+                                }}
+                              >
+                                <ArrowsUpDownIcon className="h-4 w-4 mr-2" />
+                                Change Status
+                                <ChevronDownIcon className={`ml-2 h-4 w-4 transition-transform duration-200 ${openStatusDropdownId === application.id ? 'rotate-180' : ''}`} />
+                              </button>
                             </div>
                           )}
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200 dark:border-gray-600">
-                  <button
-                    type="button"
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
-                    onClick={closeAnalysisModal}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Job Offer Email Modal */}
-        {selectedApplication && (
-          <JobOfferEmailModal
-            isOpen={isEmailModalOpen}
-            onClose={() => {
-              setIsEmailModalOpen(false);
-              setSelectedApplication(null);
-            }}
-            onSend={handleEmailSend}
-            candidateName={selectedApplication?.candidateName || ''}
-            jobTitle={job?.title || ''}
-            applicationId={selectedApplication?.id.toString() || ''}
-          />
-        )}
-
-        {/* Status Change Popover - Fixed Overlay */}
-        {openStatusDropdownId !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-gray-700 w-full max-w-md transform transition-all duration-300 ease-out scale-100 opacity-100">
-              {/* Header */}
-              <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-t-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Change Application Status</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Application #{openStatusDropdownId} • Current: <span className="font-medium text-indigo-600 dark:text-indigo-400">{applications.find(app => app.id === openStatusDropdownId)?.status}</span>
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setOpenStatusDropdownId(null)}
-                    className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-white hover:bg-opacity-50 dark:hover:bg-gray-700 dark:hover:bg-opacity-50 rounded-lg p-2 transition-all duration-150"
-                  >
-                    <XMarkIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              
-              {/* Scrollable Content */}
-              <div className="max-h-96 overflow-y-auto py-4">
-                <div className="px-6 space-y-2">
-                  {[
-                    { value: 'APPLIED', label: 'Applied', icon: '📝', color: 'text-blue-600 dark:text-blue-400', bgColor: 'hover:bg-blue-50 dark:hover:bg-blue-900/20', desc: 'Application received and pending review' },
-                    { value: 'REVIEWED', label: 'Reviewed', icon: '👀', color: 'text-purple-600 dark:text-purple-400', bgColor: 'hover:bg-purple-50 dark:hover:bg-purple-900/20', desc: 'Application has been reviewed by HR' },
-                    { value: 'SHORTLISTED', label: 'Shortlisted', icon: '⭐', color: 'text-indigo-600 dark:text-indigo-400', bgColor: 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20', desc: 'Candidate selected for next round' },
-                    { value: 'INTERVIEWING', label: 'Interviewing', icon: '🎤', color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20', desc: 'Interview process is ongoing' },
-                    { value: 'OFFERED', label: 'Offered', icon: '🎉', color: 'text-green-600 dark:text-green-400', bgColor: 'hover:bg-green-50 dark:hover:bg-green-900/20', desc: 'Job offer has been extended' },
-                    { value: 'REJECTED', label: 'Rejected', icon: '❌', color: 'text-red-600 dark:text-red-400', bgColor: 'hover:bg-red-50 dark:hover:bg-red-900/20', desc: 'Application has been rejected' },
-                    { value: 'WITHDRAWN', label: 'Withdrawn', icon: '🔙', color: 'text-gray-600 dark:text-gray-400', bgColor: 'hover:bg-gray-50 dark:hover:bg-gray-700/50', desc: 'Candidate withdrew application' }
-                  ].map((status) => {
-                    const currentApplication = applications.find(app => app.id === openStatusDropdownId);
-                    const isCurrentStatus = currentApplication?.status === status.value;
-                    
-                    return (
-                      <button
-                        key={status.value}
-                        onClick={() => {
-                          if (openStatusDropdownId && !isCurrentStatus) {
-                            handleStatusChange(openStatusDropdownId, status.value);
-                            setOpenStatusDropdownId(null);
-                          }
-                        }}
-                        disabled={isCurrentStatus}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center space-x-4 ${
-                          isCurrentStatus 
-                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-700 cursor-not-allowed opacity-75' 
-                            : `border-gray-100 dark:border-gray-700 ${status.bgColor} hover:border-gray-200 dark:hover:border-gray-600 cursor-pointer hover:shadow-md transform hover:scale-[1.02]`
-                        }`}
-                      >
-                        <div className="flex-shrink-0">
-                          <span className="text-2xl">{status.icon}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className={`text-base font-semibold ${status.color}`}>
-                              {status.label}
-                            </p>
-                            {isCurrentStatus && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                <div className="w-2 h-2 bg-indigo-400 dark:bg-indigo-500 rounded-full mr-1.5"></div>
-                                Current Status
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{status.desc}</p>
-                        </div>
-                        {!isCurrentStatus && (
-                          <div className="flex-shrink-0">
-                            <ArrowsUpDownIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              
-              {/* Footer */}
-              <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    💡 Status changes are automatically logged and tracked
-                  </p>
-                  <button
-                    onClick={() => setOpenStatusDropdownId(null)}
-                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
       </div>
+      
+      {/* Resume Analysis Modal */}
+      {isModalOpen && selectedAnalysis && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={closeAnalysisModal}></div>
+            </div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <ChartBarIcon className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                      Resume Analysis Details
+                    </h3>
+                    <div className="mt-4">
+                      {/* Score Overview */}
+                      <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                        <h4 className="text-md font-semibold text-gray-900 mb-3">Score Overview</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.overall_score)}`}>
+                              {selectedAnalysis.resume_score.overall_score.toFixed(1)}%
+                            </div>
+                            <div className="text-xs text-gray-500">Overall Score</div>
+                          </div>
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.job_match_score)}`}>
+                              {selectedAnalysis.resume_score.job_match_score.toFixed(1)}%
+                            </div>
+                            <div className="text-xs text-gray-500">Job Match</div>
+                          </div>
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.experience_score)}`}>
+                              {selectedAnalysis.resume_score.experience_score.toFixed(1)}%
+                            </div>
+                            <div className="text-xs text-gray-500">Experience</div>
+                          </div>
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.skills_match_score)}`}>
+                              {selectedAnalysis.resume_score.skills_match_score.toFixed(1)}%
+                            </div>
+                            <div className="text-xs text-gray-500">Skills Match</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Detailed Scoring Criteria */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+                        <h4 className="text-md font-semibold text-gray-900 mb-3">Detailed Scoring Criteria</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Required Skills Match:</span>
+                            <span className="text-sm font-medium">{selectedAnalysis.resume_score.scoring_criteria.required_skills_match.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Experience Level Match:</span>
+                            <span className="text-sm font-medium">{selectedAnalysis.resume_score.scoring_criteria.experience_level_match.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Industry Relevance:</span>
+                            <span className="text-sm font-medium">{selectedAnalysis.resume_score.scoring_criteria.industry_relevance.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Education Level Match:</span>
+                            <span className="text-sm font-medium">{selectedAnalysis.resume_score.scoring_criteria.education_level_match.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Professional Summary */}
+                        <div className="bg-white border border-gray-200 rounded-lg p-4">
+                          <h4 className="text-md font-semibold text-gray-900 mb-3">Professional Summary</h4>
+                          <div className="space-y-2">
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">Total Experience:</span>
+                              <span className="ml-2 text-sm text-gray-900">{selectedAnalysis.total_experience_years} years</span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">Companies Worked:</span>
+                              <span className="ml-2 text-sm text-gray-900">{selectedAnalysis.total_companies_worked}</span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">Current Company:</span>
+                              <span className="ml-2 text-sm text-gray-900">{selectedAnalysis.current_company || 'Not specified'}</span>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">Current Position:</span>
+                              <span className="ml-2 text-sm text-gray-900">{selectedAnalysis.current_position || 'Not specified'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Skills */}
+                        <div className="bg-white border border-gray-200 rounded-lg p-4">
+                          <h4 className="text-md font-semibold text-gray-900 mb-3">Extracted Skills</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedAnalysis.skills_extracted?.map((skill, index) => (
+                              <span key={index} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                {skill}
+                              </span>
+                            )) || <span className="text-sm text-gray-500">No skills extracted</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Previous Positions */}
+                      {selectedAnalysis.previous_positions && selectedAnalysis.previous_positions.length > 0 && (
+                        <div className="mt-6 bg-white border border-gray-200 rounded-lg p-4">
+                          <h4 className="text-md font-semibold text-gray-900 mb-3">Work Experience</h4>
+                          <div className="space-y-4">
+                            {selectedAnalysis.previous_positions.map((position, index) => (
+                              <div key={index} className="border-l-4 border-indigo-200 pl-4">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h5 className="text-sm font-medium text-gray-900">{position.position}</h5>
+                                    <p className="text-sm text-gray-600">{position.company}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-xs text-gray-500">{position.start_date} - {position.end_date}</p>
+                                    <p className="text-xs text-gray-500">{position.duration_months} months</p>
+                                  </div>
+                                </div>
+                                {position.responsibilities && position.responsibilities.length > 0 && (
+                                  <ul className="mt-2 list-disc list-inside text-xs text-gray-600">
+                                    {position.responsibilities.slice(0, 3).map((resp, respIndex) => (
+                                      <li key={respIndex}>{resp}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Education */}
+                      {selectedAnalysis.education && selectedAnalysis.education.length > 0 && (
+                        <div className="mt-6 bg-white border border-gray-200 rounded-lg p-4">
+                          <h4 className="text-md font-semibold text-gray-900 mb-3">Education</h4>
+                          <div className="space-y-3">
+                            {selectedAnalysis.education.map((edu, index) => (
+                              <div key={index} className="flex justify-between items-center">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{edu.degree}</p>
+                                  <p className="text-sm text-gray-600">{edu.institution}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm text-gray-900">{edu.graduation_year}</p>
+                                  {edu.grade && <p className="text-xs text-gray-500">{edu.grade}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Analysis Metadata */}
+                      <div className="mt-6 bg-gray-50 rounded-lg p-4">
+                        <h4 className="text-md font-semibold text-gray-900 mb-3">Analysis Information</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Processed:</span>
+                            <span className="ml-2 text-gray-900">{new Date(selectedAnalysis.analysis_metadata.processed_at).toLocaleString()}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">AI Model:</span>
+                            <span className="ml-2 text-gray-900">{selectedAnalysis.analysis_metadata.ai_model_used}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Confidence:</span>
+                            <span className="ml-2 text-gray-900">{(selectedAnalysis.analysis_metadata.confidence_score * 100).toFixed(1)}%</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Processing Time:</span>
+                            <span className="ml-2 text-gray-900">{selectedAnalysis.analysis_metadata.processing_time_ms}ms</span>
+                          </div>
+                        </div>
+                        {selectedAnalysis.analysis_metadata.processingNotes && selectedAnalysis.analysis_metadata.processingNotes.length > 0 && (
+                          <div className="mt-3">
+                            <span className="text-sm text-gray-600">Processing Notes:</span>
+                            <ul className="mt-1 list-disc list-inside text-xs text-gray-600">
+                              {selectedAnalysis.analysis_metadata.processingNotes.map((note, index) => (
+                                <li key={index}>{note}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={closeAnalysisModal}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Job Offer Email Modal */}
+      {selectedApplication && (
+        <JobOfferEmailModal
+          isOpen={isEmailModalOpen}
+          onClose={() => {
+            setIsEmailModalOpen(false);
+            setSelectedApplication(null);
+          }}
+          onSend={handleEmailSend}
+          candidateName={selectedApplication?.candidateName || ''}
+          jobTitle={job?.title || ''}
+          applicationId={selectedApplication?.id.toString() || ''}
+        />
+      )}
+
+      {/* Status Change Popover - Fixed Overlay */}
+      {openStatusDropdownId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 w-full max-w-md transform transition-all duration-300 ease-out scale-100 opacity-100">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Change Application Status</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Application #{openStatusDropdownId} • Current: <span className="font-medium text-indigo-600">{applications.find(app => app.id === openStatusDropdownId)?.status}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setOpenStatusDropdownId(null)}
+                  className="text-gray-400 hover:text-gray-600 hover:bg-white hover:bg-opacity-50 rounded-lg p-2 transition-all duration-150"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="max-h-96 overflow-y-auto py-4">
+              <div className="px-6 space-y-2">
+                {[
+                  { value: 'APPLIED', label: 'Applied', icon: '📝', color: 'text-blue-600', bgColor: 'hover:bg-blue-50', desc: 'Application received and pending review' },
+                  { value: 'REVIEWED', label: 'Reviewed', icon: '👀', color: 'text-purple-600', bgColor: 'hover:bg-purple-50', desc: 'Application has been reviewed by HR' },
+                  { value: 'SHORTLISTED', label: 'Shortlisted', icon: '⭐', color: 'text-indigo-600', bgColor: 'hover:bg-indigo-50', desc: 'Candidate selected for next round' },
+                  { value: 'INTERVIEWING', label: 'Interviewing', icon: '🎤', color: 'text-yellow-600', bgColor: 'hover:bg-yellow-50', desc: 'Interview process is ongoing' },
+                  { value: 'OFFERED', label: 'Offered', icon: '🎉', color: 'text-green-600', bgColor: 'hover:bg-green-50', desc: 'Job offer has been extended' },
+                  { value: 'REJECTED', label: 'Rejected', icon: '❌', color: 'text-red-600', bgColor: 'hover:bg-red-50', desc: 'Application has been rejected' },
+                  { value: 'WITHDRAWN', label: 'Withdrawn', icon: '🔙', color: 'text-gray-600', bgColor: 'hover:bg-gray-50', desc: 'Candidate withdrew application' }
+                ].map((status) => {
+                  const currentApplication = applications.find(app => app.id === openStatusDropdownId);
+                  const isCurrentStatus = currentApplication?.status === status.value;
+                  
+                  return (
+                    <button
+                      key={status.value}
+                      onClick={() => {
+                        if (openStatusDropdownId && !isCurrentStatus) {
+                          handleStatusChange(openStatusDropdownId, status.value);
+                          setOpenStatusDropdownId(null);
+                        }
+                      }}
+                      disabled={isCurrentStatus}
+                      className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center space-x-4 ${
+                        isCurrentStatus 
+                          ? 'bg-indigo-50 border-indigo-200 cursor-not-allowed opacity-75' 
+                          : `border-gray-100 ${status.bgColor} hover:border-gray-200 cursor-pointer hover:shadow-md transform hover:scale-[1.02]`
+                      }`}
+                    >
+                      <div className="flex-shrink-0">
+                        <span className="text-2xl">{status.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className={`text-base font-semibold ${status.color}`}>
+                            {status.label}
+                          </p>
+                          {isCurrentStatus && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                              <div className="w-2 h-2 bg-indigo-400 rounded-full mr-1.5"></div>
+                              Current Status
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 leading-relaxed">{status.desc}</p>
+                      </div>
+                      {!isCurrentStatus && (
+                        <div className="flex-shrink-0">
+                          <ArrowsUpDownIcon className="h-5 w-5 text-gray-400" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  💡 Status changes are automatically logged and tracked
+                </p>
+                <button
+                  onClick={() => setOpenStatusDropdownId(null)}
+                  className="text-sm text-gray-500 hover:text-gray-700 font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

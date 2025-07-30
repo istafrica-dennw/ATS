@@ -80,13 +80,13 @@ const InterviewListPage: React.FC = () => {
   const getStatusColor = (status: InterviewStatus) => {
     switch (status) {
       case InterviewStatus.ASSIGNED:
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+        return 'bg-yellow-100 text-yellow-800';
       case InterviewStatus.IN_PROGRESS:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+        return 'bg-blue-100 text-blue-800';
       case InterviewStatus.COMPLETED:
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+        return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -126,20 +126,20 @@ const InterviewListPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate('/interviewer')}
-            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4 transition-colors"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeftIcon className="h-5 w-5 mr-2" />
             Back to Dashboard
@@ -147,8 +147,8 @@ const InterviewListPage: React.FC = () => {
           
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Interviews</h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
+              <h1 className="text-3xl font-bold text-gray-900">My Interviews</h1>
+              <p className="mt-2 text-gray-600">
                 Manage and track all your assigned interviews
               </p>
             </div>
@@ -157,25 +157,25 @@ const InterviewListPage: React.FC = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 rounded-md p-4">
-            <p className="text-red-800 dark:text-red-300">{error}</p>
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-800">{error}</p>
           </div>
         )}
 
         {/* Filters */}
-        <div className="mb-6 bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
+        <div className="mb-6 bg-white shadow rounded-lg p-6">
           <div className="flex items-center space-x-4">
-            <FunnelIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Filters</h3>
+            <FunnelIcon className="h-5 w-5 text-gray-400" />
+            <h3 className="text-lg font-medium text-gray-900">Filters</h3>
           </div>
           
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as InterviewStatus | 'all')}
-                className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="all">All ({statusCounts.all})</option>
                 <option value={InterviewStatus.ASSIGNED}>Assigned ({statusCounts.assigned})</option>
@@ -185,33 +185,33 @@ const InterviewListPage: React.FC = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
+              <label className="block text-sm font-medium text-gray-700">Search</label>
               <input
                 type="text"
                 placeholder="Search by candidate name, job title, or interview type..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
           </div>
         </div>
 
         {/* Interview List */}
-        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">
               Interviews ({filteredInterviews.length})
             </h2>
           </div>
 
           {filteredInterviews.length === 0 ? (
             <div className="px-6 py-12 text-center">
-              <CheckCircleIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+              <CheckCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
                 {statusFilter === 'all' ? 'No interviews found' : `No ${statusFilter.toLowerCase().replace('_', ' ')} interviews`}
               </h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-sm text-gray-500">
                 {searchTerm 
                   ? 'Try adjusting your search terms or filters.' 
                   : 'Interviews will appear here when they are assigned to you.'
@@ -219,13 +219,13 @@ const InterviewListPage: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-gray-200">
               {filteredInterviews.map((interview) => (
-                <div key={interview.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <div key={interview.id} className="px-6 py-4 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <h3 className="text-sm font-medium text-gray-900">
                           {interview.application.candidateName}
                         </h3>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(interview.status)}`}>
@@ -234,7 +234,7 @@ const InterviewListPage: React.FC = () => {
                         </span>
                       </div>
                       
-                      <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
                         <span className="font-medium">{interview.application.jobTitle}</span>
                         <span>•</span>
                         <span>{interview.skeletonName}</span>
@@ -249,7 +249,7 @@ const InterviewListPage: React.FC = () => {
                       </div>
                       
                       {interview.completedAt && (
-                        <div className="mt-1 text-sm text-green-600 dark:text-green-400">
+                        <div className="mt-1 text-sm text-green-600">
                           Completed: {formatDate(interview.completedAt)}
                         </div>
                       )}
@@ -259,7 +259,7 @@ const InterviewListPage: React.FC = () => {
                       {interview.status === InterviewStatus.ASSIGNED && (
                         <button
                           onClick={() => handleStartInterview(interview.id)}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-800/50 transition-colors"
+                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
                         >
                           <PlayIcon className="h-3 w-3 mr-1" />
                           Start
@@ -268,7 +268,7 @@ const InterviewListPage: React.FC = () => {
                       
                       <button
                         onClick={() => navigate(`/interviewer/interviews/${interview.id}`)}
-                        className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                        className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                       >
                         <EyeIcon className="h-3 w-3 mr-1" />
                         View

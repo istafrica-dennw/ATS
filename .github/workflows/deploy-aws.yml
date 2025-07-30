@@ -18,15 +18,7 @@ on:
         default: false
         type: boolean
   
-  # Automatic trigger on push to main branch
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
-  
-  # Trigger on pull request merge to main
+  # Trigger ONLY on pull request MERGE to main (not on regular push)
   pull_request:
     branches: [ main ]
     types: [closed]
@@ -41,7 +33,8 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    if: ${{ !inputs.skip_tests }}
+    # Only run if PR was merged or manual trigger (and tests not skipped for manual triggers)
+    if: ${{ (github.event.pull_request.merged == true) || (github.event_name == 'workflow_dispatch' && !inputs.skip_tests) }}
     
     steps:
       - name: Checkout code
@@ -104,7 +97,8 @@ jobs:
     name: Deploy to AWS EC2
     runs-on: ubuntu-latest
     needs: test
-    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    # Only run if PR was merged or manual trigger
+    if: ${{ (github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch') && (always() && (needs.test.result == 'success' || needs.test.result == 'skipped')) }}
     
     environment: ${{ inputs.environment || 'production' }}
     

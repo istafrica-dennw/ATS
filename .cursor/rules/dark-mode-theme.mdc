@@ -1,0 +1,106 @@
+---
+description: add dark mode to the application pages
+globs: 
+alwaysApply: true
+---
+
+## Dark Mode Implementation Guidelines
+
+### System Detection & Configuration
+- Use `darkMode: 'media'` in `tailwind.config.js` for automatic system preference detection
+- Never use manual toggle - always follow system dark mode preference
+
+### Page Layout Guidelines
+- **NO additional background layers**: Avoid adding any additional dark mode layers to page containers
+- **Card-based layout**: Structure content in individual cards with dark mode variants
+- **Consistent spacing**: Use `mb-6` or `mb-8` between major sections
+- **Container consistency**: Follow the same pattern as UserManagementPage and EmailManagementPage
+
+### Dark Mode Class Patterns
+
+#### Text Colors
+- **Primary text (titles, headings)**: `text-gray-900 dark:text-gray-100`
+- **Secondary text (descriptions, labels)**: `text-gray-500 dark:text-gray-400` 
+- **Muted text (placeholders, disabled)**: `text-gray-400 dark:text-gray-500`
+- **Error text**: `text-red-600 dark:text-red-400`
+- **Success text**: `text-green-600 dark:text-green-400`
+
+#### Background Colors
+- **Card backgrounds**: `bg-white dark:bg-gray-800`
+- **Card sections**: `bg-gray-50 dark:bg-gray-700/50` for subsections within cards
+- **Table headers**: `bg-gray-50 dark:bg-gray-700/50`
+- **Hover states**: `hover:bg-gray-50 dark:hover:bg-gray-700/50`
+- **Form sections**: `bg-gray-50 dark:bg-gray-700/50` for grouped form elements
+- **⚠️ AVOID**: Adding page-level background colors to main containers
+
+#### Borders & Dividers
+- **Card borders**: `border-gray-200/50 dark:border-gray-700/50`
+- **Input borders**: `border-gray-300 dark:border-gray-600`
+- **Dividers**: `divide-gray-200 dark:divide-gray-700`
+
+#### Shadows
+- **Card shadows**: `shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)]`
+- **Hover shadows**: `hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.3),0_10px_10px_-5px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)]`
+- **Input shadows**: `shadow-sm hover:shadow-md`
+
+#### Status Badges
+- **Success**: `bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300`
+- **Error**: `bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300`
+- **Warning**: `bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300`
+- **Info**: `bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300`
+
+#### Form Elements
+- **Input fields**: `bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400`
+- **Form labels**: `text-gray-700 dark:text-gray-300` (lighter gray, not completely white)
+- **Focus states**: `focus:ring-indigo-500 dark:focus:ring-indigo-400`
+- **Remove browser outlines**: Always use `focus:outline-none` with custom focus rings
+- **Close icon on modals**: Always use the close icon button on all modals. The size and style standard should the the one in AddUserModal.
+
+#### Rich Text Editors (ReactQuill)
+- **Container**: `border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 overflow-hidden`
+- **Dark mode implementation**: Use React.useEffect to inject CSS styles for Quill toolbar visibility
+- **Toolbar colors**: Light stroke/fill `rgb(75 85 99)`, Dark stroke/fill `rgb(156 163 175)` (gray-400)
+- **Background colors**: Light toolbar `white`, Dark toolbar `rgb(55 65 81)`
+- **Text colors**: Light editor `rgb(17 24 39)`, Dark editor `rgb(209 213 219)` (gray-300)
+- **Picker options**: Ensure dropdown menus have proper dark mode styling
+
+#### Buttons
+- **Primary buttons**: `bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700`
+- **Secondary buttons**: `bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300`
+- **Enhanced Add buttons**: `bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 text-white font-medium transform hover:scale-[1.02]`
+
+#### Icons
+- **Status icons**: Add dark variants (e.g., `text-green-500 dark:text-green-400`)
+- **Icon backgrounds**: Use gradient backgrounds with dark variants
+
+### Modal Guidelines
+- **Remove scrolling**: Only content sections should scroll, not entire modals
+- **Responsive sizing**: Use viewport-based max-widths (`max-w-[95vw] sm:max-w-[90vw]`)
+- **Always visible close button**: Use `z-10` and proper positioning
+- **Consistent padding**: Use responsive padding (`px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6`)
+
+### Loading States
+- **Skeleton loaders**: `bg-gray-300 dark:bg-gray-600` for primary, `bg-gray-200 dark:bg-gray-700` for secondary
+- **Spinner colors**: `border-indigo-500 dark:border-indigo-400`
+
+### Layout Cards
+- **Header cards**: Wrap page headers in cards with consistent styling
+- **Section cards**: Use cards for distinct content sections
+- **Hover effects**: Add `transform hover:scale-[1.02]` for interactive cards
+
+### Best Practices
+- **Always test both modes**: Verify all components work in light and dark themes
+- **Consistent spacing**: Use standardized spacing scale (2, 3, 4, 6, 8)
+- **Typography scaling**: Use responsive text sizes (`text-sm sm:text-base`)
+- **Shadow consistency**: Use custom shadows instead of default Tailwind shadows for dark mode
+- **Performance**: Group dark mode classes logically for better readability
+
+### Required Implementation
+- Every new component MUST include comprehensive dark mode variants
+- All admin pages should follow the sectioned card layout pattern
+- Form inputs must have consistent sizing and focus states
+- Status indicators must use the standardized badge patterns
+- Form inputs must have consistent sizing and focus states
+- Status indicators must use the standardized badge patterns
+
+---

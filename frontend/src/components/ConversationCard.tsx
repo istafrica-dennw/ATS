@@ -118,29 +118,29 @@ export function ConversationCard({ conversation, type, onAssign, onReply }: Conv
   };
 
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow duration-200 border-l-4 border-l-blue-500">
+    <Card className="p-4 hover:shadow-md dark:hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] transition-all duration-200 border-l-4 border-l-blue-500 dark:border-l-blue-400 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
           {/* Avatar */}
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm shadow-md">
             {conversation.avatar || getAvatarInitials(conversation.candidateName)}
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-gray-900 truncate">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 {conversation.candidateName}
               </h4>
-              <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
+              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 whitespace-nowrap">
                 {dynamicTime}
               </span>
             </div>
-            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
               {getDisplayMessage()}
             </p>
             {conversation.unreadCount && conversation.unreadCount > 0 && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 mt-2">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 mt-2">
                 {conversation.unreadCount} unread
               </span>
             )}
@@ -148,12 +148,22 @@ export function ConversationCard({ conversation, type, onAssign, onReply }: Conv
         </div>
         <div className="flex items-center gap-2 ml-3">
           {type === "unassigned" ? (
-            <Button size="sm" variant="outline" className="text-xs" onClick={handleAssignClick}>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="text-xs bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" 
+              onClick={handleAssignClick}
+            >
               <UserIcon className="h-3 w-3 mr-1" />
               Support
             </Button>
           ) : (
-            <Button size="sm" variant="outline" className="text-xs" onClick={handleReplyClick}>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="text-xs bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600" 
+              onClick={handleReplyClick}
+            >
               <ChatBubbleLeftRightIcon className="h-3 w-3 mr-1" />
               Reply
             </Button>

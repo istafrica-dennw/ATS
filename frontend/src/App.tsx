@@ -181,22 +181,32 @@ const MUIThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children })
 const URLTokenHandler: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { setToken } = useAuth();
+  const { manuallySetToken } = useAuth();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('token');
     
     if (token) {
-      console.log('Token found in URL, setting token:', token);
-      setToken(token);
+      console.log('URLTokenHandler - Token found in URL, authenticating user:', token.substring(0, 15) + '...');
       
-      // Remove token from URL for security
-      urlParams.delete('token');
-      const newUrl = location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-      navigate(newUrl, { replace: true });
+      // Use manuallySetToken to properly validate and fetch user data
+      manuallySetToken(token).then(() => {
+        console.log('URLTokenHandler - Successfully authenticated with URL token');
+        
+        // Remove token from URL for security
+        urlParams.delete('token');
+        const newUrl = location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        navigate(newUrl, { replace: true });
+      }).catch((error) => {
+        console.error('URLTokenHandler - Failed to authenticate with URL token:', error);
+        // Still remove the token from URL even if authentication failed
+        urlParams.delete('token');
+        const newUrl = location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        navigate(newUrl, { replace: true });
+      });
     }
-  }, [location, navigate, setToken]);
+  }, [location, navigate, manuallySetToken]);
 
   return null;
 };
@@ -257,48 +267,35 @@ const App: React.FC = () => {
               {/* Dashboard route - needs to be accessible with token in URL */}
               <Route path="/dashboard" element={<DashboardPage />} />
 
-              {/* Main authenticated routes using MainLayout */}
+              {/* Candidate routes */}
               <Route
-                path="/main"
+                path="/candidate"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={[Role.CANDIDATE]}>
                     <MainLayout>
                       <Outlet />
                     </MainLayout>
                   </ProtectedRoute>
                 }
               >
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="profile/settings" element={<ProfileSettingsPage />} />
-                <Route path="profile/security" element={<SecuritySettingsPage />} />
+                <Route index element={<CandidateDashboardPage />} />
+                <Route path="2fa" element={<TwoFactorAuthDashboard />} />
+              </Route>
 
-                {/* Candidate routes */}
-                <Route
-                  path="candidate"
-                  element={
-                    <ProtectedRoute allowedRoles={[Role.CANDIDATE]}>
+              {/* Interviewer routes */}
+              <Route
+                path="/interviewer"
+                element={
+                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER, Role.ADMIN]}>
+                    <MainLayout>
                       <Outlet />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<CandidateDashboardPage />} />
-                  <Route path="2fa" element={<TwoFactorAuthDashboard />} />
-                </Route>
-
-                {/* Interviewer routes */}
-                <Route
-                  path="interviewer"
-                  element={
-                    <ProtectedRoute allowedRoles={[Role.INTERVIEWER, Role.HIRING_MANAGER, Role.ADMIN]}>
-                      <Outlet />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<InterviewerDashboardPage />} />
-                  <Route path="interviews" element={<InterviewListPage />} />
-                  <Route path="interviews/:interviewId" element={<InterviewDetailPage />} />
-                </Route>
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<InterviewerDashboardPage />} />
+                <Route path="interviews" element={<InterviewListPage />} />
+                <Route path="interviews/:interviewId" element={<InterviewDetailPage />} />
               </Route>
 
               {/* Profile routes accessible from MainLayout */}

@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Card } from '../ui/card';
+import LinkedInLoginButton from './LinkedInLoginButton';
 
 const SignupForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -191,6 +192,25 @@ const SignupForm: React.FC = () => {
             </div>
           </form>
         </Card>
+
+        {/* LinkedIn Sign Up Option */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <LinkedInLoginButton 
+              text="Sign up with LinkedIn" 
+              className="shadow-lg hover:shadow-xl transition-shadow duration-200" 
+            />
+          </div>
+        </div>
 
         {/* Additional Features */}
         <div className="text-center">

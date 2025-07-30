@@ -55,7 +55,7 @@ services:
       dockerfile: Dockerfile
     container_name: ats-backend
     ports:
-      - "8081:8081"
+      - "8080:8080"
       - "9092:9092"
     env_file:
       - .env

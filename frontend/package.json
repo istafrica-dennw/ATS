@@ -60,5 +60,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://backend:8081"
+  "proxy": "http://backend:8080"
 }

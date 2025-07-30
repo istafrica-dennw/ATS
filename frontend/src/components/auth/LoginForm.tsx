@@ -231,7 +231,7 @@ const LoginForm: React.FC = () => {
           </div>
 
           <div className="mt-6">
-            <LinkedInLoginButton />
+            <LinkedInLoginButton className="shadow-lg hover:shadow-xl transition-shadow duration-200" />
           </div>
         </div>
         

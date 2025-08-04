@@ -1,3 +1,4 @@
+// Enhanced with comprehensive dark mode support and theming
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon, CameraIcon } from '@heroicons/react/24/outline';

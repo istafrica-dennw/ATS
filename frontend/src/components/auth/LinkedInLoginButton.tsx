@@ -5,7 +5,7 @@ interface LinkedInLoginButtonProps {
   text?: string;
 }
 
-const LinkedInLoginButton: React.FC<LinkedInLoginButtonProps> = ({ className = '', text = 'Sign in with LinkedIn' }) => {
+const LinkedInLoginButton: React.FC<LinkedInLoginButtonProps> = ({ className = '', text = 'Continue with LinkedIn' }) => {
   const handleLinkedInLogin = () => {
     // Use REACT_APP_API_URL environment variable, remove /api suffix if present
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';

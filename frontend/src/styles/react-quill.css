@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer components {
+    .ql-container {
+        @apply bg-white text-black border border-gray-300 rounded-b-lg overflow-hidden;
+    }
+
+    .ql-toolbar {
+        @apply bg-gray-100 border-b border-gray-300 rounded-t-lg;
+    }
+
+    .ql-editor {
+        @apply min-h-[200px] p-4 text-gray-800;
+    }
+}
+
+/* Dark mode overrides using system preference */
+@media (prefers-color-scheme: dark) {
+    .ql-container {
+        @apply bg-gray-700 text-gray-100 border-gray-600 rounded-b-lg overflow-hidden;
+    }
+
+    .ql-toolbar {
+        @apply border-gray-600 rounded-t-lg overflow-hidden;
+        background-color: rgb(17 24 39) !important; /* gray-900 for toolbar */
+        border: 1px solid rgb(75 85 99) !important; /* gray-600 border */
+        border-bottom: 1px solid rgb(75 85 99) !important;
+    }
+
+    .ql-editor {
+        @apply text-gray-100 bg-gray-700 overflow-hidden;
+    }
+
+    /* Dark mode toolbar button styling */
+    .ql-toolbar .ql-formats button {
+        @apply text-gray-100 !important;
+    }
+
+    .ql-toolbar .ql-formats button:hover {
+        background-color: rgb(31 41 55) !important; /* gray-800 on hover */
+    }
+
+    .ql-toolbar .ql-formats button.ql-active {
+        background-color: rgb(55 65 81) !important; /* gray-700 for active */
+        @apply text-white !important;
+    }
+
+    /* Dark mode toolbar icon styling - use stroke for outlines, not fill */
+    .ql-toolbar .ql-formats button svg {
+        fill: none !important;
+        stroke: rgb(243 244 246) !important;
+        stroke-width: 1.5 !important;
+    }
+
+    .ql-toolbar .ql-formats button svg path,
+    .ql-toolbar .ql-formats button svg line,
+    .ql-toolbar .ql-formats button svg polyline,
+    .ql-toolbar .ql-formats button svg rect,
+    .ql-toolbar .ql-formats button svg circle {
+        fill: none !important;
+        stroke: rgb(243 244 246) !important;
+        stroke-width: 1.5 !important;
+    }
+
+    /* Special handling for icons that need fill (like solid shapes) */
+    .ql-toolbar .ql-formats button svg .ql-fill {
+        fill: rgb(243 244 246) !important;
+        stroke: none !important;
+    }
+
+    /* Dark mode dropdown styling - Fix heading dropdown */
+    .ql-toolbar .ql-formats .ql-picker {
+        @apply text-gray-100 !important;
+    }
+
+    .ql-toolbar .ql-formats .ql-picker-label {
+        @apply text-gray-100 !important;
+        border: 1px solid rgb(107 114 128) !important; /* gray-500 border */
+        background-color: rgb(17 24 39) !important; /* gray-900 background */
+        border-radius: 4px !important;
+        padding: 4px 8px !important;
+    }
+
+    .ql-toolbar .ql-formats .ql-picker-label:hover {
+        background-color: rgb(31 41 55) !important; /* gray-800 on hover */
+    }
+
+    .ql-toolbar .ql-formats .ql-picker-options {
+        @apply bg-gray-800 border-gray-600 !important;
+        border: 1px solid rgb(75 85 99) !important; /* gray-600 border */
+        border-radius: 6px !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+        overflow: hidden !important;
+        z-index: 1000 !important;
+    }
+
+    .ql-toolbar .ql-formats .ql-picker-item {
+        @apply text-gray-100 !important;
+        padding: 8px 12px !important;
+        border-bottom: 1px solid rgb(75 85 99) !important;
+    }
+
+    .ql-toolbar .ql-formats .ql-picker-item:hover {
+        @apply bg-gray-700 !important;
+    }
+
+    .ql-toolbar .ql-formats .ql-picker-item:last-child {
+        border-bottom: none !important;
+    }
+
+    /* Ensure toolbar icon visibility with proper stroke/fill */
+    .ql-toolbar button {
+        color: rgb(243 244 246) !important;
+    }
+
+    .ql-toolbar .ql-stroke {
+        stroke: rgb(243 244 246) !important;
+        fill: none !important;
+    }
+
+    .ql-toolbar .ql-fill {
+        fill: rgb(243 244 246) !important;
+        stroke: none !important;
+    }
+
+    /* Handle specific Quill icon classes */
+    .ql-toolbar .ql-bold svg,
+    .ql-toolbar .ql-italic svg,
+    .ql-toolbar .ql-underline svg,
+    .ql-toolbar .ql-strike svg,
+    .ql-toolbar .ql-list svg,
+    .ql-toolbar .ql-indent svg,
+    .ql-toolbar .ql-link svg,
+    .ql-toolbar .ql-image svg,
+    .ql-toolbar .ql-clean svg {
+        fill: none !important;
+        stroke: rgb(243 244 246) !important;
+        stroke-width: 1.5 !important;
+    }
+
+    /* Fix dropdown arrow */
+    .ql-toolbar .ql-formats .ql-picker-label::before {
+        color: rgb(243 244 246) !important;
+    }
+
+    /* Remove any unwanted overflow */
+    .ql-container,
+    .ql-toolbar,
+    .ql-editor {
+        overflow: visible !important;
+    }
+
+    .ql-toolbar .ql-formats .ql-picker-options {
+        overflow: hidden !important;
+    }
+}

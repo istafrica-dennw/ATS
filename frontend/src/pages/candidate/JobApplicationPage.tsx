@@ -54,10 +54,11 @@ const JobApplicationPage: React.FC = () => {
             display: 'flex', 
             justifyContent: 'center', 
             alignItems: 'center', 
-            minHeight: '50vh' 
+            minHeight: '50vh',
+            backgroundColor: 'background.default'
           }}
         >
-          <CircularProgress />
+          <CircularProgress sx={{ color: 'primary.main' }} />
         </Box>
       </MainLayout>
     );
@@ -66,15 +67,29 @@ const JobApplicationPage: React.FC = () => {
   if (error || !job) {
     return (
       <MainLayout>
-        <Box sx={{ p: 3 }}>
-          <Alert severity="error">
+        <Box sx={{ p: 3, backgroundColor: 'background.default' }}>
+          <Alert 
+            severity="error"
+            sx={{
+              backgroundColor: 'error.light',
+              color: 'error.contrastText',
+              '& .MuiAlert-icon': {
+                color: 'error.main'
+              }
+            }}
+          >
             {error || 'Job not found'}
           </Alert>
           <Box sx={{ mt: 2 }}>
             <Typography 
               variant="body2" 
-              color="primary" 
-              sx={{ cursor: 'pointer' }}
+              sx={{ 
+                cursor: 'pointer',
+                color: 'primary.main',
+                '&:hover': {
+                  color: 'primary.dark'
+                }
+              }}
               onClick={() => navigate('/jobs')}
             >
               Back to Jobs
@@ -87,12 +102,34 @@ const JobApplicationPage: React.FC = () => {
   
   return (
     <MainLayout>
-      <Box sx={{ maxWidth: 'lg', mx: 'auto', p: 3 }}>
-        <Typography variant="h4" gutterBottom>
+      <Box sx={{ 
+        maxWidth: 'lg', 
+        mx: 'auto', 
+        p: 3,
+        backgroundColor: 'background.default',
+        minHeight: '100vh'
+      }}>
+        <Typography 
+          variant="h4" 
+          gutterBottom
+          sx={{
+            color: 'text.primary',
+            fontWeight: 600,
+            mb: 2
+          }}
+        >
           Apply for Position
         </Typography>
         
-        <Typography variant="subtitle1" sx={{ mb: 3 }}>
+        <Typography 
+          variant="subtitle1" 
+          sx={{ 
+            mb: 3,
+            color: 'text.secondary',
+            fontSize: '1.1rem',
+            lineHeight: 1.5
+          }}
+        >
           Complete the application form below to apply for the {job.title} position at {job.department || 'the department'}.
         </Typography>
         

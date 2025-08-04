@@ -1,4 +1,4 @@
-name: Deploy ATS to AWS EC2
+name: Deploy ATS to AWS EC2 # Enhanced deployment with latest dark mode improvements
 
 on:
   # Manual trigger

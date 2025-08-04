@@ -1,3 +1,4 @@
+// Enhanced with comprehensive dark mode styling and improved UX
 import React from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
 import {

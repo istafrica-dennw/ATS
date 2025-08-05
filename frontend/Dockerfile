@@ -11,8 +11,8 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 ENV REACT_APP_SOCKET_URL=$REACT_APP_SOCKET_URL
 
 COPY package*.json ./
-# Increase memory limit and install dependencies
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Increase memory limit and install dependencies (4GB RAM instance)
+ENV NODE_OPTIONS="--max-old-space-size=3072"
 RUN npm install --legacy-peer-deps
 COPY . .
 RUN npm run build

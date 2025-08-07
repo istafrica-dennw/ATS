@@ -14,7 +14,10 @@ import {
   DocumentCheckIcon,
   CheckBadgeIcon,
   Bars3Icon,
-  XMarkIcon
+  XMarkIcon,
+  BuildingOfficeIcon,
+  UsersIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 interface Job {
@@ -123,12 +126,15 @@ const LandingPage: React.FC = () => {
               <div className="md:hidden flex items-center">
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-2"
+                  className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200"
+                  aria-expanded="false"
+                  aria-label="Toggle navigation menu"
                 >
+                  <span className="sr-only">Open main menu</span>
                   {mobileMenuOpen ? (
-                    <XMarkIcon className="h-6 w-6" />
+                    <XMarkIcon className="h-6 w-6 transform rotate-0 transition-transform duration-200" />
                   ) : (
-                    <Bars3Icon className="h-6 w-6" />
+                    <Bars3Icon className="h-6 w-6 transform rotate-0 transition-transform duration-200" />
                   )}
                 </button>
               </div>
@@ -136,55 +142,96 @@ const LandingPage: React.FC = () => {
           </div>
 
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-              <div className="px-2 pt-2 pb-3 space-y-1">
-                <a
+            <div className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-40 md:hidden" 
+                 onClick={() => setMobileMenuOpen(false)} />
+          )}
+
+          <div className={`fixed inset-y-0 right-0 w-full max-w-sm bg-white dark:bg-gray-900 shadow-2xl dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] transform transition-transform duration-300 ease-in-out z-50 md:hidden ${
+            mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}>
+            <div className="flex items-center justify-between px-6 py-6 bg-gray-50 dark:bg-gray-800/50">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-500 dark:to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                  <span className="text-white font-bold text-sm">ATS</span>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">ATS System</h2>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-full p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200"
+                aria-label="Close menu"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-6 overflow-y-auto h-full">
+              <div className="space-y-2 mb-8">
+                                <a
                   href="#about"
-                  className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                  className="group flex items-center px-0 py-4 text-lg font-medium text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <BuildingOfficeIcon className="h-6 w-6 mr-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
                   About
                 </a>
+                
                 <a
                   href="#careers"
-                  className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                  className="group flex items-center px-0 py-4 text-lg font-medium text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <UsersIcon className="h-6 w-6 mr-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
                   Careers
                 </a>
+                
                 <a
                   href="#contact"
-                  className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                  className="group flex items-center px-0 py-4 text-lg font-medium text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <ChatBubbleLeftRightIcon className="h-6 w-6 mr-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
                   Contact
                 </a>
+                
                 <Link
                   to="/jobs"
-                  className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
+                  className="group flex items-center px-0 py-4 text-lg font-medium text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <BriefcaseIcon className="h-6 w-6 mr-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors" />
                   Jobs
                 </Link>
-                <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4">
-                  <Link
-                    to="/login"
-                    className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="block mt-2 mx-3 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 text-white rounded-md text-base font-medium text-center transform hover:scale-[1.02] transition-all duration-200"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Get Started
-                  </Link>
-                </div>
+              </div>
+
+              <div className="space-y-4 mt-auto pt-6">
+                <Link
+                  to="/login"
+                  className="flex items-center justify-center px-6 py-4 text-base font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl transition-all duration-200 transform hover:scale-[1.02]"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                
+                <Link
+                  to="/signup"
+                  className="flex items-center justify-center px-6 py-4 text-base font-semibold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Get Started Free
+                </Link>
+              </div>
+
+              <div className="mt-8 pt-6 text-center border-t border-gray-100 dark:border-gray-700">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+                  Streamline your hiring process
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Trusted by 1000+ companies worldwide
+                </p>
               </div>
             </div>
-          )}
+          </div>
         </nav>
       )}
 

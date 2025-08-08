@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheckIcon, DocumentTextIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+  import ScrollToTopButton from '../components/common/ScrollToTopButton'; 
 
 const PrivacyPolicyPage: React.FC = () => {
   return (
@@ -278,6 +279,8 @@ const PrivacyPolicyPage: React.FC = () => {
           </div>
         </div>
       </footer>
+      
+      <ScrollToTopButton />
     </div>
   );
 };

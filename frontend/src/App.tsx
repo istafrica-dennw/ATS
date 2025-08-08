@@ -33,6 +33,9 @@ import JobApplicationPage from './pages/candidate/JobApplicationPage';
 import ChatTestPage from './pages/ChatTestPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import AboutPage from './pages/AboutPage';
+import CareersPage from './pages/CareersPage';
+import ContactPage from './pages/ContactPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -65,7 +68,7 @@ const URLTokenHandler = () => {
           console.error('URLTokenHandler - Failed to process token:', error);
         });
     }
-  }, [location.search, manuallySetToken, navigate]);
+  }, [location.search, location.pathname, manuallySetToken, navigate]);
 
   return null; // This component doesn't render anything
 };
@@ -235,6 +238,9 @@ const App: React.FC = () => {
             <Route path="/jobs/:id" element={<JobDetailsPage />} />
             <Route path="/apply/:id" element={<JobApplicationPage />} />
             <Route path="/chat-test" element={<ChatTestPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/careers" element={<CareersPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
             

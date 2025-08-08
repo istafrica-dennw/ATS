@@ -29,6 +29,7 @@ import { ClockIcon as SolidClockIcon } from '@heroicons/react/24/solid';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import JobOfferEmailModal from '../../components/JobOfferEmailModal';
+import ApplicationDetailsModal from '../../components/admin/ApplicationDetailsModal';
 
 interface CustomQuestion {
   id: number;
@@ -98,6 +99,14 @@ interface ResumeAnalysis {
   };
 }
 
+interface ApplicationAnswer {
+  id: number;
+  applicationId: number;
+  questionId: number;
+  answer: string;
+  createdAt: string;
+}
+
 interface Application {
   id: number;
   jobId: number;
@@ -110,9 +119,12 @@ interface Application {
   portfolioUrl?: string;
   currentCompany?: string;
   currentPosition?: string;
+  expectedSalary?: number;
+  experienceYears?: number;
   createdAt: string;
   updatedAt: string;
   resumeAnalysis?: ResumeAnalysis;
+  answers: ApplicationAnswer[];
 }
 
 const AdminJobDetailsPage: React.FC = () => {
@@ -138,6 +150,10 @@ const AdminJobDetailsPage: React.FC = () => {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [openStatusDropdownId, setOpenStatusDropdownId] = useState<number | null>(null);
+  
+  // Application Details Modal state
+  const [isApplicationDetailsModalOpen, setIsApplicationDetailsModalOpen] = useState(false);
+  const [selectedApplicationForDetails, setSelectedApplicationForDetails] = useState<Application | null>(null);
 
   // Sorting function
   const sortApplications = (apps: Application[], criteria: 'date' | 'score', order: 'asc' | 'desc') => {
@@ -543,6 +559,17 @@ const AdminJobDetailsPage: React.FC = () => {
       fullUrl = `${backendUrl}/api${portfolioUrl}`;
     }
     window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // Handler for opening application details modal
+  const handleViewApplicationDetails = (application: Application) => {
+    setSelectedApplicationForDetails(application);
+    setIsApplicationDetailsModalOpen(true);
+  };
+
+  const handleCloseApplicationDetailsModal = () => {
+    setIsApplicationDetailsModalOpen(false);
+    setSelectedApplicationForDetails(null);
   };
   
   const getStatusBadge = (status: string) => {
@@ -1253,6 +1280,14 @@ const AdminJobDetailsPage: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           <div className="space-y-2">
+                            <button
+                              onClick={() => handleViewApplicationDetails(application)}
+                              className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+                              title="View full application details"
+                            >
+                              <EyeIcon className="h-3 w-3 mr-1" />
+                              View Application
+                            </button>
                             {application.status === 'OFFERED' && (
                               <button
                                 onClick={() => handleSendJobOfferEmail(application.id)}
@@ -1524,6 +1559,14 @@ const AdminJobDetailsPage: React.FC = () => {
             applicationId={selectedApplication?.id.toString() || ''}
           />
         )}
+
+        {/* Application Details Modal */}
+        <ApplicationDetailsModal
+          isOpen={isApplicationDetailsModalOpen}
+          onClose={handleCloseApplicationDetailsModal}
+          application={selectedApplicationForDetails}
+          jobTitle={job?.title || ''}
+        />
 
         {/* Status Change Popover - Fixed Overlay */}
         {openStatusDropdownId !== null && (

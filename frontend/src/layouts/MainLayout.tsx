@@ -56,7 +56,7 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 >
                   Jobs
                 </Link>
-                {user?.role === 'ADMIN' && (
+                {/* {user?.role === 'ADMIN' && (
                   <Link 
                     to="/admin" 
                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
@@ -67,11 +67,11 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   >
                     Admin
                   </Link>
-                )}
+                )} */}
                 
-                <div className="border-l border-gray-300 dark:border-gray-600 h-6 self-center mx-2"></div>
+                {/* <div className="border-l border-gray-300 dark:border-gray-600 h-6 self-center mx-2"></div> */}
                 
-                <Link 
+                {/* <Link 
                   to="/about" 
                   className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 >
@@ -88,7 +88,7 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 >
                   Contact
-                </Link>
+                </Link> */}
               </div>
 
               <div className="lg:hidden ml-6 flex items-center">

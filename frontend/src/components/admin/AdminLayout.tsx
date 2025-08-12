@@ -161,8 +161,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col">
-      {/* Top Navigation - Enhanced */}
-      <nav className="glass-effect shadow-xl border-b border-white/20 dark:border-gray-700/50 flex-shrink-0 relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
+      <nav className="glass-effect shadow-xl border-b border-white/20 dark:border-gray-700/50 flex-shrink-0 relative z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 dark:from-blue-400/5 dark:via-purple-400/5 dark:to-indigo-400/5"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">

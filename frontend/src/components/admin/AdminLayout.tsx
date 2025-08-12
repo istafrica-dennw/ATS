@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import UserProfileDropdown from '../common/UserProfileDropdown';
+import ThemeToggleButton from '../common/ThemeToggleButton';
 import AdminChatNotifications from './AdminChatNotifications';
 import '../../styles/sidebar.css';
 import {
@@ -33,12 +34,10 @@ const navigation = [
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Disable staggered animations after initial load
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitialLoad(false);
@@ -47,29 +46,21 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
   const SidebarContent = () => (
     <>
-      {/* Sidebar Header */}
       <div className="flex-shrink-0 flex items-center justify-between min-h-[4rem] h-16 px-3 sm:px-4 md:px-6 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 relative overflow-hidden">
         <div className="absolute inset-0 shimmer-effect"></div>
         
-        {/* Title with responsive sizing and spacing */}
         <div className="flex-1 flex justify-center md:justify-center">
           <h2 className="relative text-sm sm:text-base md:text-lg font-semibold text-white dark:text-gray-100 tracking-wide truncate max-w-full pr-2 md:pr-0">
             Admin Portal
           </h2>
         </div>
         
-        {/* Mobile close button */}
         <button
           onClick={() => setSidebarOpen(false)}
           className="md:hidden flex-shrink-0 p-1 rounded-md text-white dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-600/30 transition-colors duration-200"
@@ -78,7 +69,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </button>
       </div>
       
-      {/* Navigation */}
       <div className="flex-1 flex flex-col px-3 py-6 space-y-2 overflow-y-auto bg-white dark:bg-gray-900">
         {navigation.map((item, index) => {
           const isCurrent = location.pathname === item.href;
@@ -181,7 +171,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </Link>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <ThemeToggleButton />
               <div className="hidden md:flex items-center space-x-3">
                 <div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-400 to-green-500 dark:from-green-500 dark:to-green-600 flex items-center justify-center shadow-lg">
                   <div className="h-2 w-2 bg-white rounded-full status-online"></div>

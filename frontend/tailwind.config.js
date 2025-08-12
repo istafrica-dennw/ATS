@@ -5,7 +5,7 @@ module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
-  darkMode: 'media', // Enables dark mode based on system preference
+  darkMode: 'class', // Enables manual dark mode switching via a 'dark' class
   theme: {
     extend: {},
   },

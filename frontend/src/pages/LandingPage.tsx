@@ -10,7 +10,6 @@ import {
   BriefcaseIcon,
   ChartBarIcon,
   CalendarIcon,
-  UserGroupIcon,
   DocumentPlusIcon,
   DocumentCheckIcon,
   CheckBadgeIcon,
@@ -245,7 +244,7 @@ const LandingPage: React.FC = () => {
               Built for People. Driven by Progress
               </h1>
               <p className="mt-6 text-xl text-gray-600 dark:text-gray-400">
-                All-in-one applicant tracking system to attract, evaluate, and hire top talent faster.
+                The all-in-one platform to discover opportunities, track your applications, and land your dream job faster.
               </p>
               <div className="mt-10 flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
                 <Link
@@ -333,10 +332,10 @@ const LandingPage: React.FC = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl">
-              Powerful features to streamline your hiring
+              Your All-in-One Career Companion
             </h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-              Everything you need to find and hire the best candidates
+              Everything you need to find and land your dream job
             </p>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -344,9 +343,9 @@ const LandingPage: React.FC = () => {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                 <BriefcaseIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">Post Jobs Everywhere</h3>
+              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">Find Your Next Career Move</h3>
               <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                Distribute jobs to multiple boards with one click.
+                Discover job opportunities tailored to your skills and experience from top companies.
               </p>
             </div>
 
@@ -354,9 +353,9 @@ const LandingPage: React.FC = () => {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                 <ChartBarIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">Smart Candidate Ranking</h3>
+              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">Smart Profile Matching</h3>
               <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                AI-powered ranking to identify the most qualified candidates.
+                Our AI matches your profile to the best-fit roles, so you can stop searching and start interviewing.
               </p>
             </div>
 
@@ -364,19 +363,19 @@ const LandingPage: React.FC = () => {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                 <CalendarIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">Interview Scheduling</h3>
+              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">Simplified Interview Scheduling</h3>
               <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                Seamlessly schedule interviews with calendar integration.
+                Easily coordinate interview times with recruiters through a simple, integrated calendar system.
               </p>
             </div>
 
             <div className="rounded-lg bg-white dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50 p-6 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] transform hover:scale-[1.02] transition-all duration-200">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                <UserGroupIcon className="h-6 w-6" />
+                <CheckBadgeIcon className="h-6 w-6" />
               </div>
-              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">Team Collaboration</h3>
+              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100">Track Your Application Status</h3>
               <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                Collaborate with your team to make better hiring decisions.
+                Stay informed at every step. Track your application's progress from submission to decision in one place.
               </p>
             </div>
           </div>
@@ -390,7 +389,7 @@ const LandingPage: React.FC = () => {
               How It Works
             </h2>
             <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
-              Three simple steps to transform your hiring process
+              Three simple steps to accelerate your job search
             </p>
           </div>
           <div className="mt-16">
@@ -399,9 +398,9 @@ const LandingPage: React.FC = () => {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                   <DocumentPlusIcon className="h-8 w-8" />
                 </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-gray-100">Create a Job</h3>
+                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-gray-100">1. Create Your Profile</h3>
                 <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                  Create and publish job listings to multiple job boards with a single click.
+                  Build a standout profile in minutes. Upload your resume and let our system highlight your key skills.
                 </p>
               </div>
 
@@ -409,9 +408,9 @@ const LandingPage: React.FC = () => {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                   <DocumentCheckIcon className="h-8 w-8" />
                 </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-gray-100">Review Applications</h3>
+                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-gray-100">2. Apply with Ease</h3>
                 <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                  Easily review and rank applications with our intuitive interface.
+                  Browse personalized job recommendations and apply to your dream job with a single click.
                 </p>
               </div>
 
@@ -419,9 +418,9 @@ const LandingPage: React.FC = () => {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                   <CheckBadgeIcon className="h-8 w-8" />
                 </div>
-                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-gray-100">Hire With Confidence</h3>
+                <h3 className="mt-6 text-xl font-medium text-gray-900 dark:text-gray-100">3. Get Hired</h3>
                 <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                  Make data-driven hiring decisions and onboard new employees seamlessly.
+                  Track your applications, schedule interviews, and receive offers all within one seamless platform.
                 </p>
               </div>
             </div>

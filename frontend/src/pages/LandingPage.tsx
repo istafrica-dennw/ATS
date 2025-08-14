@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MainLayout from '../layouts/MainLayout';
+import ThemeToggleButton from '../components/common/ThemeToggleButton';
 import ATSAnimationShowcase from '../components/ATSAnimationShowcase';
 import ScrollToTopButton from '../components/common/ScrollToTopButton';
 import axios from 'axios';
@@ -71,7 +72,7 @@ const LandingPage: React.FC = () => {
   const content = (
     <div className="bg-white dark:bg-gray-900" style={{ scrollBehavior: 'smooth' }}>
       {!user && (
-        <nav className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
+        <nav className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex">
@@ -108,7 +109,8 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="hidden md:flex md:items-center md:space-x-4">
+              <div className="hidden md:flex md:items-center md:space-x-2">
+                <ThemeToggleButton />
                 <Link
                   to="/login"
                   className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 px-3 py-2 text-sm font-medium transition-colors"
@@ -543,11 +545,7 @@ const LandingPage: React.FC = () => {
     </div>
   );
 
-  return user ? (
-    <MainLayout>
-      {content}
-    </MainLayout>
-  ) : content;
+  return user ? <MainLayout>{content}</MainLayout> : content;
 };
 
 export default LandingPage;

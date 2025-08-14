@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SecurityProvider } from './contexts/SecurityContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AdminLayout from './components/admin/AdminLayout';
@@ -114,140 +115,132 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <SecurityProvider>
-        <Router>
-          <URLTokenHandler />
-          <ToastContainer 
-            position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="colored"
-          />
-          <Routes>
-            {/* Public routes with redirection for authenticated users */}
-            <Route path="/login" element={
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            } />
-            <Route path="/signup" element={
-              <PublicRoute>
-                <SignupPage />
-              </PublicRoute>
-            } />
-            <Route path="/verify-email" element={
-              <PublicRoute>
-                <EmailVerificationPage />
-              </PublicRoute>
-            } />
-            <Route path="/reset-password" element={
-              <PublicRoute>
-                <ResetPasswordPage />
-              </PublicRoute>
-            } />
-            
-            {/* Dashboard route - needs to be accessible with token in URL */}
-            <Route path="/dashboard" element={<DashboardPage />} />
-            
-            {/* Main authenticated routes using MainLayout */}
-            <Route
-              element={
-                <ProtectedRoute allowedRoles={undefined}>
-                  <MainLayout />
-                </ProtectedRoute>
-              }
-            >
-              {/* Profile Routes - accessible to all authenticated users */}
-              <Route path="/profile">
-                <Route index element={<ProfilePage />} />
-                <Route path="settings" element={<ProfileSettingsPage />} />
-                <Route path="security" element={<SecuritySettingsPage />} />
+        <ThemeProvider>
+          <Router>
+            <URLTokenHandler />
+            <ToastContainer 
+              position="top-right"
+              autoClose={5000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="colored"
+            />
+            <Routes>
+              <Route path="/login" element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              } />
+              <Route path="/signup" element={
+                <PublicRoute>
+                  <SignupPage />
+                </PublicRoute>
+              } />
+              <Route path="/verify-email" element={
+                <PublicRoute>
+                  <EmailVerificationPage />
+                </PublicRoute>
+              } />
+              <Route path="/reset-password" element={
+                <PublicRoute>
+                  <ResetPasswordPage />
+                </PublicRoute>
+              } />
+              
+              <Route path="/dashboard" element={<DashboardPage />} />
+              
+              <Route
+                element={
+                  <ProtectedRoute allowedRoles={undefined}>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/profile">
+                  <Route index element={<ProfilePage />} />
+                  <Route path="settings" element={<ProfileSettingsPage />} />
+                  <Route path="security" element={<SecuritySettingsPage />} />
+                </Route>
+
+                <Route path="/candidate" element={<CandidateDashboardPage />} />
+
+                <Route
+                  path="/interviewer"
+                  element={
+                    <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
+                      <InterviewerDashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/interviewer/interviews"
+                  element={
+                    <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
+                      <InterviewListPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/interviewer/interviews/:interviewId"
+                  element={
+                    <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
+                      <InterviewDetailPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/hiring-manager"
+                  element={
+                    <ProtectedRoute allowedRoles={[Role.HIRING_MANAGER]}>
+                      <div>
+                        <h1>Hiring Manager Dashboard (Coming Soon)</h1>
+                      </div>
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
-
-              {/* Candidate Routes */}
-              <Route path="/candidate" element={<CandidateDashboardPage />} />
-
-              {/* Interviewer Routes */}
+              
               <Route
-                path="/interviewer"
+                path="/admin"
                 element={
-                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
-                    <InterviewerDashboardPage />
+                  <ProtectedRoute allowedRoles={[Role.ADMIN]}>
+                    <AdminLayout>
+                      <Outlet />
+                    </AdminLayout>
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="/interviewer/interviews"
-                element={
-                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
-                    <InterviewListPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/interviewer/interviews/:interviewId"
-                element={
-                  <ProtectedRoute allowedRoles={[Role.INTERVIEWER]}>
-                    <InterviewDetailPage />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Hiring Manager Routes */}
-              <Route
-                path="/hiring-manager"
-                element={
-                  <ProtectedRoute allowedRoles={[Role.HIRING_MANAGER]}>
-                    <div>
-                      <h1>Hiring Manager Dashboard (Coming Soon)</h1>
-                    </div>
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-            
-            {/* Admin Routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={[Role.ADMIN]}>
-                  <AdminLayout>
-                    <Outlet />
-                  </AdminLayout>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboardPage />} />
-              <Route path="users" element={<UserManagementPage />} />
-              <Route path="emails" element={<EmailManagementPage />} />
-              <Route path="jobs" element={<JobManagementPage />} />
-              <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
-              <Route path="interview-skeletons" element={<InterviewSkeletonManagementPage />} />
-              <Route path="interview-assignments" element={<InterviewAssignmentPage />} />
-              <Route path="chat" element={<AdminChatPage />} />
-            </Route>
-            
-            {/* Public routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/jobs" element={<JobsPage />} />
-            <Route path="/jobs/:id" element={<JobDetailsPage />} />
-            <Route path="/apply/:id" element={<JobApplicationPage />} />
-            <Route path="/chat-test" element={<ChatTestPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/careers" element={<CareersPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </Router>
+              >
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="users" element={<UserManagementPage />} />
+                <Route path="emails" element={<EmailManagementPage />} />
+                <Route path="jobs" element={<JobManagementPage />} />
+                <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
+                <Route path="interview-skeletons" element={<InterviewSkeletonManagementPage />} />
+                <Route path="interview-assignments" element={<InterviewAssignmentPage />} />
+                <Route path="chat" element={<AdminChatPage />} />
+              </Route>
+              
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/jobs" element={<JobsPage />} />
+              <Route path="/jobs/:id" element={<JobDetailsPage />} />
+              <Route path="/apply/:id" element={<JobApplicationPage />} />
+              <Route path="/chat-test" element={<ChatTestPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/careers" element={<CareersPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+              
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </Router>
+        </ThemeProvider>
       </SecurityProvider>
     </AuthProvider>
   );

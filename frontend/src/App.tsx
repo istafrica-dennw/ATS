@@ -39,11 +39,12 @@ import CareersPage from './pages/CareersPage';
 import ContactPage from './pages/ContactPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { isJWTToken, logTokenInfo } from './utils/tokenUtils';
 
 // List of paths that should always be accessible, even when authenticated
 const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email', '/dashboard'];
 
-// URL Token Handler - This component processes tokens in the URL
+// URL Token Handler - This component processes authentication tokens in the URL
 // Separate from PublicRoute to ensure it runs on every route
 const URLTokenHandler = () => {
   const location = useLocation();
@@ -55,19 +56,27 @@ const URLTokenHandler = () => {
     const token = params.get('token');
     
     if (token) {
-      console.log('URLTokenHandler - Processing token from URL');
+      // Log token info for debugging (safe - doesn't expose actual token)
+      logTokenInfo(token, 'URLTokenHandler');
       
-      // Process the token
-      manuallySetToken(token)
-        .then(() => {
-          console.log('URLTokenHandler - Token processed successfully');
-          
-          // Clean URL by removing token
-          window.history.replaceState({}, document.title, location.pathname);
-        })
-        .catch(error => {
-          console.error('URLTokenHandler - Failed to process token:', error);
-        });
+      // Check if this is a JWT token (authentication) or a simple token (email/password reset)
+      if (isJWTToken(token)) {
+        console.log('URLTokenHandler - Detected JWT authentication token from URL');
+        
+        // Process the token as an authentication token
+        manuallySetToken(token)
+          .then(() => {
+            console.log('URLTokenHandler - JWT authentication token processed successfully');
+            
+            // Clean URL by removing token
+            window.history.replaceState({}, document.title, location.pathname);
+          })
+          .catch(error => {
+            console.error('URLTokenHandler - Failed to process JWT authentication token:', error);
+          });
+      } else {
+        console.log('URLTokenHandler - Detected non-JWT token, skipping authentication processing (likely email verification or password reset token)');
+      }
     }
   }, [location.search, location.pathname, manuallySetToken, navigate]);
 
@@ -76,7 +85,7 @@ const URLTokenHandler = () => {
 
 // Component to handle public routes (login, signup) with redirection for authenticated users
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, token } = useAuth();
+  const { user, token, isAuthenticated } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
   
@@ -89,7 +98,8 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   // Otherwise, apply normal redirection logic for authenticated users
-  if (user && token) {
+  // Use multiple authentication indicators for more robust checking
+  if (user && token && isAuthenticated) {
     // Check if user is already on a valid path for their role
     const userRole = user.role;
     

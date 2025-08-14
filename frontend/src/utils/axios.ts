@@ -58,17 +58,35 @@ axiosInstance.interceptors.response.use(
     
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !error.response?.config?.url?.includes('/login')) {
-      console.log('Axios - 401 Unauthorized, clearing auth data');
-      // Clear auth data
+      console.log('Axios - 401 Unauthorized, clearing all auth data');
+      
+      // Clear all authentication data thoroughly
       try {
+        // Clear localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('mfaVerified');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('authExpires');
+        localStorage.removeItem('loginTime');
+        
+        // Clear sessionStorage too
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('mfaVerified');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('authExpires');
+        sessionStorage.removeItem('loginTime');
+        
+        // Clear axios authorization header
+        delete axiosInstance.defaults.headers.common['Authorization'];
+        
+        console.log('Axios - All auth data cleared due to 401');
       } catch (e) {
-        console.error('Axios - Error clearing localStorage:', e);
+        console.error('Axios - Error clearing auth data:', e);
       }
       
-      // Redirect to login
+      // Redirect to login with full page reload
       window.location.href = '/login';
     }
     

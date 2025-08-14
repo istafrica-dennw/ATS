@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Role } from '../../types/user';
 import axiosInstance from '../../utils/axios';
 import { storeCurrentRouteIfNeeded, getTargetRouteForUser } from '../../utils/routeUtils';
+import { isJWTToken, logTokenInfo } from '../../utils/tokenUtils';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -35,22 +36,29 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
           const params = new URLSearchParams(window.location.search);
           const urlToken = params.get('token');
           
-          // If there's token in URL, use it
+          // If there's token in URL and it's a JWT, use it for authentication
           if (urlToken) {
-            console.log('ProtectedRoute - Found token in URL parameters:', urlToken.substring(0, 15) + '...');
+            // Log token info for debugging (safe - doesn't expose actual token)
+            logTokenInfo(urlToken, 'ProtectedRoute');
             
-            try {
-              // Use the new utility function that handles all storage methods
-              await manuallySetToken(urlToken);
-              console.log('ProtectedRoute - Successfully authenticated with URL token');
+            if (isJWTToken(urlToken)) {
+              console.log('ProtectedRoute - Found JWT token in URL parameters');
               
-              // Remove token from URL for security
-              window.history.replaceState({}, document.title, location.pathname);
-              
-              setIsValidating(false);
-              return; // Successfully authenticated
-            } catch (error) {
-              console.error('ProtectedRoute - Failed to authenticate with URL token:', error);
+              try {
+                // Use the new utility function that handles all storage methods
+                await manuallySetToken(urlToken);
+                console.log('ProtectedRoute - Successfully authenticated with JWT token');
+                
+                // Remove token from URL for security
+                window.history.replaceState({}, document.title, location.pathname);
+                
+                setIsValidating(false);
+                return; // Successfully authenticated
+              } catch (error) {
+                console.error('ProtectedRoute - Failed to authenticate with JWT token:', error);
+              }
+            } else {
+              console.log('ProtectedRoute - Found non-JWT token in URL, skipping authentication (likely email verification or password reset token)');
             }
           }
           

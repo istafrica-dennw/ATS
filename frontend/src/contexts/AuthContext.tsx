@@ -499,9 +499,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('AuthContext - Error during final storage cleanup:', e);
         }
         
-        // Force redirect to login page
-        console.log('AuthContext - Redirecting to login page');
-        window.location.href = '/login';
+        // Force redirect to login page with a full page reload to clear any cached state
+        console.log('AuthContext - Redirecting to login page with full reload');
+        
+        // For extra safety, add a delay to ensure all cleanup operations complete
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 100);
       });
   };
 

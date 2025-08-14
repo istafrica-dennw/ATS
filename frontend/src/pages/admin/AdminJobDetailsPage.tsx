@@ -23,7 +23,11 @@ import {
   XMarkIcon,
   BriefcaseIcon,
   QuestionMarkCircleIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  ChevronDownIcon,
+  CalendarIcon,
+  XMarkIcon as XIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import { ClockIcon as SolidClockIcon } from '@heroicons/react/24/solid';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -137,6 +141,13 @@ const AdminJobDetailsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<{[key: string]: number}>({});
   const [candidateDetails, setCandidateDetails] = useState<{[key: number]: {name: string, email: string}}>({});
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalElements, setTotalElements] = useState<number>(0);
+  const [loadingApplications, setLoadingApplications] = useState<boolean>(false);
   
   // New state for sorting and modal
   const [sortBy, setSortBy] = useState<'date' | 'score'>('date');
@@ -317,24 +328,9 @@ const AdminJobDetailsPage: React.FC = () => {
   const fetchJobDetails = async () => {
     try {
       setLoading(true);
-      const [jobResponse, applicationsResponse] = await Promise.all([
-        axiosInstance.get(`/jobs/${jobId}`),
-        axiosInstance.get(`/applications/job/${jobId}`)
-      ]);
       
+      const jobResponse = await axiosInstance.get(`/jobs/${jobId}`);
       setJob(jobResponse.data);
-      const applicationsData = applicationsResponse.data.content || [];
-      setApplications(applicationsData);
-      
-      // Fetch candidate details for each application
-      await fetchCandidateDetails(applicationsData);
-      
-      // Calculate statistics
-      const stats = applicationsData.reduce((acc: any, app: Application) => {
-        acc[app.status] = (acc[app.status] || 0) + 1;
-        return acc;
-      }, {});
-      setStats(stats);
       
       // Fetch interviews for this job
       await fetchInterviews();
@@ -344,6 +340,45 @@ const AdminJobDetailsPage: React.FC = () => {
       toast.error('Failed to load job details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplications = async () => {
+    try {
+      setLoadingApplications(true);
+      
+      const applicationsResponse = await axiosInstance.get(`/applications/job/${jobId}`, {
+        params: {
+          page: currentPage,
+          size: pageSize,
+          sort: 'createdAt,desc' // Sort by creation date descending
+        }
+      });
+      
+      const pageData = applicationsResponse.data;
+      const applicationsData = pageData.content || [];
+      
+      setApplications(applicationsData);
+      const elements = (pageData.totalElements ?? applicationsData.length ?? 0) as number;
+      const pages = (pageData.totalPages ?? (elements > 0 ? Math.ceil(elements / pageSize) : 0)) as number;
+      setTotalElements(elements);
+      setTotalPages(pages);
+      
+      // Fetch candidate details for each application
+      await fetchCandidateDetails(applicationsData);
+      
+      // Calculate statistics (only for current page - we'll need separate call for all stats)
+      const stats = applicationsData.reduce((acc: any, app: Application) => {
+        acc[app.status] = (acc[app.status] || 0) + 1;
+        return acc;
+      }, {});
+      setStats(stats);
+      
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      toast.error('Failed to load applications');
+    } finally {
+      setLoadingApplications(false);
     }
   };
 
@@ -398,6 +433,12 @@ const AdminJobDetailsPage: React.FC = () => {
       fetchJobDetails();
     }
   }, [jobId]);
+
+  useEffect(() => {
+    if (jobId) {
+      fetchApplications();
+    }
+  }, [jobId, currentPage, pageSize]);
   
   const handleStatusChange = async (applicationId: number, newStatus: string) => {
     try {
@@ -1320,6 +1361,118 @@ const AdminJobDetailsPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              
+              {/* Pagination Controls */}
+                <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                      disabled={currentPage === 0 || loadingApplications}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                      disabled={currentPage >= totalPages - 1 || loadingApplications}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div className="flex items-center space-x-4">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing{' '}
+                      <span className="font-medium">{currentPage * pageSize + 1}</span>
+                      {' '}to{' '}
+                      <span className="font-medium">
+                        {Math.min((currentPage + 1) * pageSize, totalElements)}
+                      </span>
+                      {' '}of{' '}
+                      <span className="font-medium">{totalElements}</span>
+                      {' '}applications
+                      {loadingApplications && (
+                        <span className="ml-2 text-indigo-600 dark:text-indigo-400">Loading...</span>
+                      )}
+                    </p>
+                    <div className="flex items-center space-x-2">
+                      <label htmlFor="pageSize" className="text-sm text-gray-700 dark:text-gray-300">
+                        Show:
+                      </label>
+                      <select
+                        id="pageSize"
+                        value={pageSize}
+                        onChange={(e) => {
+                          setPageSize(Number(e.target.value));
+                          setCurrentPage(0); // Reset to first page when changing page size
+                        }}
+                        disabled={loadingApplications}
+                        className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50"
+                      >
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                        disabled={currentPage === 0 || loadingApplications}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Previous</span>
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      
+                      {/* Page numbers */}
+                      {[...Array(Math.min(totalPages, 5))].map((_, index) => {
+                        let pageNum: number;
+                        if (totalPages <= 5) {
+                          pageNum = index;
+                        } else if (currentPage < 3) {
+                          pageNum = index;
+                        } else if (currentPage > totalPages - 4) {
+                          pageNum = totalPages - 5 + index;
+                        } else {
+                          pageNum = currentPage - 2 + index;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            disabled={loadingApplications}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === pageNum
+                                ? 'z-10 bg-indigo-50 dark:bg-indigo-900/50 border-indigo-500 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400'
+                                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            {pageNum + 1}
+                          </button>
+                        );
+                      })}
+                      
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                        disabled={currentPage >= totalPages - 1 || loadingApplications}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Next</span>
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1670,30 +1823,5 @@ const AdminJobDetailsPage: React.FC = () => {
     </div>
   );
 };
-
-// Add missing icons
-const XIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
-
-const TagIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-  </svg>
-);
-
-const CalendarIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
-
-const ChevronDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  </svg>
-);
 
 export default AdminJobDetailsPage;

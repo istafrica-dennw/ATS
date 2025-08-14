@@ -11,6 +11,9 @@ import {
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
 import axiosInstance from '../../utils/axios';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import 'styles/react-quill.css';
 
 interface Job {
   id: number;
@@ -78,7 +81,7 @@ const BulkEmailPage: React.FC = () => {
     status: null,
     subject: '',
     content: '',
-    isHtml: false,
+    isHtml: true,
     sendTest: false,
     testEmailRecipient: user?.email || ''
   });
@@ -258,14 +261,24 @@ const BulkEmailPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email Content *
                   </label>
-                  <textarea
-                    value={formData.content}
-                    onChange={(e) => handleInputChange('content', e.target.value)}
-                    placeholder="Enter your email content here. You can use placeholders like {{candidateName}}, {{firstName}}, {{jobTitle}}, {{applicationStatus}}"
-                    rows={10}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
+                  <div className="react-quill-no-outline dark:border-gray-700 bg-white dark:bg-gray-700 rounded-md overflow-hidden">
+                    <ReactQuill
+                      theme="snow"
+                      value={formData.content}
+                      onChange={(html) => handleInputChange('content', html)}
+                      modules={{
+                        toolbar: [
+                          [{ header: [1, 2, 3, false] }],
+                          ['bold', 'italic', 'underline', 'strike'],
+                          [{ list: 'ordered' }, { list: 'bullet' }],
+                          ['link'],
+                          ['clean']
+                        ],
+                        clipboard: { matchVisual: false }
+                      }}
+                      formats={['header', 'bold', 'italic', 'underline', 'strike', 'list', 'bullet', 'link']}
+                    />
+                  </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     Available placeholders: {"{candidateName}"}, {"{firstName}"}, {"{lastName}"}, {"{jobTitle}"}, {"{jobDepartment}"}, {"{applicationStatus}"}
                   </p>

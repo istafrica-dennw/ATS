@@ -22,6 +22,14 @@ import jakarta.mail.internet.MimeMessage;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.time.ZonedDateTime;
+
+import com.ats.dto.BulkEmailRequestDTO;
+import com.ats.dto.BulkEmailResponseDTO;
+import com.ats.model.ApplicationStatus;
+import com.ats.repository.ApplicationRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +37,7 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
     private final EmailNotificationRepository emailNotificationRepository;
+    private final ApplicationRepository applicationRepository;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -328,5 +337,224 @@ public class EmailServiceImpl implements EmailService {
         }
         
         return templateVars;
+    }
+
+    @Override
+    @Transactional
+    public BulkEmailResponseDTO sendBulkEmailToApplicants(BulkEmailRequestDTO request, User senderUser) {
+        ZonedDateTime startTime = ZonedDateTime.now();
+        
+        // Get the list of applications to send emails to
+        List<Application> applications = getApplicationsForBulkEmail(request);
+        
+        List<Long> emailNotificationIds = new ArrayList<>();
+        List<BulkEmailResponseDTO.FailedEmailDetail> failures = new ArrayList<>();
+        int successCount = 0;
+        
+        // Send test email first if requested
+        if (request.getSendTest() && request.getTestEmailRecipient() != null) {
+            try {
+                EmailNotification testEmail = sendCustomEmail(
+                    request.getTestEmailRecipient(),
+                    "[TEST] " + request.getSubject(),
+                    request.getContent(),
+                    request.getIsHtml(),
+                    senderUser
+                );
+                emailNotificationIds.add(testEmail.getId());
+                successCount++;
+            } catch (MessagingException e) {
+                failures.add(BulkEmailResponseDTO.FailedEmailDetail.builder()
+                    .candidateEmail(request.getTestEmailRecipient())
+                    .candidateName("Test Recipient")
+                    .errorMessage("Test email failed: " + e.getMessage())
+                    .build());
+            }
+        }
+        
+        // Send emails to all matching applicants
+        for (Application application : applications) {
+            try {
+                // Null checks for safety
+                if (application.getCandidate() == null) {
+                    failures.add(BulkEmailResponseDTO.FailedEmailDetail.builder()
+                        .applicationId(application.getId())
+                        .candidateEmail("Unknown")
+                        .candidateName("Unknown")
+                        .errorMessage("Candidate information is missing for application ID: " + application.getId())
+                        .build());
+                    continue;
+                }
+                
+                if (application.getJob() == null) {
+                    failures.add(BulkEmailResponseDTO.FailedEmailDetail.builder()
+                        .applicationId(application.getId())
+                        .candidateEmail(application.getCandidate().getEmail())
+                        .candidateName(application.getCandidate().getFirstName() + " " + application.getCandidate().getLastName())
+                        .errorMessage("Job information is missing for application ID: " + application.getId())
+                        .build());
+                    continue;
+                }
+                
+                String candidateEmail = application.getCandidate().getEmail();
+                if (candidateEmail == null || candidateEmail.trim().isEmpty()) {
+                    failures.add(BulkEmailResponseDTO.FailedEmailDetail.builder()
+                        .applicationId(application.getId())
+                        .candidateEmail("No email")
+                        .candidateName(application.getCandidate().getFirstName() + " " + application.getCandidate().getLastName())
+                        .errorMessage("Candidate email is missing or empty")
+                        .build());
+                    continue;
+                }
+                
+                String candidateName = (application.getCandidate().getFirstName() != null ? application.getCandidate().getFirstName() : "") + 
+                                     " " + (application.getCandidate().getLastName() != null ? application.getCandidate().getLastName() : "");
+                candidateName = candidateName.trim();
+                
+                // Personalize the content with candidate and job information
+                String personalizedContent = personalizeEmailContent(
+                    request.getContent(), 
+                    application,
+                    candidateName
+                );
+                
+                EmailNotification notification = sendCustomEmail(
+                    candidateEmail,
+                    request.getSubject(),
+                    personalizedContent,
+                    request.getIsHtml(),
+                    senderUser
+                );
+                
+                emailNotificationIds.add(notification.getId());
+                successCount++;
+                
+            } catch (Exception e) {
+                String candidateEmail = "Unknown";
+                String candidateName = "Unknown";
+                
+                try {
+                    if (application.getCandidate() != null) {
+                        candidateEmail = application.getCandidate().getEmail() != null ? application.getCandidate().getEmail() : "No email";
+                        candidateName = (application.getCandidate().getFirstName() != null ? application.getCandidate().getFirstName() : "") + 
+                                      " " + (application.getCandidate().getLastName() != null ? application.getCandidate().getLastName() : "");
+                        candidateName = candidateName.trim();
+                    }
+                } catch (Exception ignored) {
+                    // If we can't get candidate info, use defaults
+                }
+                
+                failures.add(BulkEmailResponseDTO.FailedEmailDetail.builder()
+                    .applicationId(application.getId())
+                    .candidateEmail(candidateEmail)
+                    .candidateName(candidateName)
+                    .errorMessage(e.getMessage())
+                    .build());
+            }
+        }
+        
+        ZonedDateTime completedTime = ZonedDateTime.now();
+        int totalAttempted = applications.size() + (request.getSendTest() ? 1 : 0);
+        int failureCount = failures.size();
+        
+        String status;
+        if (failureCount == 0) {
+            status = "SUCCESS";
+        } else if (successCount > 0) {
+            status = "PARTIAL_SUCCESS";
+        } else {
+            status = "FAILED";
+        }
+        
+        return BulkEmailResponseDTO.builder()
+            .totalAttempted(totalAttempted)
+            .successCount(successCount)
+            .failureCount(failureCount)
+            .emailNotificationIds(emailNotificationIds)
+            .failures(failures)
+            .startedAt(startTime)
+            .completedAt(completedTime)
+            .status(status)
+            .build();
+    }
+    
+    @Override
+    public List<Application> getApplicantsForBulkEmail(Long jobId, ApplicationStatus status) {
+        if (jobId != null && status != null) {
+            return applicationRepository.findByJobIdAndStatusWithCandidateAndJob(jobId, status);
+        } else if (jobId != null) {
+            return applicationRepository.findByJobIdWithCandidateAndJob(jobId);
+        } else if (status != null) {
+            return applicationRepository.findByStatusWithCandidateAndJob(status);
+        } else {
+            return applicationRepository.findAllWithCandidateAndJob();
+        }
+    }
+    
+    @Override
+    @Transactional
+    public EmailNotification sendCustomEmail(String to, String subject, String content, Boolean isHtml, User senderUser) throws MessagingException {
+        // Create email notification record
+        EmailNotification notification = EmailNotification.builder()
+            .recipientEmail(to)
+            .subject(subject)
+            .body(content)
+            .status(EmailNotification.EmailStatus.PENDING)
+            .templateName("custom-email")
+            .relatedUser(senderUser)
+            .build();
+        
+        notification = emailNotificationRepository.save(notification);
+
+        try {
+            // Send the email
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, isHtml != null ? isHtml : false);
+            
+            mailSender.send(message);
+            
+            // Update status to SENT
+            notification.setStatus(EmailNotification.EmailStatus.SENT);
+            return emailNotificationRepository.save(notification);
+        } catch (MessagingException e) {
+            // Update status to FAILED and save error message
+            notification.setStatus(EmailNotification.EmailStatus.FAILED);
+            notification.setErrorMessage(e.getMessage());
+            notification = emailNotificationRepository.save(notification);
+            
+            throw e;
+        }
+    }
+    
+    private List<Application> getApplicationsForBulkEmail(BulkEmailRequestDTO request) {
+        // If specific application IDs are provided, use those
+        if (request.getApplicationIds() != null && !request.getApplicationIds().isEmpty()) {
+            return applicationRepository.findAllById(request.getApplicationIds())
+                .stream()
+                .filter(app -> app.getCandidate() != null && app.getJob() != null)
+                .toList();
+        }
+        
+        // Otherwise use job and status filters
+        return getApplicantsForBulkEmail(request.getJobId(), request.getStatus());
+    }
+    
+    private String personalizeEmailContent(String content, Application application, String candidateName) {
+        if (content == null) return content;
+        
+        // Replace common placeholders with actual values
+        String personalizedContent = content
+            .replace("{{candidateName}}", candidateName != null ? candidateName : "")
+            .replace("{{firstName}}", application.getCandidate().getFirstName() != null ? application.getCandidate().getFirstName() : "")
+            .replace("{{lastName}}", application.getCandidate().getLastName() != null ? application.getCandidate().getLastName() : "")
+            .replace("{{jobTitle}}", application.getJob().getTitle() != null ? application.getJob().getTitle() : "")
+            .replace("{{jobDepartment}}", application.getJob().getDepartment() != null ? application.getJob().getDepartment() : "")
+            .replace("{{applicationStatus}}", application.getStatus() != null ? application.getStatus().toString() : "");
+        
+        return personalizedContent;
     }
 } 

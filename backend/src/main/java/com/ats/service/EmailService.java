@@ -1,5 +1,7 @@
 package com.ats.service;
 
+import com.ats.dto.BulkEmailRequestDTO;
+import com.ats.dto.BulkEmailResponseDTO;
 import com.ats.model.EmailNotification;
 import com.ats.model.User;
 import com.ats.model.Application;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Service interface for handling email operations
@@ -77,4 +80,32 @@ public interface EmailService {
      * @throws MessagingException If there's an error sending the email
      */
     EmailNotification sendInterviewEmail(Interview interview, EmailEvent event) throws MessagingException;
+
+    /**
+     * Sends bulk emails to applicants based on filter criteria
+     * @param request The bulk email request containing filters and content
+     * @param senderUser The admin user sending the emails
+     * @return The bulk email response with statistics
+     */
+    BulkEmailResponseDTO sendBulkEmailToApplicants(BulkEmailRequestDTO request, User senderUser);
+
+    /**
+     * Gets the list of applications that would be targeted by the bulk email filters
+     * @param jobId Optional job ID filter
+     * @param status Optional application status filter
+     * @return List of applications that match the criteria
+     */
+    List<Application> getApplicantsForBulkEmail(Long jobId, com.ats.model.ApplicationStatus status);
+
+    /**
+     * Sends a custom email to a specific recipient
+     * @param to Recipient email address
+     * @param subject Email subject
+     * @param content Email content
+     * @param isHtml Whether the content is HTML
+     * @param senderUser The user sending the email
+     * @return The created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    EmailNotification sendCustomEmail(String to, String subject, String content, Boolean isHtml, User senderUser) throws MessagingException;
 } 

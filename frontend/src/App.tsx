@@ -15,6 +15,7 @@ import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
 import InterviewSkeletonManagementPage from './pages/admin/InterviewSkeletonManagementPage';
 import InterviewAssignmentPage from './pages/admin/InterviewAssignmentPage';
 import AdminChatPage from './pages/admin/AdminChatPage';
+import BulkEmailPage from './pages/admin/BulkEmailPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
@@ -226,14 +227,15 @@ const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<AdminDashboardPage />} />
-                <Route path="users" element={<UserManagementPage />} />
-                <Route path="emails" element={<EmailManagementPage />} />
-                <Route path="jobs" element={<JobManagementPage />} />
-                <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
-                <Route path="interview-skeletons" element={<InterviewSkeletonManagementPage />} />
-                <Route path="interview-assignments" element={<InterviewAssignmentPage />} />
-                <Route path="chat" element={<AdminChatPage />} />
+                               <Route index element={<AdminDashboardPage />} />
+               <Route path="users" element={<UserManagementPage />} />
+               <Route path="emails" element={<EmailManagementPage />} />
+               <Route path="bulk-email" element={<BulkEmailPage />} />
+               <Route path="jobs" element={<JobManagementPage />} />
+               <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
+               <Route path="interview-skeletons" element={<InterviewSkeletonManagementPage />} />
+               <Route path="interview-assignments" element={<InterviewAssignmentPage />} />
+               <Route path="chat" element={<AdminChatPage />} />
               </Route>
               
               <Route path="/" element={<LandingPage />} />

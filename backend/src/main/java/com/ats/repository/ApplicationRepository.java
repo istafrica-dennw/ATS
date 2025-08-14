@@ -61,6 +61,50 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * @return the application if found
      */
     Optional<Application> findByJobIdAndCandidateId(Long jobId, Long candidateId);
+
+    /**
+     * Find all applications by status
+     * 
+     * @param status the application status
+     * @return list of applications
+     */
+    List<Application> findByStatus(ApplicationStatus status);
+
+    /**
+     * Find all applications (for bulk operations)
+     * 
+     * @return list of all applications
+     */
+    @Query("SELECT a FROM Application a JOIN FETCH a.candidate JOIN FETCH a.job")
+    List<Application> findAllWithCandidateAndJob();
+
+    /**
+     * Find applications by job ID with candidate and job details
+     * 
+     * @param jobId the job ID
+     * @return list of applications
+     */
+    @Query("SELECT a FROM Application a JOIN FETCH a.candidate JOIN FETCH a.job WHERE a.job.id = :jobId")
+    List<Application> findByJobIdWithCandidateAndJob(@Param("jobId") Long jobId);
+
+    /**
+     * Find applications by status with candidate and job details
+     * 
+     * @param status the application status
+     * @return list of applications
+     */
+    @Query("SELECT a FROM Application a JOIN FETCH a.candidate JOIN FETCH a.job WHERE a.status = :status")
+    List<Application> findByStatusWithCandidateAndJob(@Param("status") ApplicationStatus status);
+
+    /**
+     * Find applications by job ID and status with candidate and job details
+     * 
+     * @param jobId the job ID
+     * @param status the application status
+     * @return list of applications
+     */
+    @Query("SELECT a FROM Application a JOIN FETCH a.candidate JOIN FETCH a.job WHERE a.job.id = :jobId AND a.status = :status")
+    List<Application> findByJobIdAndStatusWithCandidateAndJob(@Param("jobId") Long jobId, @Param("status") ApplicationStatus status);
     
     /**
      * Count the number of applications for a job

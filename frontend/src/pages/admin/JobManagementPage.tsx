@@ -5,10 +5,8 @@ import {
   TrashIcon, 
   EyeIcon,
   ArrowPathIcon,
-  CheckCircleIcon,
   XCircleIcon,
   XMarkIcon,
-  ClockIcon,
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import ReactQuill from 'react-quill';
@@ -441,8 +439,7 @@ const JobManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header Card */}
+    <div className="space-y-8">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 p-6 mb-6">
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
@@ -468,8 +465,7 @@ const JobManagementPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Filter Controls Card */}
+      
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 p-4 mb-6">
         <div className="flex items-center space-x-4">
           <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -501,7 +497,6 @@ const JobManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Job table */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
         <div className="overflow-x-auto">
           <div className="inline-block min-w-full align-middle">
@@ -570,7 +565,6 @@ const JobManagementPage: React.FC = () => {
                       </td>
                       <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                         <div className="flex justify-end space-x-2">
-                          {/* View button */}
                           <button
                             type="button"
                             onClick={() => navigate(`/admin/jobs/${job.id}`)}
@@ -580,7 +574,6 @@ const JobManagementPage: React.FC = () => {
                             <EyeIcon className="h-5 w-5" aria-hidden="true" />
                           </button>
                           
-                          {/* Edit button */}
                           <button
                             type="button"
                             onClick={() => handleEdit(job)}
@@ -590,7 +583,6 @@ const JobManagementPage: React.FC = () => {
                             <PencilIcon className="h-5 w-5" aria-hidden="true" />
                           </button>
                           
-                          {/* Delete button */}
                           <button
                             type="button"
                             onClick={() => handleDelete(job.id)}
@@ -610,7 +602,6 @@ const JobManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Create/Edit Job Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -637,11 +628,8 @@ const JobManagementPage: React.FC = () => {
                   </h3>
                   <div className="mt-6 max-h-[80vh] overflow-y-auto pr-2">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                      {/* Two-column layout for desktop */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-6">
-                        {/* Left Column - Job Title to Location */}
                         <div className="space-y-4">
-                          {/* Job Title */}
                           <div>
                             <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Job Title *
@@ -657,7 +645,6 @@ const JobManagementPage: React.FC = () => {
                             />
                           </div>
 
-                          {/* Department */}
                           <div>
                             <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Department *
@@ -673,7 +660,6 @@ const JobManagementPage: React.FC = () => {
                             />
                           </div>
 
-                          {/* Job Description */}
                           <div>
                             <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Job Description *
@@ -685,9 +671,7 @@ const JobManagementPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Right Column - Employment Type onwards */}
                         <div className="space-y-4 lg:mt-0 mt-4">
-                          {/* Location */}
                           <div>
                             <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Location *
@@ -703,7 +687,6 @@ const JobManagementPage: React.FC = () => {
                             />
                           </div>
 
-                          {/* Employment Type */}
                           <div>
                             <label htmlFor="employmentType" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Employment Type *
@@ -723,7 +706,6 @@ const JobManagementPage: React.FC = () => {
                             </select>
                           </div>
 
-                          {/* Work Setting */}
                           <div>
                             <label htmlFor="workSetting" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Work Setting *
@@ -742,7 +724,6 @@ const JobManagementPage: React.FC = () => {
                             </select>
                           </div>
 
-                          {/* Job Status - Only shown when editing */}
                           {isEditing && (
                             <div>
                               <label htmlFor="jobStatus" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -765,7 +746,6 @@ const JobManagementPage: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Salary Range */}
                           <div>
                             <label htmlFor="salaryRange" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Salary Range
@@ -781,7 +761,6 @@ const JobManagementPage: React.FC = () => {
                             />
                           </div>
 
-                          {/* Skills */}
                           <div>
                             <label htmlFor="skills" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Skills
@@ -828,7 +807,6 @@ const JobManagementPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Custom Questions - Full width below the two columns */}
                       <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                         <div className="flex justify-between items-center">
                           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Custom Application Questions</h4>
@@ -849,7 +827,6 @@ const JobManagementPage: React.FC = () => {
                           </button>
                         </div>
 
-                        {/* Custom Questions List */}
                         {formData.customQuestions.length > 0 && (
                           <div className="mt-4 space-y-3">
                             {formData.customQuestions.map((q) => (
@@ -882,7 +859,6 @@ const JobManagementPage: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Add/Edit Question Form */}
                       {showQuestionForm && (
                         <div className="mt-6 p-6 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700/50">
                           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
@@ -890,7 +866,6 @@ const JobManagementPage: React.FC = () => {
                           </h4>
                           
                           <div className="space-y-4">
-                            {/* Question Text */}
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Question Text *
@@ -904,7 +879,6 @@ const JobManagementPage: React.FC = () => {
                               />
                             </div>
 
-                            {/* Question Type */}
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Question Type *
@@ -927,7 +901,6 @@ const JobManagementPage: React.FC = () => {
                               </select>
                             </div>
 
-                            {/* Options for multiple choice questions */}
                             {newQuestion.type === 'MULTIPLE_CHOICE' && (
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -951,7 +924,6 @@ const JobManagementPage: React.FC = () => {
                                   </button>
                                 </div>
                                 
-                                {/* Display added options */}
                                 {newQuestion.options && newQuestion.options.length > 0 && (
                                   <div className="mt-3 space-y-2">
                                     {newQuestion.options.map((option, idx) => (
@@ -971,7 +943,6 @@ const JobManagementPage: React.FC = () => {
                               </div>
                             )}
 
-                            {/* Required toggle */}
                             <div className="flex items-center">
                               <input
                                 type="checkbox"
@@ -985,7 +956,6 @@ const JobManagementPage: React.FC = () => {
                               </label>
                             </div>
 
-                            {/* Form actions */}
                             <div className="flex justify-end space-x-3 pt-4">
                               <button
                                 type="button"
@@ -1039,11 +1009,9 @@ const JobManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Job Status Change Popover - Fixed Overlay */}
       {openStatusJobId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-gray-700 w-full max-w-md transform transition-all duration-300 ease-out scale-100 opacity-100">
-            {/* Header */}
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <div>
@@ -1061,7 +1029,6 @@ const JobManagementPage: React.FC = () => {
               </div>
             </div>
             
-            {/* Scrollable Content */}
             <div className="max-h-96 overflow-y-auto py-4">
               <div className="px-6 space-y-2">
                 {[
@@ -1118,7 +1085,6 @@ const JobManagementPage: React.FC = () => {
               </div>
             </div>
             
-            {/* Footer */}
             <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-500 dark:text-gray-400">

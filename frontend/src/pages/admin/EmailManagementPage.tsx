@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { Listbox, Transition } from '@headlessui/react';
 import {
   CheckCircleIcon,
   ExclamationCircleIcon,
@@ -10,6 +11,8 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
+
 
 // Define email notification types
 export enum EmailStatus {
@@ -40,6 +43,13 @@ interface EmailStats {
   failedEmails: number;
 }
 
+const statusOptions = [
+    { name: 'All Status', value: 'all' },
+    { name: 'Sent', value: EmailStatus.SENT },
+    { name: 'Pending', value: EmailStatus.PENDING },
+    { name: 'Failed', value: EmailStatus.FAILED },
+];
+
 const EmailManagementPage: React.FC = () => {
   const { token } = useAuth();
   const [emails, setEmails] = useState<EmailNotification[]>([]);
@@ -57,13 +67,13 @@ const EmailManagementPage: React.FC = () => {
       if (selectedStatus !== 'all') {
         url += `?status=${selectedStatus}`;
       }
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setEmails(data);
@@ -85,7 +95,7 @@ const EmailManagementPage: React.FC = () => {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setStats(data);
@@ -103,16 +113,16 @@ const EmailManagementPage: React.FC = () => {
   const handleResendEmail = async (id: number) => {
     try {
       setResending(prev => [...prev, id]);
-      
+
       const response = await fetch(`/api/admin/emails/${id}/resend`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         // Fetch the updated email to check its actual status
         const emailResponse = await fetch(`/api/admin/emails/${id}`, {
@@ -120,7 +130,7 @@ const EmailManagementPage: React.FC = () => {
             'Authorization': `Bearer ${token}`,
           },
         });
-        
+
         if (emailResponse.ok) {
           const emailData = await emailResponse.json();
           if (emailData.status === EmailStatus.SENT) {
@@ -133,7 +143,7 @@ const EmailManagementPage: React.FC = () => {
         } else {
           toast.success('Email resend initiated');
         }
-        
+
         fetchEmails();
         fetchStats();
       } else {
@@ -150,19 +160,19 @@ const EmailManagementPage: React.FC = () => {
   const handleResendAllFailed = async () => {
     try {
       setLoading(true);
-      
+
       // Remember how many failed emails we had before
       const beforeFailedCount = stats?.failedEmails || 0;
-      
+
       const response = await fetch('/api/admin/emails/resend-all-failed', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         // Get the latest stats to see the current failed count
         const statsResponse = await fetch('/api/admin/emails/stats', {
@@ -170,12 +180,12 @@ const EmailManagementPage: React.FC = () => {
             'Authorization': `Bearer ${token}`,
           },
         });
-        
+
         if (statsResponse.ok) {
           const latestStats = await statsResponse.json();
           const nowFailedCount = latestStats.failedEmails;
           const successCount = beforeFailedCount - nowFailedCount;
-          
+
           if (successCount <= 0) {
             toast.error('Failed to resend any emails');
           } else if (nowFailedCount > 0) {
@@ -193,7 +203,7 @@ const EmailManagementPage: React.FC = () => {
             toast.success(`Successfully resent all ${data.totalEmails} emails`);
           }
         }
-        
+
         // Refresh the UI
         fetchEmails();
         fetchStats();
@@ -209,11 +219,11 @@ const EmailManagementPage: React.FC = () => {
   };
 
   const filteredEmails = emails.filter(email => {
-    const matchesSearch = 
+    const matchesSearch =
       email.recipientEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.templateName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesSearch;
   });
 
@@ -254,14 +264,12 @@ const EmailManagementPage: React.FC = () => {
 
   if (loading && emails.length === 0) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-8">
         <div className="animate-pulse space-y-6">
-          {/* Header skeleton */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50">
             <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-1/4 mb-2"></div>
             <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
           </div>
-          {/* Stats skeleton */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50">
@@ -276,8 +284,7 @@ const EmailManagementPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header Section */}
+    <div className="space-y-8">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50 mb-8">
         <div className="sm:flex sm:items-center sm:justify-between">
           <div>
@@ -302,9 +309,8 @@ const EmailManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
       {stats && (
-        <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.3),0_10px_10px_-5px_rgba(0,0,0,0.2)] dark:hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transition-all duration-300 transform hover:scale-[1.02]">
             <div className="px-4 py-5 sm:p-6">
               <div className="flex items-center">
@@ -376,47 +382,79 @@ const EmailManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Filters Section */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 mb-8">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div className="relative">
+            <div className="w-full sm:w-auto relative"> 
               <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sr-only">
                 Filter by Status
               </label>
-              <select
-                id="status-filter"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="block w-full py-2.5 px-3 pr-8 text-sm border dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 appearance-none"
-              >
-                <option value="all">All Status</option>
-                <option value={EmailStatus.SENT}>Sent</option>
-                <option value={EmailStatus.PENDING}>Pending</option>
-                <option value={EmailStatus.FAILED}>Failed</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 20 20" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              <Listbox value={selectedStatus} onChange={setSelectedStatus}>
+                <div className="relative">
+                  <Listbox.Button className="relative w-full sm:w-48 cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border dark:border-gray-600">
+                    <span className="block truncate">{statusOptions.find(s => s.value === selectedStatus)?.name}</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                      <ChevronUpDownIcon
+                        className="h-5 w-5 text-gray-400"
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </Listbox.Button>
+                  <Transition
+                    as={Fragment}
+                    leave="transition ease-in duration-100"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                  >
+                    <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full sm:w-48 overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                      {statusOptions.map((status, statusIdx) => (
+                        <Listbox.Option
+                          key={statusIdx}
+                          className={({ active }) =>
+                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                              active ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                            }`
+                          }
+                          value={status.value}
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span
+                                className={`block truncate ${
+                                  selected ? 'font-medium' : 'font-normal'
+                                }`}
+                              >
+                                {status.name}
+                              </span>
+                              {selected ? (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                  <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </Listbox.Option>
+                      ))}
+                    </Listbox.Options>
+                  </Transition>
+                </div>
+              </Listbox>
             </div>
-                         <div className="relative rounded-lg shadow-sm">
-               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                 <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
-               </div>
-                             <input
-                 type="text"
-                 className="focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent block w-full pl-10 py-2.5 text-sm border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:shadow-md transition-all duration-200"
-                 placeholder="Search emails..."
-                 value={searchTerm}
-                 onChange={(e) => setSearchTerm(e.target.value)}
-               />
+            <div className="w-full sm:w-auto relative rounded-lg shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              </div>
+              <input
+                type="text"
+                className="focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent block w-full pl-10 py-2.5 text-sm border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:shadow-md transition-all duration-200"
+                placeholder="Search emails..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </div>
         </div>
 
-        {/* Email List Table */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
@@ -507,25 +545,23 @@ const EmailManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* View Email Modal */}
       {viewEmail && (
         <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900/75 bg-opacity-75 transition-opacity z-50">
           <div className="flex min-h-full items-end justify-center p-2 sm:p-4 text-center sm:items-center">
             <div className="relative transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6 text-left shadow-xl dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] transition-all border border-gray-200/50 dark:border-gray-700/50 w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-5xl lg:max-w-6xl">
-                              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
-                  <button
-                    type="button"
-                    onClick={() => setViewEmail(null)}
-                    className="rounded-lg bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
-                  >
-                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                  </button>
-                </div>
+              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+                <button
+                  type="button"
+                  onClick={() => setViewEmail(null)}
+                  className="rounded-lg bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
+                >
+                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                </button>
+              </div>
               <div className="flex flex-col h-full">
                 <div className="flex-shrink-0">
                   <h3 className="text-base sm:text-lg font-semibold leading-6 text-gray-900 dark:text-gray-100 pr-10 mb-4">Email Details</h3>
                   <div className="space-y-3">
-                    {/* Top section with key info */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
                       <div>
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Recipient:</p>
@@ -541,12 +577,12 @@ const EmailManagementPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Subject:</p>
                       <p className="text-sm text-gray-900 dark:text-gray-100 break-words">{viewEmail.subject}</p>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
                       <div>
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Template:</p>
@@ -557,7 +593,6 @@ const EmailManagementPage: React.FC = () => {
                         <p className="text-sm text-gray-900 dark:text-gray-100">{formatDate(viewEmail.createdAt)}</p>
                       </div>
                     </div>
-                    {/* Additional info in compact layout */}
                     {(viewEmail.errorMessage || viewEmail.lastRetryAt || (viewEmail.retryCount !== undefined && viewEmail.retryCount > 0)) && (
                       <div className="grid grid-cols-1 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
                         {viewEmail.errorMessage && (
@@ -582,17 +617,16 @@ const EmailManagementPage: React.FC = () => {
                         </div>
                       </div>
                     )}
-                                    </div>
-                  
-                  {/* Scrollable email content section */}
+                  </div>
+
                   <div className="flex-1 min-h-0 mt-4">
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Email Content:</p>
                     <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 h-40 sm:h-48 md:h-56 overflow-y-auto">
                       <div className="text-gray-900 dark:text-gray-100 text-sm break-words" dangerouslySetInnerHTML={{ __html: viewEmail.body }} />
                     </div>
                   </div>
-                
-                                    <div className="flex-shrink-0 mt-4 flex flex-col-reverse sm:flex-row sm:justify-end space-y-3 space-y-reverse sm:space-y-0 sm:space-x-3">
+
+                  <div className="flex-shrink-0 mt-4 flex flex-col-reverse sm:flex-row sm:justify-end space-y-3 space-y-reverse sm:space-y-0 sm:space-x-3">
                     {viewEmail.status === EmailStatus.FAILED && (
                       <button
                         type="button"

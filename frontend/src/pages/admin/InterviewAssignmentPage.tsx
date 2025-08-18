@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { interviewAPI, interviewSkeletonAPI } from '../../services/api';
 import { InterviewSkeleton, AssignInterviewRequest, Interview } from '../../types/interview';
 import { 
-  PlusIcon, 
   UserIcon,
   BriefcaseIcon,
   CalendarIcon,
@@ -233,7 +232,6 @@ const InterviewAssignmentPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -245,14 +243,12 @@ const InterviewAssignmentPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700/50 rounded-md p-4">
           <p className="text-red-800 dark:text-red-300">{error}</p>
         </div>
       )}
 
-      {/* Applications List Card */}
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -300,7 +296,6 @@ const InterviewAssignmentPage: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Show interview assignment info if exists */}
                       {interview && (
                         <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-md border border-blue-200 dark:border-blue-700/50">
                           <div className="flex items-center space-x-2">
@@ -324,7 +319,6 @@ const InterviewAssignmentPage: React.FC = () => {
                     
                     <div className="flex items-center space-x-2">
                       {interview ? (
-                        // Show Re-assign and De-assign buttons for assigned interviews
                         <>
                           <button
                             onClick={() => handleAssignInterview(application)}
@@ -340,7 +334,6 @@ const InterviewAssignmentPage: React.FC = () => {
                           </button>
                         </>
                       ) : (
-                        // Show Assign button for unassigned applications
                         <button
                           onClick={() => handleAssignInterview(application)}
                           className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
@@ -358,7 +351,6 @@ const InterviewAssignmentPage: React.FC = () => {
         )}
       </div>
 
-      {/* Assignment Modal */}
       {showModal && selectedApplication && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border border-gray-200/50 dark:border-gray-700/50 max-w-[95vw] sm:max-w-[90vw] md:w-2/3 lg:w-1/2 shadow-lg dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] rounded-md bg-white dark:bg-gray-800">
@@ -473,7 +465,6 @@ const InterviewAssignmentPage: React.FC = () => {
         </div>
       )}
       
-      {/* Toast Notification */}
       {toast && (
         <Toast
           message={toast.message}

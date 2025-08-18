@@ -131,7 +131,7 @@ const UserManagementPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="space-y-8">
         <div className="animate-pulse space-y-6">
           {/* Header skeleton */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50">
@@ -164,9 +164,8 @@ const UserManagementPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50 mb-8">
+    <div className="space-y-8">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50">
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">User Management</h1>
@@ -187,9 +186,7 @@ const UserManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-        {/* Search and Filter Section */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex-1 min-w-0">
             <div className="relative rounded-lg shadow-sm">
@@ -225,7 +222,6 @@ const UserManagementPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Table Section */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
@@ -322,7 +318,6 @@ const UserManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Add User Modal */}
       <AddUserModal
         isOpen={isAddUserModalOpen}
         onClose={handleCloseAddUserModal}
@@ -330,7 +325,6 @@ const UserManagementPage: React.FC = () => {
         token={token!}
       />
 
-      {/* User Details Modal */}
       <UserDetailsModal
         isOpen={isUserDetailsModalOpen}
         onClose={handleCloseUserDetailsModal}

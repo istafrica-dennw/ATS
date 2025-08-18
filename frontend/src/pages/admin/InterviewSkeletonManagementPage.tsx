@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { interviewSkeletonAPI } from '../../services/api';
-import { InterviewSkeleton, CreateInterviewSkeletonRequest, CreateFocusAreaRequest } from '../../types/interview';
+import { InterviewSkeleton, CreateInterviewSkeletonRequest } from '../../types/interview';
 import { 
   PlusIcon, 
   PencilIcon, 
   TrashIcon,
-  EyeIcon,
   XMarkIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
@@ -23,7 +22,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
   const [editingSkeleton, setEditingSkeleton] = useState<InterviewSkeleton | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form state
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -169,7 +167,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -188,7 +185,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700/50 rounded-md p-4">
           <p className="text-red-800 dark:text-red-300">{error}</p>
@@ -201,7 +197,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Skeletons List Card */}
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -257,7 +252,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Focus Areas Preview */}
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                   {skeleton.focusAreas.map((area, index) => (
                     <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-2 border border-gray-200/50 dark:border-gray-600/50">
@@ -274,11 +268,9 @@ const InterviewSkeletonManagementPage: React.FC = () => {
         )}
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-0 border border-gray-200/50 dark:border-gray-700/50 max-w-[95vw] sm:max-w-[90vw] md:max-w-2xl shadow-lg dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] rounded-lg bg-white dark:bg-gray-800">
-            {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {editingSkeleton ? 'Edit Interview Skeleton' : 'Create Interview Skeleton'}
@@ -291,10 +283,8 @@ const InterviewSkeletonManagementPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Information Section */}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -324,7 +314,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Focus Areas Section */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -386,7 +375,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
               </form>
             </div>
 
-            {/* Modal Footer */}
             <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
               <button
                 type="button"

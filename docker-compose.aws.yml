@@ -111,6 +111,8 @@ services:
       - NODE_ENV=production
     volumes:
       - ./certbot:/var/www/certbot
+      - /etc/letsencrypt:/etc/letsencrypt:ro   # certificates read-only
+
     depends_on:
       - backend
     networks:

@@ -108,6 +108,8 @@ services:
       - REACT_APP_API_URL=${REACT_APP_API_URL}
       - REACT_APP_SOCKET_URL=${REACT_APP_SOCKET_URL:-http://localhost:9092}
       - NODE_ENV=production
+    volumes:
+      - ./certbot:/var/www/certbot
     depends_on:
       - backend
     networks:
@@ -120,7 +122,17 @@ services:
           memory: 512M
         reservations:
           memory: 256M
-
+  certbot:
+    image: certbot/certbot
+    container_name: ats-certbot
+    volumes:
+      - ./certbot:/var/www/certbot
+      - /etc/letsencrypt:/etc/letsencrypt
+    profiles: ["manual"]
+    entrypoint: ""
+    restart: "no"
+    networks:
+      - ats-network
 networks:
   ats-network:
     driver: bridge

@@ -102,12 +102,24 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - ./certbot:/var/www/certbot
     depends_on:
       - backend
     networks:
       - ats-network
     tty: true
     stdin_open: true
+  certbot:
+    image: certbot/certbot
+    container_name: ats-certbot
+    volumes:
+      - ./certbot:/var/www/certbot
+      - /etc/letsencrypt:/etc/letsencrypt
+    profiles: ["manual"]
+    entrypoint: ""
+    restart: "no"
+    networks:
+      - ats-network
 
 networks:
   ats-network:

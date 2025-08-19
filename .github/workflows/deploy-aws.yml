@@ -201,7 +201,7 @@ jobs:
             echo "# OAuth Configuration" >> .env
             echo "LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}" >> .env
             echo "LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}" >> .env
-            echo "BACKEND_URL=http://${{ secrets.EC2_HOST }}:8080" >> .env
+            echo "BACKEND_URL=${{ secrets.BACKEND_URL }}" >> .env
             echo "" >> .env
             echo "# Gemini AI Configuration" >> .env
             echo "AI_PROVIDER=gemini" >> .env
@@ -218,10 +218,10 @@ jobs:
             echo "AI_TEMPERATURE=0.1" >> .env
             echo "" >> .env
             echo "# Application Configuration" >> .env
-            echo "REACT_APP_API_URL=http://${{ secrets.EC2_HOST }}:8080/api" >> .env
-            echo "REACT_APP_SOCKET_URL=http://${{ secrets.EC2_HOST }}:9092" >> .env
-            echo "FRONTEND_URL=http://${{ secrets.EC2_HOST }}" >> .env
-            echo "BACKEND_URL=http://${{ secrets.EC2_HOST }}:8080" >> .env
+            echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env
+            echo "REACT_APP_SOCKET_URL=${{ secrets.REACT_APP_SOCKET_URL }}" >> .env
+            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
+            echo "BACKEND_URL=${{ secrets.BACKEND_URL }}" >> .env
             echo "UPLOADS_DIRECTORY=uploads" >> .env
             echo "" >> .env
             chmod 600 .env

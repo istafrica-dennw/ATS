@@ -101,7 +101,8 @@ services:
         REACT_APP_SOCKET_URL: ${REACT_APP_SOCKET_URL}
     container_name: ats-frontend-aws
     ports:
-      - "80:3001"
+      - "80:80"
+      - "443:443"
     env_file:
       - .env
     environment:

@@ -2,6 +2,12 @@
 
 A comprehensive Applicant Tracking System built with Spring Boot and React, designed to streamline the recruitment process for organizations.
 
+## 🌐 Live Site
+
+**Access the live application at: [https://ist.africa](https://ist.africa)**
+
+The application is hosted on AWS and ready for production use.
+
 ## Features
 
 ### 📋 Job Management
@@ -66,10 +72,13 @@ A comprehensive Applicant Tracking System built with Spring Boot and React, desi
 - **Axios** - HTTP client
 - **React Router** - Navigation
 
-### DevOps
+### DevOps & Deployment
 - **Docker & Docker Compose** - Containerization
 - **Multi-stage builds** - Optimized container images
 - **Health checks** - Container monitoring
+- **AWS EC2** - Production hosting
+- **GitHub Actions** - CI/CD pipeline
+- **Nginx** - Production web server
 - **Ollama + phi3** - Local AI models for resume analysis
 
 ## Quick Start
@@ -86,12 +95,13 @@ docker-compose up -d
 ```
 
 3. **Access the application**
-- Frontend: http://localhost:3001 (development) / http://your-domain (production)
-- Backend API: http://localhost:8080
-- API Documentation: http://localhost:8080/swagger-ui.html
+- **Production**: [https://ist.africa](https://ist.africa)
+- **Local Frontend**: http://localhost:3001 (development)
+- **Local Backend**: http://localhost:8080
+- **API Documentation**: http://localhost:8080/swagger-ui.html
 
 ### Default Admin Account
-- Email: `admin@ats.istafrica`
+- Email: `admin@ist.africa`
 - Password: `admin@atsafrica`
 
 ## 📊 Database Schema
@@ -151,8 +161,9 @@ The system provides comprehensive REST APIs:
 - **Files**: `/api/files/*` - File uploads
 
 ### Documentation
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- OpenAPI Spec: http://localhost:8080/api-docs
+- **Production API**: https://ist.africa:8080/swagger-ui.html
+- **Local Development**: http://localhost:8080/swagger-ui.html
+- **OpenAPI Spec**: http://localhost:8080/api-docs
 
 ## 🎨 User Interface
 
@@ -228,7 +239,8 @@ docker run -d --name ats-db \
 ## 📄 Documentation
 
 - [Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md) - Detailed system documentation
-- [API Documentation](http://localhost:8080/swagger-ui.html) - Interactive API docs
+- [Production API Docs](https://ist.africa:8080/swagger-ui.html) - Live interactive API docs
+- [Local API Documentation](http://localhost:8080/swagger-ui.html) - Development API docs
 - [Database Schema](docs/TECHNICAL_DOCUMENTATION.md#database-schema) - Complete schema reference
 
 ## 🤝 Contributing

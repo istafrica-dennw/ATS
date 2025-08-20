@@ -27,8 +27,8 @@ public class SwaggerConfig {
                     .name("Apache 2.0")
                     .url("http://springdoc.org")))
             .servers(Arrays.asList(
-                new Server().url("http://localhost:8080").description("Local Development Server"),
-                new Server().url("http://api.ats-system.com").description("Production Server")
+                new Server().url("https://ist.africa:8080").description("Production Server"),
+                new Server().url("http://localhost:8080").description("Local Development Server")
             ))
             .components(new Components()
                 .addSecuritySchemes("bearerAuth", 

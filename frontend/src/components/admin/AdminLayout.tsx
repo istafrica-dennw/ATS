@@ -161,7 +161,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div className="flex flex-col flex-1 overflow-hidden">
         <nav className="shadow-xl border-b border-white/20 dark:border-gray-700/50 flex-shrink-0 relative z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-indigo-600/10 dark:from-blue-400/5 dark:via-purple-400/5 dark:to-indigo-400/5"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="relative px-4 sm:px-6 md:px-8">
             <div className="flex justify-between h-16">
               <div className="flex items-center">
                 <button
@@ -204,10 +204,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         <div className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-800/50 dark:to-gray-900/30">
           <main className="flex-1">
-            <div className="py-6">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-                <Outlet />
-              </div>
+            <div className="py-6 px-4 sm:px-6 md:px-8">
+              <Outlet />
             </div>
           </main>
         </div>

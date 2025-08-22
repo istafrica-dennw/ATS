@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { interviewSkeletonAPI } from '../../services/api';
 import { InterviewSkeleton, CreateInterviewSkeletonRequest } from '../../types/interview';
 import { 
@@ -6,7 +7,8 @@ import {
   PencilIcon, 
   TrashIcon,
   XMarkIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 
 interface FocusAreaForm {
@@ -223,44 +225,61 @@ const InterviewSkeletonManagementPage: React.FC = () => {
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {skeletons.map((skeleton) => (
               <div key={skeleton.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{skeleton.name}</h3>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{skeleton.name}</h3>
                     {skeleton.description && (
-                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{skeleton.description}</p>
+                      <ul className="mt-2 list-none space-y-2">
+                        {skeleton.description.split('\n').filter(line => line.trim()).map((line, sIndex) => (
+                          <li key={sIndex} className="text-sm text-gray-700 dark:text-gray-300">
+                            {line.trim()}
+                          </li>
+                        ))}
+                      </ul>
                     )}
-                    <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                      <span>{skeleton.focusAreas.length} focus areas</span>
+                    <div className="mt-3 flex items-center text-base font-medium text-gray-800 dark:text-gray-200">
+                      <ClipboardDocumentListIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
+                      <span>
+                        {skeleton.focusAreas.length} Focus Areas
+                      </span>
                     </div>
                   </div>
                   
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handleEdit(skeleton)}
-                      className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
                     >
-                      <PencilIcon className="h-3 w-3 mr-1" />
+                      <PencilIcon className="h-4 w-4 mr-1.5" />
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(skeleton.id)}
-                      className="inline-flex items-center px-3 py-1 border border-red-300 dark:border-red-600 text-xs font-medium rounded text-red-700 dark:text-red-300 bg-white dark:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/40"
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
                     >
-                      <TrashIcon className="h-3 w-3 mr-1" />
+                      <TrashIcon className="h-4 w-4 mr-1.5" />
                       Delete
                     </button>
                   </div>
                 </div>
                 
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {skeleton.focusAreas.map((area, index) => (
-                    <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-2 border border-gray-200/50 dark:border-gray-600/50">
-                      <h4 className="text-xs font-medium text-gray-900 dark:text-gray-100">{area.title}</h4>
-                      {area.description && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{area.description}</p>
-                      )}
-                    </div>
-                  ))}
+                <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {skeleton.focusAreas.map((area, index) => (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200/50 dark:border-gray-600/50 transform transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-gray-700/50">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">{area.title}</h4>
+                        {area.description && (
+                          <div className="flex flex-wrap gap-2">
+                            {area.description.split(/[,.]|\d+\.\s*/).filter(skill => skill.trim()).map((skill, sIndex) => (
+                              <span key={sIndex} className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full dark:bg-blue-900/30 dark:text-blue-300">
+                                {skill.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -268,7 +287,7 @@ const InterviewSkeletonManagementPage: React.FC = () => {
         )}
       </div>
 
-      {showModal && (
+      {showModal && ReactDOM.createPortal(
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-0 border border-gray-200/50 dark:border-gray-700/50 max-w-[95vw] sm:max-w-[90vw] md:max-w-2xl shadow-lg dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] rounded-lg bg-white dark:bg-gray-800">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -393,7 +412,8 @@ const InterviewSkeletonManagementPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

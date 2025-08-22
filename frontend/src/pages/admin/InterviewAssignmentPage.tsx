@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { interviewAPI, interviewSkeletonAPI } from '../../services/api';
 import { InterviewSkeleton, AssignInterviewRequest, Interview } from '../../types/interview';
 import { 
-  PlusIcon, 
   UserIcon,
   BriefcaseIcon,
   CalendarIcon,
   XMarkIcon,
   CheckCircleIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  PencilSquareIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 interface Application {
@@ -233,7 +234,6 @@ const InterviewAssignmentPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -245,14 +245,12 @@ const InterviewAssignmentPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700/50 rounded-md p-4">
           <p className="text-red-800 dark:text-red-300">{error}</p>
         </div>
       )}
 
-      {/* Applications List Card */}
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -300,56 +298,58 @@ const InterviewAssignmentPage: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Show interview assignment info if exists */}
                       {interview && (
-                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-md border border-blue-200 dark:border-blue-700/50">
-                          <div className="flex items-center space-x-2">
-                            <UserGroupIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                            <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
-                              Assigned to: {interview.interviewerName}
-                            </span>
-                          </div>
-                          <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                            {interview.scheduledAt 
-                              ? `Scheduled: ${formatDate(interview.scheduledAt)}`
-                              : 'Date TBD'
-                            }
-                          </div>
-                          <div className="text-xs text-blue-700 dark:text-blue-300">
-                            Status: {interview.status}
+                        <div className="mt-4 p-4 bg-blue-50 dark:bg-gray-700/50 rounded-lg border border-blue-200/50 dark:border-blue-700/50 transform transition-transform duration-300 hover:scale-[1.01] shadow-inner">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center space-x-3">
+                                <UserGroupIcon className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                                <span className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+                                  Assigned to: {interview.interviewerName}
+                                </span>
+                              </div>
+                              <div className="mt-2 ml-8 text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                                <p>
+                                  {interview.scheduledAt 
+                                    ? `Scheduled: ${formatDate(interview.scheduledAt)}`
+                                    : 'Date TBD'
+                                  }
+                                </p>
+                                <p>Status: <span className="font-medium">{interview.status}</span></p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col space-y-2">
+                              <button
+                                onClick={() => handleAssignInterview(application)}
+                                className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 dark:from-blue-400 dark:to-blue-500 dark:hover:from-blue-500 dark:hover:to-blue-600 transition-all shadow-sm hover:shadow-lg transform hover:scale-105"
+                              >
+                                <PencilSquareIcon className="h-4 w-4 mr-1.5" />
+                                Re-assign
+                              </button>
+                              <button
+                                onClick={() => handleCancelInterview(interview.id)}
+                                className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 dark:from-red-400 dark:to-red-500 dark:hover:from-red-500 dark:hover:to-red-600 transition-all shadow-sm hover:shadow-lg transform hover:scale-105"
+                              >
+                                <TrashIcon className="h-4 w-4 mr-1.5" />
+                                De-assign
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      {interview ? (
-                        // Show Re-assign and De-assign buttons for assigned interviews
-                        <>
-                          <button
-                            onClick={() => handleAssignInterview(application)}
-                            className="inline-flex items-center px-3 py-1 border border-indigo-300 dark:border-indigo-600 rounded text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
-                          >
-                            Re-assign
-                          </button>
-                          <button
-                            onClick={() => handleCancelInterview(interview.id)}
-                            className="inline-flex items-center px-3 py-1 border border-red-300 dark:border-red-600 rounded text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50"
-                          >
-                            De-assign
-                          </button>
-                        </>
-                      ) : (
-                        // Show Assign button for unassigned applications
+                    {!interview && (
+                      <div className="flex items-center">
                         <button
                           onClick={() => handleAssignInterview(application)}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 font-medium transform hover:scale-[1.02] transition-all"
                         >
-                          <CalendarIcon className="h-3 w-3 mr-1" />
+                          <CalendarIcon className="h-4 w-4 mr-2" />
                           Assign Interview
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -358,7 +358,6 @@ const InterviewAssignmentPage: React.FC = () => {
         )}
       </div>
 
-      {/* Assignment Modal */}
       {showModal && selectedApplication && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border border-gray-200/50 dark:border-gray-700/50 max-w-[95vw] sm:max-w-[90vw] md:w-2/3 lg:w-1/2 shadow-lg dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] rounded-md bg-white dark:bg-gray-800">
@@ -473,7 +472,6 @@ const InterviewAssignmentPage: React.FC = () => {
         </div>
       )}
       
-      {/* Toast Notification */}
       {toast && (
         <Toast
           message={toast.message}

@@ -8,11 +8,11 @@ import {
   CheckCircleIcon,
   SparklesIcon,
   ArrowRightIcon,
-  BellIcon,
   PlayIcon,
   ArrowPathIcon,
   MagnifyingGlassIcon,
-  TrophyIcon
+  UsersIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 
 interface AnimationStep {
@@ -75,24 +75,33 @@ const animationSteps: AnimationStep[] = [
   }
 ];
 
-const mockStats = [
-  { label: 'Active Jobs', value: 45, icon: BriefcaseIcon, trend: '+12%' },
-  { label: 'Applications', value: 234, icon: DocumentTextIcon, trend: '+25%' },
-  { label: 'Interviews', value: 28, icon: CalendarIcon, trend: '+8%' },
-  { label: 'Hired', value: 12, icon: TrophyIcon, trend: '+15%' }
-];
+// const mockStats = [
+//   { label: 'Active Jobs', value: 45, icon: BriefcaseIcon, trend: '+12%' },
+//   { label: 'Applications', value: 234, icon: DocumentTextIcon, trend: '+25%' },
+//   { label: 'Interviews', value: 28, icon: CalendarIcon, trend: '+8%' },
+//   { label: 'Hired', value: 12, icon: TrophyIcon, trend: '+15%' }
+// ];
 
-const mockActivities = [
-  { type: 'application', message: 'New application received', time: '2m ago', icon: DocumentTextIcon },
-  { type: 'interview', message: 'Interview scheduled', time: '5m ago', icon: CalendarIcon },
-  { type: 'hire', message: 'Candidate hired!', time: '1h ago', icon: CheckCircleIcon },
-  { type: 'job', message: 'New job posted', time: '2h ago', icon: BriefcaseIcon }
-];
+// const mockActivities = [
+//   { type: 'application', message: 'New application received', time: '2m ago', icon: DocumentTextIcon },
+//   { type: 'interview', message: 'Interview scheduled', time: '5m ago', icon: CalendarIcon },
+//   { type: 'hire', message: 'Candidate hired!', time: '1h ago', icon: CheckCircleIcon },
+//   { type: 'job', message: 'New job posted', time: '2h ago', icon: BriefcaseIcon }
+// ];
 
 const ATSAnimationShowcase: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [animationComplete, setAnimationComplete] = useState(false);
+
+  const features = [
+    { name: 'Job Posting', icon: BriefcaseIcon },
+    { name: 'AI Screening', icon: SparklesIcon },
+    { name: 'Scheduling', icon: CalendarIcon },
+    { name: 'Collaboration', icon: UsersIcon },
+    { name: 'Analytics', icon: ChartBarIcon },
+    { name: 'Onboarding', icon: CheckCircleIcon },
+  ];
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -138,9 +147,10 @@ const ATSAnimationShowcase: React.FC = () => {
             <div className="text-2xl font-bold mb-4">ATS Dashboard Preview</div>
             <div className="text-lg mb-8">Streamlined candidate management</div>
             <div className="grid grid-cols-3 gap-4 w-full max-w-md">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="bg-white bg-opacity-20 rounded-lg p-3 h-16 flex items-center justify-center">
-                  <div className="text-sm">Feature {i}</div>
+              {features.map((feature, i) => (
+                <div key={i} className="bg-white bg-opacity-20 rounded-lg p-3 h-16 flex flex-col items-center justify-center text-center">
+                  <feature.icon className="h-6 w-6 mb-1" />
+                  <div className="text-xs font-semibold">{feature.name}</div>
                 </div>
               ))}
             </div>

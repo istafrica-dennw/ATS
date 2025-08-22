@@ -4,7 +4,6 @@ import {
   UserGroupIcon, 
   EyeIcon,
   PaperAirplaneIcon,
-  ExclamationTriangleIcon,
   CheckCircleIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline';
@@ -67,7 +66,7 @@ interface BulkEmailResponse {
 }
 
 const BulkEmailPage: React.FC = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [statuses, setStatuses] = useState<ApplicationStatus[]>([]);
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null);
@@ -170,8 +169,8 @@ const BulkEmailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="space-y-8">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50 mb-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
             <EnvelopeIcon className="h-8 w-8 mr-3 text-indigo-600 dark:text-indigo-400" />
@@ -183,14 +182,12 @@ const BulkEmailPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Email Composition Form */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 Email Filters & Content
               </h2>
 
-              {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -229,7 +226,6 @@ const BulkEmailPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Preview Button */}
               <div className="mb-6">
                 <button
                   onClick={fetchEmailPreview}
@@ -241,7 +237,6 @@ const BulkEmailPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Email Content */}
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -322,7 +317,6 @@ const BulkEmailPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Send Button */}
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={sendBulkEmail}
@@ -336,9 +330,7 @@ const BulkEmailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Preview Panel */}
           <div className="space-y-6">
-            {/* Recipients Preview */}
             {showPreview && emailPreview && (
               <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -382,7 +374,6 @@ const BulkEmailPage: React.FC = () => {
               </div>
             )}
 
-            {/* Send Result */}
             {sendResult && (
               <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">

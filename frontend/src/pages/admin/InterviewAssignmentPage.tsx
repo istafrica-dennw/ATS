@@ -7,7 +7,9 @@ import {
   CalendarIcon,
   XMarkIcon,
   CheckCircleIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  PencilSquareIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 interface Application {
@@ -297,52 +299,57 @@ const InterviewAssignmentPage: React.FC = () => {
                       </div>
 
                       {interview && (
-                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-md border border-blue-200 dark:border-blue-700/50">
-                          <div className="flex items-center space-x-2">
-                            <UserGroupIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                            <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
-                              Assigned to: {interview.interviewerName}
-                            </span>
-                          </div>
-                          <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                            {interview.scheduledAt 
-                              ? `Scheduled: ${formatDate(interview.scheduledAt)}`
-                              : 'Date TBD'
-                            }
-                          </div>
-                          <div className="text-xs text-blue-700 dark:text-blue-300">
-                            Status: {interview.status}
+                        <div className="mt-4 p-4 bg-blue-50 dark:bg-gray-700/50 rounded-lg border border-blue-200/50 dark:border-blue-700/50 transform transition-transform duration-300 hover:scale-[1.01] shadow-inner">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center space-x-3">
+                                <UserGroupIcon className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                                <span className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+                                  Assigned to: {interview.interviewerName}
+                                </span>
+                              </div>
+                              <div className="mt-2 ml-8 text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                                <p>
+                                  {interview.scheduledAt 
+                                    ? `Scheduled: ${formatDate(interview.scheduledAt)}`
+                                    : 'Date TBD'
+                                  }
+                                </p>
+                                <p>Status: <span className="font-medium">{interview.status}</span></p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col space-y-2">
+                              <button
+                                onClick={() => handleAssignInterview(application)}
+                                className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 dark:from-blue-400 dark:to-blue-500 dark:hover:from-blue-500 dark:hover:to-blue-600 transition-all shadow-sm hover:shadow-lg transform hover:scale-105"
+                              >
+                                <PencilSquareIcon className="h-4 w-4 mr-1.5" />
+                                Re-assign
+                              </button>
+                              <button
+                                onClick={() => handleCancelInterview(interview.id)}
+                                className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 dark:from-red-400 dark:to-red-500 dark:hover:from-red-500 dark:hover:to-red-600 transition-all shadow-sm hover:shadow-lg transform hover:scale-105"
+                              >
+                                <TrashIcon className="h-4 w-4 mr-1.5" />
+                                De-assign
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      {interview ? (
-                        <>
-                          <button
-                            onClick={() => handleAssignInterview(application)}
-                            className="inline-flex items-center px-3 py-1 border border-indigo-300 dark:border-indigo-600 rounded text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
-                          >
-                            Re-assign
-                          </button>
-                          <button
-                            onClick={() => handleCancelInterview(interview.id)}
-                            className="inline-flex items-center px-3 py-1 border border-red-300 dark:border-red-600 rounded text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50"
-                          >
-                            De-assign
-                          </button>
-                        </>
-                      ) : (
+                    {!interview && (
+                      <div className="flex items-center">
                         <button
                           onClick={() => handleAssignInterview(application)}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/30 hover:bg-indigo-200 dark:hover:bg-indigo-900/50"
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 font-medium transform hover:scale-[1.02] transition-all"
                         >
-                          <CalendarIcon className="h-3 w-3 mr-1" />
+                          <CalendarIcon className="h-4 w-4 mr-2" />
                           Assign Interview
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

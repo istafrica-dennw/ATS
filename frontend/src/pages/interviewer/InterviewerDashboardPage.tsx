@@ -211,9 +211,9 @@ const InterviewerDashboardPage: React.FC = () => {
                       )}
                       <button
                         onClick={() => handleViewInterview(interview.id)}
-                        className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 dark:from-blue-400 dark:to-blue-500 dark:hover:from-blue-500 dark:hover:to-blue-600 transition-all shadow-sm hover:shadow-lg transform hover:scale-105"
                       >
-                        <EyeIcon className="h-3 w-3 mr-1" />
+                        <EyeIcon className="h-4 w-4 mr-1.5" />
                         View
                       </button>
                     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { interviewAPI } from '../../services/api';
+import { interviewAPI, skeletonJobAssociationAPI } from '../../services/api';
 import { jobService } from '../../services/jobService';
 import { Interview, InterviewStatus } from '../../types/interview';
 import { JobDTO } from '../../services/jobService';
@@ -69,6 +69,7 @@ const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () 
 const InterviewResultsPage: React.FC = () => {
   const [results, setResults] = useState<InterviewResult[]>([]);
   const [jobs, setJobs] = useState<JobDTO[]>([]);
+  const [jobFocusAreas, setJobFocusAreas] = useState<{[jobId: number]: string[]}>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -161,20 +162,40 @@ const InterviewResultsPage: React.FC = () => {
         });
       });
 
-      // Calculate overall ratings and convert to array
+      // Load focus areas for each job first
+      const jobFocusAreasMap: {[jobId: number]: string[]} = {};
+      await Promise.all(
+        jobsResponse.map(async (job: JobDTO) => {
+          try {
+            const focusAreasResponse = await skeletonJobAssociationAPI.getFocusAreasForJob(job.id);
+            jobFocusAreasMap[job.id] = focusAreasResponse.data || [];
+          } catch (error) {
+            console.error(`Error loading focus areas for job ${job.id}:`, error);
+            jobFocusAreasMap[job.id] = [];
+          }
+        })
+      );
+
+      // Calculate overall ratings ONLY based on associated focus areas
       const processedResults: InterviewResult[] = Array.from(candidateGroups.values()).map(result => {
-        // Calculate overall rating from all responses
-        const allValidRatings: number[] = [];
-        Object.values(result.allResponses).forEach(responses => {
-          responses.forEach(response => {
-            if (response.rating > 0) {
-              allValidRatings.push(response.rating);
-            }
-          });
+        const jobFocusAreasList = jobFocusAreasMap[result.jobId] || [];
+        
+        // STRICT: Calculate average based ONLY on associated focus areas (including 0 for missing)
+        const ratingsForAllAreas: number[] = [];
+        jobFocusAreasList.forEach(focusArea => {
+          const responses = result.allResponses[focusArea] || [];
+          if (responses.length > 0) {
+            // Use the average of all responses for this focus area
+            const areaAverage = responses.reduce((sum, resp) => sum + resp.rating, 0) / responses.length;
+            ratingsForAllAreas.push(areaAverage);
+          } else {
+            // No responses for this focus area, count as 0
+            ratingsForAllAreas.push(0);
+          }
         });
 
-        const overallRating = allValidRatings.length > 0 
-          ? Math.round(allValidRatings.reduce((sum, rating) => sum + rating, 0) / allValidRatings.length)
+        const overallRating = ratingsForAllAreas.length > 0 
+          ? Math.round(ratingsForAllAreas.reduce((sum, rating) => sum + rating, 0) / ratingsForAllAreas.length)
           : 0;
 
         return {
@@ -185,6 +206,7 @@ const InterviewResultsPage: React.FC = () => {
 
       setResults(processedResults);
       setJobs(jobsResponse);
+      setJobFocusAreas(jobFocusAreasMap);
       
     } catch (err) {
       console.error('Error fetching interview results:', err);
@@ -285,14 +307,15 @@ const InterviewResultsPage: React.FC = () => {
     return 'bg-gray-100 dark:bg-gray-900/30';
   };
 
-  // Get unique focus areas from all results for table headers
+  // Get unique focus areas ONLY from job associations for table headers
   const getAllFocusAreas = () => {
     const focusAreas = new Set<string>();
-    results.forEach(result => {
-      Object.keys(result.allResponses).forEach(focusArea => {
-        focusAreas.add(focusArea);
-      });
+    
+    // STRICT: Only add focus areas from job associations (associated skeletons only)
+    Object.values(jobFocusAreas).forEach(areas => {
+      areas.forEach(area => focusAreas.add(area));
     });
+    
     return Array.from(focusAreas).sort();
   };
 

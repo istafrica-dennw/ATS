@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { interviewAPI, interviewSkeletonAPI } from '../../services/api';
+import { interviewAPI, interviewSkeletonAPI, skeletonJobAssociationAPI } from '../../services/api';
 import { jobService, JobDTO } from '../../services/jobService';
 import { InterviewSkeleton, AssignInterviewRequest, Interview } from '../../types/interview';
 import { 
@@ -69,6 +69,7 @@ const InterviewAssignmentPage: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [interviewers, setInterviewers] = useState<Interviewer[]>([]);
   const [skeletons, setSkeletons] = useState<InterviewSkeleton[]>([]);
+  const [filteredSkeletons, setFilteredSkeletons] = useState<InterviewSkeleton[]>([]);
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [jobs, setJobs] = useState<JobDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,7 +161,7 @@ const InterviewAssignmentPage: React.FC = () => {
     });
   };
 
-  const handleAssignInterview = (application: Application) => {
+  const handleAssignInterview = async (application: Application) => {
     setSelectedApplication(application);
     setFormData({
       interviewerId: '',
@@ -168,6 +169,24 @@ const InterviewAssignmentPage: React.FC = () => {
       scheduledAt: '',
       notes: ''
     });
+    
+    try {
+      // Get skeletons associated with this job
+      const associatedSkeletonIds = await skeletonJobAssociationAPI.getSkeletonIdsByJobId(application.jobId);
+      
+      // Filter skeletons to only show those associated with the job
+      const jobSkeletons = skeletons.filter(skeleton => 
+        associatedSkeletonIds.data.includes(skeleton.id)
+      );
+      
+      // STRICT: Only show skeletons associated with this job
+      setFilteredSkeletons(jobSkeletons);
+    } catch (error) {
+      console.error('Error loading job skeletons:', error);
+      // STRICT: Show no skeletons if API fails
+      setFilteredSkeletons([]);
+    }
+    
     setShowModal(true);
   };
 
@@ -525,11 +544,14 @@ const InterviewAssignmentPage: React.FC = () => {
                   required
                 >
                   <option value="">Select an interview template</option>
-                  {skeletons.map((skeleton) => (
+                  {filteredSkeletons.map((skeleton) => (
                     <option key={skeleton.id} value={skeleton.id}>
                       {skeleton.name} ({skeleton.focusAreas.length} focus areas)
                     </option>
                   ))}
+                  {filteredSkeletons.length === 0 && (
+                    <option value="" disabled>No interview templates associated with this job</option>
+                  )}
                 </select>
               </div>
 

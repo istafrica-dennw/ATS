@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { interviewSkeletonAPI } from '../../services/api';
+import { interviewSkeletonAPI, skeletonJobAssociationAPI } from '../../services/api';
+import { jobService, JobDTO } from '../../services/jobService';
 import { InterviewSkeleton, CreateInterviewSkeletonRequest } from '../../types/interview';
 import { 
   PlusIcon, 
@@ -8,7 +9,9 @@ import {
   TrashIcon,
   XMarkIcon,
   DocumentTextIcon,
-  ClipboardDocumentListIcon
+  ClipboardDocumentListIcon,
+  LinkIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 
 interface FocusAreaForm {
@@ -16,12 +19,35 @@ interface FocusAreaForm {
   description: string;
 }
 
+interface SkeletonWithJobs {
+  id: number;
+  name: string;
+  description?: string;
+  focusAreas: {
+    title: string;
+    description?: string;
+    weight?: number;
+  }[];
+  associatedJobs: {
+    id: number;
+    title: string;
+    status: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
+  createdByName: string;
+}
+
 const InterviewSkeletonManagementPage: React.FC = () => {
-  const [skeletons, setSkeletons] = useState<InterviewSkeleton[]>([]);
+  const [skeletons, setSkeletons] = useState<SkeletonWithJobs[]>([]);
+  const [jobs, setJobs] = useState<JobDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showJobAssociationModal, setShowJobAssociationModal] = useState(false);
   const [editingSkeleton, setEditingSkeleton] = useState<InterviewSkeleton | null>(null);
+  const [selectedSkeletonForJobs, setSelectedSkeletonForJobs] = useState<SkeletonWithJobs | null>(null);
+  const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -37,18 +63,24 @@ const InterviewSkeletonManagementPage: React.FC = () => {
   const fetchSkeletons = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      console.log('Fetching skeletons...');
+      console.log('Fetching skeletons with jobs...');
       
-      const skeletonsResponse = await interviewSkeletonAPI.getAll();
+      const [skeletonsResponse, jobsResponse] = await Promise.all([
+        skeletonJobAssociationAPI.getSkeletonsWithJobs(),
+        jobService.getAllJobs()
+      ]);
       
       console.log('Skeletons response:', skeletonsResponse);
+      console.log('Jobs response:', jobsResponse);
       
       setSkeletons(skeletonsResponse.data || []);
+      setJobs(jobsResponse || []);
       
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load data');
+      setError('Failed to load skeletons. Please try again.');
       setSkeletons([]);
     } finally {
       setLoading(false);
@@ -159,6 +191,44 @@ const InterviewSkeletonManagementPage: React.FC = () => {
     }));
   };
 
+  const handleJobAssociation = (skeleton: SkeletonWithJobs) => {
+    setSelectedSkeletonForJobs(skeleton);
+    setSelectedJobIds(skeleton.associatedJobs.map(job => job.id));
+    setShowJobAssociationModal(true);
+  };
+
+  const handleSaveJobAssociations = async () => {
+    if (!selectedSkeletonForJobs) return;
+
+    try {
+      setSubmitting(true);
+      await skeletonJobAssociationAPI.associateSkeletonWithJobs({
+        skeletonId: selectedSkeletonForJobs.id,
+        jobIds: selectedJobIds
+      });
+      
+      // Refresh skeletons to show updated associations
+      await fetchSkeletons();
+      
+      setShowJobAssociationModal(false);
+      setSelectedSkeletonForJobs(null);
+      setSelectedJobIds([]);
+    } catch (err) {
+      console.error('Error saving job associations:', err);
+      setError('Failed to save job associations. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleJobSelection = (jobId: number) => {
+    setSelectedJobIds(prev => 
+      prev.includes(jobId) 
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -247,6 +317,13 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                   
                   <div className="flex items-center space-x-2">
                     <button
+                      onClick={() => handleJobAssociation(skeleton)}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
+                    >
+                      <LinkIcon className="h-4 w-4 mr-1.5" />
+                      Jobs
+                    </button>
+                    <button
                       onClick={() => handleEdit(skeleton)}
                       className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
                     >
@@ -263,7 +340,31 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                   </div>
                 </div>
                 
+                {/* Associated Jobs */}
+                {skeleton.associatedJobs.length > 0 && (
+                  <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <BuildingOfficeIcon className="h-4 w-4 mr-2" />
+                      Associated Jobs ({skeleton.associatedJobs.length})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {skeleton.associatedJobs.map((job) => (
+                        <span
+                          key={job.id}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                        >
+                          {job.title}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                    <ClipboardDocumentListIcon className="h-4 w-4 mr-2" />
+                    Focus Areas ({skeleton.focusAreas.length})
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {skeleton.focusAreas.map((area, index) => (
                       <div key={index} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200/50 dark:border-gray-600/50 transform transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-gray-700/50">
@@ -410,6 +511,88 @@ const InterviewSkeletonManagementPage: React.FC = () => {
               >
                 {submitting ? 'Saving...' : (editingSkeleton ? 'Update Skeleton' : 'Create Skeleton')}
               </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Job Association Modal */}
+      {showJobAssociationModal && selectedSkeletonForJobs && ReactDOM.createPortal(
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                Associate Jobs with "{selectedSkeletonForJobs.name}"
+              </h3>
+              <button
+                onClick={() => setShowJobAssociationModal(false)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Select which jobs this interview skeleton should be available for. When creating interviews, only associated skeletons will be shown for each job.
+              </p>
+
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {jobs.map((job) => (
+                  <label
+                    key={job.id}
+                    className="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedJobIds.includes(job.id)}
+                      onChange={() => toggleJobSelection(job.id)}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded"
+                    />
+                    <div className="ml-3 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {job.title}
+                        </p>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          job.jobStatus === 'OPEN' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+                        }`}>
+                          {job.jobStatus}
+                        </span>
+                      </div>
+                      {job.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                          {job.description}
+                        </p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+              <p className="text-sm text-gray-600 dark:text-gray-400 self-center">
+                {selectedJobIds.length} job(s) selected
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowJobAssociationModal(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveJobAssociations}
+                  disabled={submitting}
+                  className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {submitting ? 'Saving...' : 'Save Associations'}
+                </button>
+              </div>
             </div>
           </div>
         </div>,

@@ -102,4 +102,31 @@ export const interviewAPI = {
   // Cancel an interview assignment (admin only)
   cancelInterview: (interviewId: number) =>
     axiosInstance.delete(`/interviews/${interviewId}`)
+};
+
+// Skeleton Job Association API
+export const skeletonJobAssociationAPI = {
+  // Associate skeleton with jobs
+  associateSkeletonWithJobs: (data: { skeletonId: number; jobIds: number[] }) =>
+    axiosInstance.post('/skeleton-job-associations', data),
+
+  // Remove skeleton-job association
+  removeSkeletonJobAssociation: (skeletonId: number, jobId: number) =>
+    axiosInstance.delete(`/skeleton-job-associations/skeleton/${skeletonId}/job/${jobId}`),
+
+  // Get all skeletons with their job associations
+  getSkeletonsWithJobs: () =>
+    axiosInstance.get('/skeleton-job-associations/skeletons-with-jobs'),
+
+  // Get skeleton IDs for a job
+  getSkeletonIdsByJobId: (jobId: number) =>
+    axiosInstance.get<number[]>(`/skeleton-job-associations/job/${jobId}/skeletons`),
+
+  // Get focus areas for a job
+  getFocusAreasForJob: (jobId: number) =>
+    axiosInstance.get<string[]>(`/skeleton-job-associations/job/${jobId}/focus-areas`),
+
+  // Check if skeleton is associated with job
+  isSkeletonAssociatedWithJob: (skeletonId: number, jobId: number) =>
+    axiosInstance.get<boolean>(`/skeleton-job-associations/skeleton/${skeletonId}/job/${jobId}/exists`)
 }; 

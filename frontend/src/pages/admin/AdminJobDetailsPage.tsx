@@ -690,9 +690,9 @@ const AdminJobDetailsPage: React.FC = () => {
     return found;
   };
 
-  // Handle interview assignment (redirect to assignment page)
-  const handleAssignInterview = (applicationId: number) => {
-    navigate('/admin/interview-assignments');
+      // Handle interview assignment (redirect to interview management page)
+    const handleAssignInterview = (applicationId: number) => {
+      navigate('/admin/interview-management');
   };
 
   // Handle interview cancellation

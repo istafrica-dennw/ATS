@@ -12,8 +12,8 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import EmailManagementPage from './pages/admin/EmailManagementPage';
 import JobManagementPage from './pages/admin/JobManagementPage';
 import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
-import InterviewSkeletonManagementPage from './pages/admin/InterviewSkeletonManagementPage';
-import InterviewAssignmentPage from './pages/admin/InterviewAssignmentPage';
+import InterviewManagementPage from './pages/admin/InterviewManagementPage';
+import InterviewResultsPage from './pages/admin/InterviewResultsPage';
 import AdminChatPage from './pages/admin/AdminChatPage';
 import BulkEmailPage from './pages/admin/BulkEmailPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -233,8 +233,8 @@ const App: React.FC = () => {
                <Route path="bulk-email" element={<BulkEmailPage />} />
                <Route path="jobs" element={<JobManagementPage />} />
                <Route path="jobs/:jobId" element={<AdminJobDetailsPage />} />
-               <Route path="interview-skeletons" element={<InterviewSkeletonManagementPage />} />
-               <Route path="interview-assignments" element={<InterviewAssignmentPage />} />
+               <Route path="interview-management" element={<InterviewManagementPage />} />
+               <Route path="interview-results" element={<InterviewResultsPage />} />
                <Route path="chat" element={<AdminChatPage />} />
               </Route>
               

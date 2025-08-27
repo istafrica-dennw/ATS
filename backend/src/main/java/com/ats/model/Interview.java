@@ -48,6 +48,9 @@ public class Interview extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_by", nullable = false)
     private User assignedBy;
+    
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
 
     @Getter
     @Setter

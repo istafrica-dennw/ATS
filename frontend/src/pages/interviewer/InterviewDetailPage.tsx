@@ -437,8 +437,19 @@ const InterviewDetailPage: React.FC = () => {
                             type="number"
                             min="0"
                             max="100"
-                            value={responses[area.title]?.rating || 0}
-                            onChange={(e) => updateResponse(area.title, 'rating', parseInt(e.target.value) || 0)}
+                            value={responses[area.title]?.rating === 0 ? '' : (responses[area.title]?.rating || '')}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '') {
+                                updateResponse(area.title, 'rating', 0);
+                              } else {
+                                const numValue = parseInt(value);
+                                if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+                                  updateResponse(area.title, 'rating', numValue);
+                                }
+                              }
+                            }}
+                            placeholder="Enter rating 0-100"
                             className={`w-32 px-4 py-2 border rounded-lg shadow-sm transition-all duration-200
                                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
                                     focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400

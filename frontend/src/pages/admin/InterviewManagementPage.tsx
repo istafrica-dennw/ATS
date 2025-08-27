@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   DocumentTextIcon,
   ClipboardDocumentListIcon,
@@ -8,21 +7,16 @@ import {
 } from '@heroicons/react/24/outline';
 import InterviewSkeletonManagementPage from './InterviewSkeletonManagementPage';
 import InterviewAssignmentPage from './InterviewAssignmentPage';
+import InterviewResultsPage from './InterviewResultsPage';
 
 type ActiveSection = 'skeletons' | 'assignments' | 'results';
 
 const InterviewManagementPage: React.FC = () => {
-  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<ActiveSection>('skeletons');
   const [showDropdown, setShowDropdown] = useState(false);
 
   // Handle section change
   const handleSectionChange = (sectionId: ActiveSection) => {
-    if (sectionId === 'results') {
-      // Navigate to the dedicated Interview Results page
-      navigate('/admin/interview-results');
-      return;
-    }
     setActiveSection(sectionId);
     setShowDropdown(false);
   };
@@ -47,7 +41,7 @@ const InterviewManagementPage: React.FC = () => {
       name: 'Interview Results',
       description: 'View and compare results',
       icon: ChartBarIcon,
-      component: () => <div className="p-8 text-center text-gray-500 dark:text-gray-400">Interview Results - Coming Soon</div>
+      component: InterviewResultsPage
     }
   ];
 

@@ -18,7 +18,6 @@ import {
   Bars3Icon,
   ChatBubbleLeftRightIcon,
   ShieldCheckIcon,
-  ChartPieIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -28,7 +27,6 @@ const navigation = [
   { name: 'Bulk Email', href: '/admin/bulk-email', icon: SparklesIcon, color: 'from-rose-500 to-rose-600' },
   { name: 'Jobs', href: '/admin/jobs', icon: BriefcaseIcon, color: 'from-orange-500 to-orange-600' },
   { name: 'Interview Management', href: '/admin/interview-management', icon: DocumentTextIcon, color: 'from-teal-500 to-teal-600' },
-  { name: 'Interview Results', href: '/admin/interview-results', icon: ChartPieIcon, color: 'from-cyan-500 to-cyan-600' },
   { name: 'Chat Support', href: '/admin/chat', icon: ChatBubbleLeftRightIcon, color: 'from-indigo-500 to-indigo-600' },
   { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon, color: 'from-indigo-500 to-indigo-600' },
   { name: 'Settings', href: '/admin/settings', icon: CogIcon, color: 'from-gray-500 to-gray-600' },

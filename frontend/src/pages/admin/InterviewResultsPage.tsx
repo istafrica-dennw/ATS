@@ -307,12 +307,16 @@ const InterviewResultsPage: React.FC = () => {
     return 'bg-gray-100 dark:bg-gray-900/30';
   };
 
-  // Get unique focus areas ONLY from job associations for table headers
-  const getAllFocusAreas = () => {
+  // Get unique focus areas ONLY from jobs that appear in the current filtered results
+  const getAllFocusAreas = (filteredResults: InterviewResult[]) => {
     const focusAreas = new Set<string>();
     
-    // STRICT: Only add focus areas from job associations (associated skeletons only)
-    Object.values(jobFocusAreas).forEach(areas => {
+    // Get unique job IDs from currently filtered results
+    const relevantJobIds = new Set(filteredResults.map(result => result.jobId));
+    
+    // STRICT: Only add focus areas from job associations for jobs that are currently displayed
+    relevantJobIds.forEach(jobId => {
+      const areas = jobFocusAreas[jobId] || [];
       areas.forEach(area => focusAreas.add(area));
     });
     
@@ -337,7 +341,7 @@ const InterviewResultsPage: React.FC = () => {
   };
 
   const filteredResults = getFilteredAndSortedResults();
-  const allFocusAreas = getAllFocusAreas();
+  const allFocusAreas = getAllFocusAreas(filteredResults);
 
   if (loading) {
     return (

@@ -32,6 +32,12 @@ public class SkeletonJobAssociationServiceImpl implements SkeletonJobAssociation
     public void associateSkeletonWithJobs(SkeletonJobAssociationRequest request, Long userId) {
         log.info("Associating skeleton {} with jobs {} by user {}", request.getSkeletonId(), request.getJobIds(), userId);
 
+        // Remove duplicate job IDs from the request
+        Set<Long> uniqueJobIds = new HashSet<>(request.getJobIds());
+        if (uniqueJobIds.size() != request.getJobIds().size()) {
+            log.warn("Removed {} duplicate job IDs from request", request.getJobIds().size() - uniqueJobIds.size());
+        }
+
         // Validate skeleton exists
         InterviewSkeleton skeleton = skeletonRepository.findById(request.getSkeletonId())
                 .orElseThrow(() -> new ResourceNotFoundException("Interview skeleton not found with ID: " + request.getSkeletonId()));
@@ -43,16 +49,22 @@ public class SkeletonJobAssociationServiceImpl implements SkeletonJobAssociation
         // Remove existing associations for this skeleton
         associationRepository.deleteBySkeletonId(request.getSkeletonId());
 
-        // Create new associations
-        for (Long jobId : request.getJobIds()) {
+        // Create new associations (with duplicate prevention)
+        for (Long jobId : uniqueJobIds) {
             Job job = jobRepository.findById(jobId)
                     .orElseThrow(() -> new ResourceNotFoundException("Job not found with ID: " + jobId));
 
-            SkeletonJobAssociation association = new SkeletonJobAssociation(skeleton, job, user);
-            associationRepository.save(association);
+            // Check if association already exists (extra safety)
+            if (!associationRepository.findBySkeletonIdAndJobId(request.getSkeletonId(), jobId).isPresent()) {
+                SkeletonJobAssociation association = new SkeletonJobAssociation(skeleton, job, user);
+                associationRepository.save(association);
+                log.debug("Created association: skeleton {} -> job {}", request.getSkeletonId(), jobId);
+            } else {
+                log.warn("Association already exists: skeleton {} -> job {}", request.getSkeletonId(), jobId);
+            }
         }
 
-        log.info("Successfully associated skeleton {} with {} jobs", request.getSkeletonId(), request.getJobIds().size());
+        log.info("Successfully associated skeleton {} with {} unique jobs", request.getSkeletonId(), uniqueJobIds.size());
     }
 
     @Override

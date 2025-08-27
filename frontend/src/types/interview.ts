@@ -69,6 +69,7 @@ export interface AssignInterviewRequest {
   skeletonId: number;
   scheduledAt?: string;
   notes?: string;
+  sendCalendarInvite?: boolean;
 }
 
 export interface SubmitInterviewRequest {

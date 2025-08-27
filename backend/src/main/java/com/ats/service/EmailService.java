@@ -108,4 +108,17 @@ public interface EmailService {
      * @throws MessagingException If there's an error sending the email
      */
     EmailNotification sendCustomEmail(String to, String subject, String content, Boolean isHtml, User senderUser) throws MessagingException;
+    
+    /**
+     * Sends an email with a calendar attachment
+     * @param to Recipient email address
+     * @param subject Email subject
+     * @param content Email content
+     * @param calendarContent ICS calendar content
+     * @param attachmentName Name for the calendar attachment
+     * @return The created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    EmailNotification sendEmailWithCalendarAttachment(String to, String subject, String content, 
+                                                    String calendarContent, String attachmentName) throws MessagingException;
 } 

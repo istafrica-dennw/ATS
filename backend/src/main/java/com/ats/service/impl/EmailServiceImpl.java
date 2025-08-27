@@ -19,6 +19,8 @@ import org.thymeleaf.context.Context;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.activation.DataSource;
+import jakarta.mail.util.ByteArrayDataSource;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.HashMap;
@@ -556,5 +558,51 @@ public class EmailServiceImpl implements EmailService {
             .replace("{{applicationStatus}}", application.getStatus() != null ? application.getStatus().toString() : "");
         
         return personalizedContent;
+    }
+    
+    @Override
+    @Transactional
+    public EmailNotification sendEmailWithCalendarAttachment(String to, String subject, String content, 
+                                                           String calendarContent, String attachmentName) throws MessagingException {
+        // Create email notification record
+        EmailNotification notification = EmailNotification.builder()
+            .recipientEmail(to)
+            .subject(subject)
+            .body(content)
+            .status(EmailNotification.EmailStatus.PENDING)
+            .templateName("calendar-invite")
+            .retryCount(0)
+            .build();
+        
+        notification = emailNotificationRepository.save(notification);
+
+        try {
+            // Create the email message
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, false); // Plain text email
+            
+            // Add calendar attachment with proper MIME type for Outlook compatibility
+            DataSource dataSource = new ByteArrayDataSource(calendarContent.getBytes("UTF-8"), "text/calendar; method=PUBLISH");
+            helper.addAttachment(attachmentName, dataSource);
+            
+            // Send the email
+            mailSender.send(message);
+            
+            // Update status to SENT
+            notification.setStatus(EmailNotification.EmailStatus.SENT);
+            return emailNotificationRepository.save(notification);
+            
+        } catch (Exception e) {
+            // Update status to FAILED and save error message
+            notification.setStatus(EmailNotification.EmailStatus.FAILED);
+            notification.setErrorMessage(e.getMessage());
+            notification = emailNotificationRepository.save(notification);
+            
+            throw new MessagingException("Failed to send email with calendar attachment", e);
+        }
     }
 } 

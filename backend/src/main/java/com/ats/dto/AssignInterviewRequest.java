@@ -26,4 +26,6 @@ public class AssignInterviewRequest {
     private LocalDateTime scheduledAt;
     
     private String notes; // Optional notes for the interviewer
+    
+    private Boolean sendCalendarInvite = false; // Whether to send calendar invites to participants
 } 

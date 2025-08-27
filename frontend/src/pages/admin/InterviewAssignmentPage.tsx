@@ -90,7 +90,8 @@ const InterviewAssignmentPage: React.FC = () => {
     interviewerId: '',
     skeletonId: '',
     scheduledAt: '',
-    notes: ''
+    notes: '',
+    sendCalendarInvite: false
   });
 
   useEffect(() => {
@@ -167,7 +168,8 @@ const InterviewAssignmentPage: React.FC = () => {
       interviewerId: '',
       skeletonId: '',
       scheduledAt: '',
-      notes: ''
+      notes: '',
+      sendCalendarInvite: false
     });
     
     try {
@@ -235,7 +237,8 @@ const InterviewAssignmentPage: React.FC = () => {
         interviewerId: parseInt(formData.interviewerId),
         skeletonId: parseInt(formData.skeletonId),
         scheduledAt: formData.scheduledAt || undefined,
-        notes: formData.notes || undefined
+        notes: formData.notes || undefined,
+        sendCalendarInvite: formData.sendCalendarInvite
       };
 
       await interviewAPI.assign(requestData);
@@ -574,6 +577,23 @@ const InterviewAssignmentPage: React.FC = () => {
                   className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:shadow-md focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                   placeholder="Optional notes for the interviewer"
                 />
+              </div>
+
+              {/* Calendar Integration Option */}
+              <div className="flex items-center">
+                <input
+                  id="sendCalendarInvite"
+                  type="checkbox"
+                  checked={formData.sendCalendarInvite}
+                  onChange={(e) => setFormData(prev => ({ ...prev, sendCalendarInvite: e.target.checked }))}
+                  className="h-4 w-4 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                />
+                <label htmlFor="sendCalendarInvite" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                  📅 Send calendar invites to all participants
+                  <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Sends Outlook/Google calendar invites to interviewer, candidate, and admin
+                  </span>
+                </label>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">

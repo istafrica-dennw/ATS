@@ -9,6 +9,7 @@ import com.ats.model.*;
 import com.ats.repository.*;
 import com.ats.service.InterviewService;
 import com.ats.service.EmailService;
+import com.ats.service.CalendarService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class InterviewServiceImpl implements InterviewService {
     private final InterviewSkeletonRepository interviewSkeletonRepository;
     private final JobRepository jobRepository;
     private final EmailService emailService;
+    private final CalendarService calendarService;
 
     @Autowired
     public InterviewServiceImpl(
@@ -38,13 +40,15 @@ public class InterviewServiceImpl implements InterviewService {
             UserRepository userRepository,
             InterviewSkeletonRepository interviewSkeletonRepository,
             JobRepository jobRepository,
-            EmailService emailService) {
+            EmailService emailService,
+            CalendarService calendarService) {
         this.interviewRepository = interviewRepository;
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
         this.interviewSkeletonRepository = interviewSkeletonRepository;
         this.jobRepository = jobRepository;
         this.emailService = emailService;
+        this.calendarService = calendarService;
     }
 
     @Override
@@ -95,6 +99,7 @@ public class InterviewServiceImpl implements InterviewService {
         interview.setStatus(InterviewStatus.ASSIGNED);
         interview.setScheduledAt(request.getScheduledAt());
         interview.setAssignedBy(admin);
+        interview.setNotes(request.getNotes());
 
         // Initialize empty responses based on skeleton focus areas
         List<Interview.InterviewResponse> responses = skeleton.getFocusAreas().stream()
@@ -125,6 +130,18 @@ public class InterviewServiceImpl implements InterviewService {
             log.error("Failed to send interview assignment email to candidate for interview ID: {}: {}", 
                      savedInterview.getId(), e.getMessage());
             // Don't fail the entire operation if email fails - email is saved with FAILED status
+        }
+        
+        // Send calendar invites if requested
+        if (Boolean.TRUE.equals(request.getSendCalendarInvite()) && savedInterview.getScheduledAt() != null) {
+            try {
+                calendarService.sendCalendarInvites(savedInterview);
+                log.info("Calendar invites sent successfully for interview ID: {}", savedInterview.getId());
+            } catch (Exception e) {
+                log.error("Failed to send calendar invites for interview ID: {}: {}", 
+                         savedInterview.getId(), e.getMessage());
+                // Don't fail the entire operation if calendar invite fails
+            }
         }
 
         return mapToDTO(savedInterview);

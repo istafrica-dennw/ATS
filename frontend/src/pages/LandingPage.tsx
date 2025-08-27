@@ -41,16 +41,12 @@ const LandingPage: React.FC = () => {
     const fetchJobs = async () => {
       try {
         const response = await axios.get('/api/jobs');
-        console.log('API Response:', response.data);
-        console.log('All job statuses:', response.data.map((job: any) => job.jobStatus));
         // Sort jobs by posted date (most recent first) and take only published jobs
         const publishedJobs = response.data.filter((job: Job & { jobStatus: string }) => {
-          console.log(`Job ${job.id} - Title: ${job.title}, Status: ${job.jobStatus}`);
           // Include both PUBLISHED and REOPENED jobs
           const status = job.jobStatus?.toUpperCase();
           return status === 'PUBLISHED' || status === 'REOPENED';
         });
-        console.log('Published jobs:', publishedJobs);
         
         const sortedJobs = publishedJobs
           .sort((a: Job, b: Job) => 

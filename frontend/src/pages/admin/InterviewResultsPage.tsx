@@ -110,7 +110,7 @@ const InterviewResultsPage: React.FC = () => {
       
       // Fetch all completed interviews and jobs
       const [interviewsResponse, jobsResponse] = await Promise.all([
-        interviewAPI.getAssignedByMe(),
+        interviewAPI.getAllCompletedInterviews(),
         jobService.getAllJobs()
       ]);
       

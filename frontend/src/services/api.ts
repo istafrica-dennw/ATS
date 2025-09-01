@@ -79,6 +79,10 @@ export const interviewAPI = {
   getAssignedByMe: () =>
     axiosInstance.get<Interview[]>('/interviews/assigned-by-me'),
 
+  // Get all completed interviews for admin results viewing
+  getAllCompletedInterviews: () =>
+    axiosInstance.get<Interview[]>('/interviews/completed'),
+
   // Shortlist an application (admin only)
   shortlistApplication: (applicationId: number) =>
     axiosInstance.post(`/interviews/applications/${applicationId}/shortlist`),

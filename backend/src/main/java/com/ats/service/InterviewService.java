@@ -56,6 +56,11 @@ public interface InterviewService {
     List<InterviewDTO> getInterviewsAssignedBy(Long assignedById);
     
     /**
+     * Get all completed interviews for admin results viewing
+     */
+    List<InterviewDTO> getAllCompletedInterviews();
+    
+    /**
      * Shortlist an application
      */
     void shortlistApplication(Long applicationId, Long adminId);

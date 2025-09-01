@@ -34,6 +34,11 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
     @Query("SELECT COUNT(i) FROM Interview i WHERE i.interviewer.id = :interviewerId AND i.status = :status")
     Long countByInterviewerIdAndStatus(@Param("interviewerId") Long interviewerId, @Param("status") InterviewStatus status);
     
+    /**
+     * Find interviews by status
+     */
+    List<Interview> findByStatus(InterviewStatus status);
+    
     // Find all available interviewers (users with INTERVIEWER role)
     @Query("SELECT DISTINCT i.interviewer FROM Interview i WHERE i.interviewer.role = :role")
     List<com.ats.model.User> findAllInterviewers(@Param("role") Role role);

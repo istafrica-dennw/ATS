@@ -260,6 +260,15 @@ public class InterviewServiceImpl implements InterviewService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<InterviewDTO> getAllCompletedInterviews() {
+        log.debug("Fetching all completed interviews for admin results viewing");
+        return interviewRepository.findByStatus(InterviewStatus.COMPLETED).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void shortlistApplication(Long applicationId, Long adminId) {
         log.info("Shortlisting application {} by admin {}", applicationId, adminId);
 

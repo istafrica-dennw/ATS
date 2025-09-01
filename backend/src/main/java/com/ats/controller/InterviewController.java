@@ -235,6 +235,26 @@ public class InterviewController {
     }
 
     /**
+     * Get all completed interviews for admin results viewing
+     * Admin only
+     */
+    @GetMapping("/completed")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<InterviewDTO>> getAllCompletedInterviews() {
+        
+        log.debug("Fetching all completed interviews for admin results viewing");
+        
+        try {
+            List<InterviewDTO> interviews = interviewService.getAllCompletedInterviews();
+            return ResponseEntity.ok(interviews);
+            
+        } catch (Exception e) {
+            log.error("Error fetching completed interviews: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
      * Shortlist an application
      * Admin only
      */

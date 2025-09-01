@@ -63,10 +63,9 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                         return;
                     }
                     
-                    // Explicitly set the proper role for the JWT token
+                    // Use the user's actual role from the database (preserves admin-assigned roles)
                     String email = oidcUser.getEmail();
-                    // Ensure we're using ROLE_CANDIDATE format
-                    String roleString = "ROLE_" + Role.CANDIDATE.name();
+                    String roleString = "ROLE_" + user.getRole().name();
                     
                     System.out.println("[DEBUG] Generating JWT with email: " + email + " and role: " + roleString);
                     
@@ -121,6 +120,7 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                     // User exists by email, update provider ID
                     User user = existingUserByEmail.get();
                     System.out.println("[DEBUG] User found by email, updating provider data: " + user.getId());
+                    System.out.println("[DEBUG] Current user role: " + user.getRole());
                     
                     // Update provider-specific fields
                     if ("linkedin".equals(provider)) {
@@ -131,6 +131,7 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                     // Update other fields
                     updateUserFields(user, oidcUser);
                     
+                    System.out.println("[DEBUG] User role after update: " + user.getRole());
                     userRepository.save(user);
                     System.out.println("[DEBUG] User updated: " + user.getId());
                     return user;
@@ -140,10 +141,10 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                     User newUser = new User();
                     newUser.setEmail(email);
                     
-                    // Required fields from User entity - ALWAYS set CANDIDATE role
+                    // Required fields from User entity - ONLY set CANDIDATE role for NEW users
                     newUser.setFirstName(oidcUser.getGivenName() != null ? oidcUser.getGivenName() : "LinkedIn");
                     newUser.setLastName(oidcUser.getFamilyName() != null ? oidcUser.getFamilyName() : "User");
-                    newUser.setRole(Role.CANDIDATE); // IMPORTANT: setting proper role from enum
+                    newUser.setRole(Role.CANDIDATE); // IMPORTANT: ONLY for new users, existing users keep their roles
                     newUser.setIsActive(true);
                     newUser.setIsEmailVerified(true); // LinkedIn users are already verified
                     
@@ -165,10 +166,12 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                 // User exists by provider ID, update other fields
                 User user = existingUserByProviderId.get();
                 System.out.println("[DEBUG] User found by provider ID, updating: " + user.getId());
+                System.out.println("[DEBUG] Current user role: " + user.getRole());
                 
                 // Update user information
                 updateUserFields(user, oidcUser);
                 
+                System.out.println("[DEBUG] User role after update: " + user.getRole());
                 userRepository.save(user);
                 System.out.println("[DEBUG] User updated: " + user.getId());
                 return user;
@@ -201,8 +204,8 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
             user.setEmail(oidcUser.getEmail());
         }
         
-        // Always ensure the role is set to CANDIDATE for LinkedIn users
-        user.setRole(Role.CANDIDATE);
+        // DO NOT change the role - preserve admin-assigned roles
+        // user.setRole(Role.CANDIDATE); // REMOVED: This was overwriting admin roles!
         
         // Email verification - LinkedIn users are considered verified
         user.setIsEmailVerified(true);

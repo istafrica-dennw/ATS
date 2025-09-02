@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import { User, Role } from '../../types/user';
@@ -6,6 +6,7 @@ import AddUserModal from '../../components/admin/AddUserModal';
 import UserDetailsModal from '../../components/admin/UserDetailsModal';
 import ProfilePicture from '../../components/common/ProfilePicture';
 import { toast } from 'react-toastify';
+import { Listbox, Transition } from '@headlessui/react';
 import {
   PencilIcon,
   TrashIcon,
@@ -13,6 +14,15 @@ import {
   PlusIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
+import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
+
+const roleOptions = [
+  { name: 'All Roles', value: 'all' },
+  { name: 'Admin', value: Role.ADMIN },
+  { name: 'Interviewer', value: Role.INTERVIEWER },
+  { name: 'Hiring Manager', value: Role.HIRING_MANAGER },
+  { name: 'Candidate', value: Role.CANDIDATE },
+];
 
 const UserManagementPage: React.FC = () => {
   const { token } = useAuth();
@@ -186,59 +196,106 @@ const UserManagementPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex-1 min-w-0">
-            <div className="relative rounded-lg shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 overflow-visible">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          {/* Mobile-first responsive layout */}
+          <div className="space-y-4 md:space-y-0 md:flex md:items-end md:justify-between md:gap-4">
+            {/* Search Field */}
+            <div className="flex-1">
+              <div className="relative rounded-lg shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+                </div>
+                <input
+                  type="text"
+                  className="focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent block w-full pl-10 py-3 text-base dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:shadow-md transition-all duration-200"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <input
-                type="text"
-                className="focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent block w-full pl-10 py-3 text-base dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:shadow-md transition-all duration-200"
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
             </div>
-          </div>
-          <div className="ml-4 relative">
-            <select
-              className="block w-full pl-3 pr-10 py-3 text-base dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 appearance-none"
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-            >
-              <option value="all">All Roles</option>
-              <option value={Role.ADMIN}>Admin</option>
-              <option value={Role.INTERVIEWER}>Interviewer</option>
-              <option value={Role.HIRING_MANAGER}>Hiring Manager</option>
-              <option value={Role.CANDIDATE}>Candidate</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 20 20" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+            
+            <div className="w-full md:w-48">
+              <label htmlFor="role-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 md:sr-only">
+                Filter by Role
+              </label>
+              <div className="relative">
+                <Listbox value={selectedRole} onChange={setSelectedRole}>
+                  <div className="relative">
+                <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-3 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-base border dark:border-gray-600 transition-all duration-200">
+                  <span className="block truncate text-gray-900 dark:text-gray-100">{roleOptions.find(r => r.value === selectedRole)?.name}</span>
+                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <ChevronUpDownIcon
+                      className="h-5 w-5 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </Listbox.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                    <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-2 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border dark:border-gray-600">
+                      {roleOptions.map((role, roleIdx) => (
+                        <Listbox.Option
+                          key={roleIdx}
+                          className={({ active, selected }) =>
+                            `relative cursor-pointer select-none py-3 pl-10 pr-4 transition-colors duration-150 ${
+                              active 
+                                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-200' 
+                                : selected 
+                                  ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200'
+                                  : 'text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600/50'
+                            }`
+                          }
+                          value={role.value}
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                {role.name}
+                              </span>
+                              {selected ? (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                  <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </Listbox.Option>
+                      ))}
+                    </Listbox.Options>
+                  </Transition>
+                  </div>
+                </Listbox>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-visible">
           <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
             <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-6">
+                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-6 min-w-[200px]">
                   Name
                 </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <th scope="col" className="hidden sm:table-cell px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[200px]">
                   Email
                 </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[120px]">
                   Role
                 </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
+                <th scope="col" className="hidden md:table-cell px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[100px]">
                   Status
                 </th>
-                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 w-[120px]">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -246,7 +303,7 @@ const UserManagementPage: React.FC = () => {
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                  <td className="py-4 pl-4 pr-3 text-sm sm:pl-6">
                     <div className="flex items-center">
                       <ProfilePicture 
                         firstName={user.firstName}
@@ -254,20 +311,34 @@ const UserManagementPage: React.FC = () => {
                         profilePictureUrl={user.profilePictureUrl}
                         size="medium"
                       />
-                      <div className="ml-4">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                      <div className="ml-4 min-w-0 flex-1">
+                        <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
                           {user.firstName} {user.lastName}
+                        </div>
+                        <div className="sm:hidden text-gray-500 dark:text-gray-400 text-xs truncate mt-1">
+                          {user.email}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">{user.email}</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleColor(user.role)}`}>
-                      {user.role}
-                    </span>
+                  <td className="hidden sm:table-cell px-3 py-4 text-sm text-gray-500 dark:text-gray-400 truncate">{user.email}</td>
+                  <td className="px-3 py-4 text-sm">
+                    <div className="space-y-1">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleColor(user.role)}`}>
+                        {user.role}
+                      </span>
+                      <div className="md:hidden">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.isActive 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                        }`}>
+                          {user.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm">
+                  <td className="hidden md:table-cell px-3 py-4 text-sm">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       user.isActive 
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
@@ -276,31 +347,31 @@ const UserManagementPage: React.FC = () => {
                       {user.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
-                  <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                    <div className="flex justify-end space-x-2">
+                  <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <div className="flex justify-end space-x-1 sm:space-x-2">
                       <button
                         type="button"
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 p-1 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
                         onClick={() => handleViewUser(user.id)}
                         title="View user"
                       >
-                        <EyeIcon className="h-5 w-5" aria-hidden="true" />
+                        <EyeIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                       </button>
                       <button
                         type="button"
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 p-1 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
                         onClick={() => handleViewUser(user.id)}
                         title="Edit user"
                       >
-                        <PencilIcon className="h-5 w-5" aria-hidden="true" />
+                        <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                       </button>
                       <button
                         type="button"
-                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
                         onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
                         title="Delete user"
                       >
-                        <TrashIcon className="h-5 w-5" aria-hidden="true" />
+                        <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                       </button>
                     </div>
                   </td>

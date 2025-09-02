@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { 
   PlusIcon, 
   PencilIcon, 
@@ -9,6 +9,8 @@ import {
   XMarkIcon,
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
+import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
+import { Listbox, Transition } from '@headlessui/react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import 'styles/react-quill.css'
@@ -16,6 +18,42 @@ import 'styles/react-quill.css'
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
+
+// Status options for the dropdown
+const statusOptions = [
+  { name: 'All Statuses', value: 'ALL' },
+  { name: 'Draft', value: 'DRAFT' },
+  { name: 'Published', value: 'PUBLISHED' },
+  { name: 'Expired', value: 'EXPIRED' },
+  { name: 'Closed', value: 'CLOSED' },
+  { name: 'Reopened', value: 'REOPENED' },
+];
+
+// Employment Type options
+const employmentTypeOptions = [
+  { name: 'Full Time', value: 'Full Time' },
+  { name: 'Part Time', value: 'Part Time' },
+  { name: 'Contract', value: 'Contract' },
+  { name: 'Internship', value: 'Internship' },
+];
+
+// Work Setting options
+const workSettingOptions = [
+  { name: 'Remote', value: 'REMOTE' },
+  { name: 'Onsite', value: 'ONSITE' },
+  { name: 'Hybrid', value: 'HYBRID' },
+];
+
+// Job Status options
+const jobStatusOptions = [
+  { name: 'Draft', value: 'DRAFT' },
+  { name: 'Published', value: 'PUBLISHED' },
+  { name: 'Expired', value: 'EXPIRED' },
+  { name: 'Closed', value: 'CLOSED' },
+  { name: 'Reopened', value: 'REOPENED' },
+];
+
+
 
 // Types
 interface Job {
@@ -92,6 +130,23 @@ const RichTextEditor: React.FC<{
   value: string;
   onChange: (content: string) => void;
 }> = ({ value, onChange }) => {
+  React.useEffect(() => {
+    const originalError = console.error;
+    console.error = (...args: any[]) => {
+      if (
+        typeof args[0] === 'string' &&
+        args[0].includes('findDOMNode is deprecated')
+      ) {
+        return; 
+      }
+      originalError.call(console, ...args);
+    };
+
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
+
   return (
         <div className="react-quill-no-outline dark:border-gray-700 bg-white dark:bg-gray-700 rounded-md overflow-hidden">
           <ReactQuill
@@ -193,6 +248,36 @@ const JobManagementPage: React.FC = () => {
     }
   };
 
+  const handleEmploymentTypeChange = React.useCallback((value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      employmentType: value
+    }));
+  }, []);
+
+  const handleWorkSettingChange = React.useCallback((value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      workSetting: value as 'REMOTE' | 'ONSITE' | 'HYBRID'
+    }));
+  }, []);
+
+  const handleJobStatusChange = React.useCallback((value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      jobStatus: value as 'DRAFT' | 'PUBLISHED' | 'EXPIRED' | 'CLOSED' | 'REOPENED'
+    }));
+  }, []);
+
+  const handleQuestionTypeChange = React.useCallback((value: string) => {
+    setNewQuestion(prev => ({
+      question: prev.question,
+      isRequired: prev.isRequired,
+      type: value as any,
+      options: value === 'MULTIPLE_CHOICE' ? (prev.options || []) : []
+    }));
+  }, []);
+
   // Submit form to create or update a job
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,6 +332,28 @@ const JobManagementPage: React.FC = () => {
   });
   const [showQuestionForm, setShowQuestionForm] = useState<boolean>(false);
   const [newOption, setNewOption] = useState<string>('');
+  
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [jobToDelete, setJobToDelete] = useState<{ id: number; title: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const selectedStatusName = React.useMemo(() => 
+    statusOptions.find(s => s.value === filterStatus)?.name, [filterStatus]
+  );
+  
+  const selectedEmploymentTypeName = React.useMemo(() => 
+    employmentTypeOptions.find(e => e.value === formData.employmentType)?.name, [formData.employmentType]
+  );
+  
+  const selectedWorkSettingName = React.useMemo(() => 
+    workSettingOptions.find(w => w.value === formData.workSetting)?.name, [formData.workSetting]
+  );
+  
+  const selectedJobStatusName = React.useMemo(() => 
+    jobStatusOptions.find(j => j.value === formData.jobStatus)?.name, [formData.jobStatus]
+  );
+  
+
 
   // Add a new custom question
   const handleAddQuestion = () => {
@@ -368,19 +475,53 @@ const JobManagementPage: React.FC = () => {
     }
   };
 
-  // Delete a job
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this job?')) {
-      try {
-        await axios.delete(`/api/jobs/${id}`);
-        toast.success('Job deleted successfully!');
-        fetchJobs();
-      } catch (err) {
-        toast.error('Failed to delete job. Please try again.');
-        console.error('Error deleting job:', err);
-      }
+  const handleDelete = (id: number, title: string) => {
+    setJobToDelete({ id, title });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteJob = async () => {
+    if (!jobToDelete || isDeleting) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      const response = await axios.delete(`/api/jobs/${jobToDelete.id}`);
+      console.log('Delete response:', response);
+      
+      toast.success(`Job "${jobToDelete.title}" deleted successfully!`);
+      
+      await fetchJobs();
+      
+    } catch (err: any) {
+      console.error('Error deleting job:', err);
+      
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to delete job. Please try again.';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setJobToDelete(null);
     }
   };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setJobToDelete(null);
+  };
+
+  React.useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showDeleteModal) {
+        cancelDelete();
+      }
+    };
+
+    if (showDeleteModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showDeleteModal]);
 
   // Change job status
   const handleStatusChange = async (id: number, newStatus: 'DRAFT' | 'PUBLISHED' | 'EXPIRED' | 'CLOSED' | 'REOPENED') => {
@@ -471,20 +612,54 @@ const JobManagementPage: React.FC = () => {
           <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Filter by Status:
           </label>
-          <select
-            id="status-filter"
-            name="status-filter"
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm rounded-md shadow-sm hover:shadow-md transition-shadow duration-200"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="DRAFT">Draft</option>
-            <option value="PUBLISHED">Published</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="CLOSED">Closed</option>
-            <option value="REOPENED">Reopened</option>
-          </select>
+          <div className="w-full relative">
+            <Listbox value={filterStatus} onChange={setFilterStatus}>
+              <div className="relative">
+                                  <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                    <span className="block truncate">{selectedStatusName}</span>
+                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <ChevronUpDownIcon
+                      className="h-5 w-5 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </Listbox.Button>
+                <Transition
+                  as={Fragment}
+                  leave="transition ease-in duration-100"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                >
+                  <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                    {statusOptions.map((status, statusIdx) => (
+                      <Listbox.Option
+                        key={statusIdx}
+                        className={({ active }) =>
+                          `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                            active ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                          }`
+                        }
+                        value={status.value}
+                      >
+                        {({ selected }) => (
+                          <>
+                            <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                              {status.name}
+                            </span>
+                            {selected ? (
+                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                              </span>
+                            ) : null}
+                          </>
+                        )}
+                      </Listbox.Option>
+                    ))}
+                  </Listbox.Options>
+                </Transition>
+              </div>
+            </Listbox>
+          </div>
           
           <button
             type="button"
@@ -585,7 +760,7 @@ const JobManagementPage: React.FC = () => {
                           
                           <button
                             type="button"
-                            onClick={() => handleDelete(job.id)}
+                            onClick={() => handleDelete(job.id, job.title)}
                             className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors duration-200"
                             title="Delete"
                           >
@@ -691,37 +866,108 @@ const JobManagementPage: React.FC = () => {
                             <label htmlFor="employmentType" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Employment Type *
                             </label>
-                            <select
-                              name="employmentType"
-                              id="employmentType"
-                              required
-                              value={formData.employmentType}
-                              onChange={handleInputChange}
-                              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm hover:shadow-md transition-shadow duration-200"
-                            >
-                              <option value="Full Time">Full Time</option>
-                              <option value="Part Time">Part Time</option>
-                              <option value="Contract">Contract</option>
-                              <option value="Internship">Internship</option>
-                            </select>
+                            <div className="mt-1 relative">
+                              <Listbox value={formData.employmentType} onChange={handleEmploymentTypeChange}>
+                                <div className="relative">
+                                  <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                                    <span className="block truncate">{selectedEmploymentTypeName}</span>
+                                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                      <ChevronUpDownIcon
+                                        className="h-5 w-5 text-gray-400"
+                                        aria-hidden="true"
+                                      />
+                                    </span>
+                                  </Listbox.Button>
+                                  <Transition
+                                    as={Fragment}
+                                    leave="transition ease-in duration-100"
+                                    leaveFrom="opacity-100"
+                                    leaveTo="opacity-0"
+                                  >
+                                    <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                      {employmentTypeOptions.map((employmentType, employmentTypeIdx) => (
+                                        <Listbox.Option
+                                          key={employmentTypeIdx}
+                                          className={({ active }) =>
+                                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                              active ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                            }`
+                                          }
+                                          value={employmentType.value}
+                                        >
+                                          {({ selected }) => (
+                                            <>
+                                              <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                {employmentType.name}
+                                              </span>
+                                              {selected ? (
+                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                                  <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                                </span>
+                                              ) : null}
+                                            </>
+                                          )}
+                                        </Listbox.Option>
+                                      ))}
+                                    </Listbox.Options>
+                                  </Transition>
+                                </div>
+                              </Listbox>
+                            </div>
                           </div>
 
                           <div>
                             <label htmlFor="workSetting" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                               Work Setting *
                             </label>
-                            <select
-                              name="workSetting"
-                              id="workSetting"
-                              required
-                              value={formData.workSetting}
-                              onChange={handleInputChange}
-                              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm hover:shadow-md transition-shadow duration-200"
-                            >
-                              <option value="REMOTE">Remote</option>
-                              <option value="ONSITE">Onsite</option>
-                              <option value="HYBRID">Hybrid</option>
-                            </select>
+                            <div className="mt-1 relative">
+                              <Listbox value={formData.workSetting} onChange={handleWorkSettingChange}>
+                                <div className="relative">
+                                  <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                                    <span className="block truncate">{selectedWorkSettingName}</span>
+                                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                      <ChevronUpDownIcon
+                                        className="h-5 w-5 text-gray-400"
+                                        aria-hidden="true"
+                                      />
+                                    </span>
+                                  </Listbox.Button>
+                                  <Transition
+                                    as={Fragment}
+                                    leave="transition ease-in duration-100"
+                                    leaveFrom="opacity-100"
+                                    leaveTo="opacity-0"
+                                  >
+                                    <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                      {workSettingOptions.map((workSetting, workSettingIdx) => (
+                                        <Listbox.Option
+                                          key={workSettingIdx}
+                                          className={({ active }) =>
+                                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                              active ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                            }`
+                                          }
+                                          value={workSetting.value}
+                                        >
+                                          {({ selected }) => (
+                                            <>
+                                              <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                {workSetting.name}
+                                              </span>
+                                              {selected ? (
+                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                                  <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                                </span>
+                                              ) : null}
+                                            </>
+                                          )}
+                                        </Listbox.Option>
+                                      ))}
+                                    </Listbox.Options>
+                                  </Transition>
+                                </div>
+                              </Listbox>
+                            </div>
                           </div>
 
                           {isEditing && (
@@ -729,20 +975,54 @@ const JobManagementPage: React.FC = () => {
                               <label htmlFor="jobStatus" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Job Status *
                               </label>
-                              <select
-                                name="jobStatus"
-                                id="jobStatus"
-                                required
-                                value={formData.jobStatus}
-                                onChange={handleInputChange}
-                                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm hover:shadow-md transition-shadow duration-200"
-                              >
-                                <option value="DRAFT">Draft</option>
-                                <option value="PUBLISHED">Published</option>
-                                <option value="EXPIRED">Expired</option>
-                                <option value="CLOSED">Closed</option>
-                                <option value="REOPENED">Reopened</option>
-                              </select>
+                              <div className="mt-1 relative">
+                                <Listbox value={formData.jobStatus} onChange={handleJobStatusChange}>
+                                  <div className="relative">
+                                    <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                                      <span className="block truncate">{selectedJobStatusName}</span>
+                                      <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                        <ChevronUpDownIcon
+                                          className="h-5 w-5 text-gray-400"
+                                          aria-hidden="true"
+                                        />
+                                      </span>
+                                    </Listbox.Button>
+                                    <Transition
+                                      as={Fragment}
+                                      leave="transition ease-in duration-100"
+                                      leaveFrom="opacity-100"
+                                      leaveTo="opacity-0"
+                                    >
+                                      <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                        {jobStatusOptions.map((jobStatus, jobStatusIdx) => (
+                                          <Listbox.Option
+                                            key={jobStatus.value}
+                                            className={({ active }) =>
+                                              `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                                active ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                              }`
+                                            }
+                                            value={jobStatus.value}
+                                          >
+                                            {({ selected }) => (
+                                              <>
+                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                  {jobStatus.name}
+                                                </span>
+                                                {selected ? (
+                                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                                    <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                                  </span>
+                                                ) : null}
+                                              </>
+                                            )}
+                                          </Listbox.Option>
+                                        ))}
+                                      </Listbox.Options>
+                                    </Transition>
+                                  </div>
+                                </Listbox>
+                              </div>
                             </div>
                           )}
 
@@ -883,22 +1163,20 @@ const JobManagementPage: React.FC = () => {
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Question Type *
                               </label>
-                              <select
-                                value={newQuestion.type}
-                                onChange={(e) => setNewQuestion({
-                                  ...newQuestion, 
-                                  type: e.target.value as any,
-                                  options: e.target.value === 'TEXT' ? undefined : (newQuestion.options || [])
-                                })}
-                                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm"
-                              >
-                                <option value="TEXT">Text</option>
-                                <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-                                <option value="YES_NO">Yes/No</option>
-                                <option value="RATING">Rating</option>
-                                <option value="FILE_UPLOAD">File Upload</option>
-                                <option value="DATE">Date</option>
-                              </select>
+                              <div className="mt-1 relative">
+                                <select
+                                  value={newQuestion.type}
+                                  onChange={(e) => handleQuestionTypeChange(e.target.value)}
+                                  className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm"
+                                >
+                                  <option value="TEXT">Text</option>
+                                  <option value="MULTIPLE_CHOICE">Multiple Choice</option>
+                                  <option value="YES_NO">Yes/No</option>
+                                  <option value="RATING">Rating</option>
+                                  <option value="FILE_UPLOAD">File Upload</option>
+                                  <option value="DATE">Date</option>
+                                </select>
+                              </div>
                             </div>
 
                             {newQuestion.type === 'MULTIPLE_CHOICE' && (
@@ -1010,8 +1288,17 @@ const JobManagementPage: React.FC = () => {
       )}
 
       {openStatusJobId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] border border-gray-200 dark:border-gray-700 w-full max-w-md transform transition-all duration-300 ease-out scale-100 opacity-100">
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 py-6 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-80 transition-opacity backdrop-blur-sm" 
+              onClick={() => setOpenStatusJobId(null)}
+              aria-hidden="true"
+            ></div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+          
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200 dark:border-gray-700">
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-gray-700 dark:to-gray-700 rounded-t-xl">
               <div className="flex items-center justify-between">
                 <div>
@@ -1085,17 +1372,99 @@ const JobManagementPage: React.FC = () => {
               </div>
             </div>
             
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  💡 Status changes affect job visibility and application acceptance
-                </p>
+              <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    💡 Status changes affect job visibility and application acceptance
+                  </p>
+                  <button
+                    onClick={() => setOpenStatusJobId(null)}
+                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Professional Delete Confirmation Modal */}
+      {showDeleteModal && jobToDelete && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 py-6 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-gray-500 dark:bg-gray-900 opacity-75 transition-opacity" 
+              onClick={cancelDelete}
+              aria-hidden="true"
+            ></div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+          
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200 dark:border-gray-700">
+              <div className="absolute top-0 right-0 pt-4 pr-4 z-10">
                 <button
-                  onClick={() => setOpenStatusJobId(null)}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 font-medium transition-colors duration-200"
+                  type="button"
+                  onClick={cancelDelete}
+                  className="rounded-lg bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
                 >
-                  Cancel
+                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                 </button>
+              </div>
+
+              <div className="px-6 py-6">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <TrashIcon className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <h3 className="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100">
+                      Delete Job
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Are you sure you want to delete{' '}
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          "{jobToDelete.title}"
+                        </span>
+                        ?
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                        This action cannot be undone and will permanently remove the job posting and all associated applications.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3">
+                  <button
+                    type="button"
+                    onClick={cancelDelete}
+                    disabled={isDeleting}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2.5 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmDeleteJob}
+                    disabled={isDeleting}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-sm font-medium text-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all duration-200 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="animate-spin -ml-1 mr-2 h-5 w-5 border-2 border-white rounded-full border-t-transparent" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                        Delete Job
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

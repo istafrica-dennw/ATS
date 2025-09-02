@@ -546,107 +546,121 @@ const EmailManagementPage: React.FC = () => {
       </div>
 
       {viewEmail && (
-        <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900/75 bg-opacity-75 transition-opacity z-50">
-          <div className="flex min-h-full items-end justify-center p-2 sm:p-4 text-center sm:items-center">
-            <div className="relative transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6 text-left shadow-xl dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] transition-all border border-gray-200/50 dark:border-gray-700/50 w-full max-w-[95vw] sm:max-w-[90vw] md:max-w-5xl lg:max-w-6xl">
-              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto"
+          onClick={() => setViewEmail(null)}
+        >
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 dark:bg-gray-900 opacity-75"></div>
+            </div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div 
+              className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6 border border-gray-200/50 dark:border-gray-700/50"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-0 right-0 pt-4 pr-4 z-10">
                 <button
                   type="button"
                   onClick={() => setViewEmail(null)}
-                  className="rounded-lg bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
+                  className="rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 p-2 transition-all duration-200 shadow-md hover:shadow-lg"
                 >
-                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                  <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                 </button>
               </div>
-              <div className="flex flex-col h-full">
-                <div className="flex-shrink-0">
+              <div>
+                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                   <h3 className="text-base sm:text-lg font-semibold leading-6 text-gray-900 dark:text-gray-100 pr-10 mb-4">Email Details</h3>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Recipient:</p>
-                        <p className="text-sm text-gray-900 dark:text-gray-100 break-all">{viewEmail.recipientEmail}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</p>
-                        <div className="flex items-center">
-                          <span className={`px-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(viewEmail.status)}`}>
-                            {getStatusIcon(viewEmail.status)}
-                            <span className="ml-1">{viewEmail.status}</span>
-                          </span>
+                  <div className="mt-6 max-h-[80vh] overflow-y-auto pr-2">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Recipient:</p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100 break-all">{viewEmail.recipientEmail}</p>
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Subject:</p>
-                      <p className="text-sm text-gray-900 dark:text-gray-100 break-words">{viewEmail.subject}</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Template:</p>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">{viewEmail.templateName}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Created:</p>
-                        <p className="text-sm text-gray-900 dark:text-gray-100">{formatDate(viewEmail.createdAt)}</p>
-                      </div>
-                    </div>
-                    {(viewEmail.errorMessage || viewEmail.lastRetryAt || (viewEmail.retryCount !== undefined && viewEmail.retryCount > 0)) && (
-                      <div className="grid grid-cols-1 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-                        {viewEmail.errorMessage && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Error:</p>
-                            <p className="text-sm text-red-600 dark:text-red-400 break-words">{viewEmail.errorMessage}</p>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</p>
+                          <div className="flex items-center">
+                            <span className={`px-2 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(viewEmail.status)}`}>
+                              {getStatusIcon(viewEmail.status)}
+                              <span className="ml-1">{viewEmail.status}</span>
+                            </span>
                           </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-3">
-                          {viewEmail.lastRetryAt && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Retry:</p>
-                              <p className="text-sm text-gray-900 dark:text-gray-100">{formatDate(viewEmail.lastRetryAt)}</p>
-                            </div>
-                          )}
-                          {viewEmail.retryCount !== undefined && viewEmail.retryCount > 0 && (
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Retries:</p>
-                              <p className="text-sm text-gray-900 dark:text-gray-100">{viewEmail.retryCount}</p>
-                            </div>
-                          )}
                         </div>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="flex-1 min-h-0 mt-4">
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Email Content:</p>
-                    <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 h-40 sm:h-48 md:h-56 overflow-y-auto">
-                      <div className="text-gray-900 dark:text-gray-100 text-sm break-words" dangerouslySetInnerHTML={{ __html: viewEmail.body }} />
+                      <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Subject:</p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100 break-words">{viewEmail.subject}</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Template:</p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">{viewEmail.templateName}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Created:</p>
+                          <p className="text-sm text-gray-900 dark:text-gray-100">{formatDate(viewEmail.createdAt)}</p>
+                        </div>
+                      </div>
+                      {(viewEmail.errorMessage || viewEmail.lastRetryAt || (viewEmail.retryCount !== undefined && viewEmail.retryCount > 0)) && (
+                        <div className="grid grid-cols-1 gap-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+                          {viewEmail.errorMessage && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Error:</p>
+                              <p className="text-sm text-red-600 dark:text-red-400 break-words">{viewEmail.errorMessage}</p>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-2 gap-3">
+                            {viewEmail.lastRetryAt && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Retry:</p>
+                                <p className="text-sm text-gray-900 dark:text-gray-100">{formatDate(viewEmail.lastRetryAt)}</p>
+                              </div>
+                            )}
+                            {viewEmail.retryCount !== undefined && viewEmail.retryCount > 0 && (
+                              <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Retries:</p>
+                                <p className="text-sm text-gray-900 dark:text-gray-100">{viewEmail.retryCount}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
 
-                  <div className="flex-shrink-0 mt-4 flex flex-col-reverse sm:flex-row sm:justify-end space-y-3 space-y-reverse sm:space-y-0 sm:space-x-3">
-                    {viewEmail.status === EmailStatus.FAILED && (
+                    <div className="flex-1 min-h-0 mt-4">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Email Content:</p>
+                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 h-40 sm:h-48 md:h-56 overflow-y-auto">
+                        <div className="text-gray-900 dark:text-gray-100 text-sm break-words" dangerouslySetInnerHTML={{ __html: viewEmail.body }} />
+                      </div>
+                    </div>
+
+                    <div className="flex-shrink-0 mt-4 flex flex-col-reverse sm:flex-row sm:justify-end space-y-3 space-y-reverse sm:space-y-0 sm:space-x-3">
+                      {viewEmail.status === EmailStatus.FAILED && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleResendEmail(viewEmail.id);
+                            setViewEmail(null);
+                          }}
+                          disabled={resending.includes(viewEmail.id)}
+                          className="inline-flex w-full sm:w-auto justify-center rounded-lg border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        >
+                          {resending.includes(viewEmail.id) ? 'Resending...' : 'Resend Email'}
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => {
-                          handleResendEmail(viewEmail.id);
-                          setViewEmail(null);
-                        }}
-                        disabled={resending.includes(viewEmail.id)}
-                        className="inline-flex w-full sm:w-auto justify-center rounded-lg border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        onClick={() => setViewEmail(null)}
+                        className="inline-flex w-full sm:w-auto justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200"
                       >
-                        {resending.includes(viewEmail.id) ? 'Resending...' : 'Resend Email'}
+                        Close
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setViewEmail(null)}
-                      className="inline-flex w-full sm:w-auto justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200"
-                    >
-                      Close
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>

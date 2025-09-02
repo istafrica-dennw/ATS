@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -10,8 +10,13 @@ import {
   ClockIcon,
   BuildingOfficeIcon,
   ChevronDownIcon,
-  XMarkIcon
+  XMarkIcon,
+  ChevronUpDownIcon,
+  CheckIcon,
+  DocumentTextIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
+import { Listbox, Transition } from '@headlessui/react';
 
 interface Job {
   id: number;
@@ -29,147 +34,12 @@ interface Job {
   jobStatus: string;
 }
 
-// Filter options
-const DEPARTMENTS = [
-  {
-    id: 1,
-    title: 'Senior Software Engineer',
-    company: 'Tech Innovations',
-    location: 'San Francisco, CA',
-    type: 'Full-time',
-    salary: '$120K - $150K',
-    posted: '2 days ago',
-    description: 'We are looking for an experienced software engineer to join our team and help build scalable web applications. The ideal candidate has experience with React, Node.js, and cloud infrastructure.',
-    requirements: [
-      'Bachelor\'s degree in Computer Science or related field',
-      '5+ years of experience in software development',
-      'Strong knowledge of JavaScript, React, and Node.js',
-      'Experience with cloud platforms (AWS, Azure, or GCP)',
-      'Excellent problem-solving and communication skills'
-    ]
-  },
-  {
-    id: 2,
-    title: 'Product Manager',
-    company: 'Growth Startup',
-    location: 'New York, NY',
-    type: 'Full-time',
-    salary: '$110K - $130K',
-    posted: '1 week ago',
-    description: 'Join our product team to help define and execute our product roadmap. You will work closely with engineering, design, and marketing teams to deliver exceptional user experiences.',
-    requirements: [
-      'Bachelor\'s degree in Business, Computer Science, or related field',
-      '3+ years of experience in product management',
-      'Strong analytical and problem-solving skills',
-      'Excellent communication and stakeholder management abilities',
-      'Experience with agile methodologies'
-    ]
-  },
-  {
-    id: 3,
-    title: 'UX/UI Designer',
-    company: 'Creative Solutions',
-    location: 'Remote',
-    type: 'Contract',
-    salary: '$80K - $100K',
-    posted: '3 days ago',
-    description: 'We are seeking a talented UX/UI Designer to create amazing user experiences. The ideal candidate should have a strong portfolio demonstrating their ability to create intuitive and visually appealing designs.',
-    requirements: [
-      'Bachelor\'s degree in Design, HCI, or related field',
-      '3+ years of experience in UX/UI design',
-      'Proficiency in design tools such as Figma, Sketch, or Adobe XD',
-      'Strong portfolio showcasing user-centered design process',
-      'Experience with user research and usability testing'
-    ]
-  },
-  {
-    id: 4,
-    title: 'Marketing Specialist',
-    company: 'Global Brand',
-    location: 'Chicago, IL',
-    type: 'Full-time',
-    salary: '$70K - $90K',
-    posted: '5 days ago',
-    description: 'Join our marketing team to help develop and execute marketing campaigns across multiple channels. You will be responsible for creating content, analyzing campaign performance, and identifying growth opportunities.',
-    requirements: [
-      'Bachelor\'s degree in Marketing, Communications, or related field',
-      '2+ years of experience in digital marketing',
-      'Experience with social media marketing and content creation',
-      'Knowledge of SEO and SEM principles',
-      'Strong analytical skills and experience with marketing analytics tools'
-    ]
-  },
-  {
-    id: 5,
-    title: 'Data Scientist',
-    company: 'Analytics Pro',
-    location: 'Boston, MA',
-    type: 'Full-time',
-    salary: '$130K - $160K',
-    posted: '1 day ago',
-    description: 'We are looking for a Data Scientist to help us extract insights from our data. You will work with large datasets, build predictive models, and communicate findings to stakeholders.',
-    requirements: [
-      'Master\'s or PhD in Computer Science, Statistics, or related field',
-      '3+ years of experience in data science or machine learning',
-      'Proficiency in Python, R, or similar programming languages',
-      'Experience with machine learning frameworks and statistical analysis',
-      'Strong communication skills to present complex findings to non-technical audiences'
-    ]
-  },
-  {
-    id: 6,
-    title: 'Customer Success Manager',
-    company: 'SaaS Platform',
-    location: 'Austin, TX',
-    type: 'Full-time',
-    salary: '$75K - $95K',
-    posted: '1 week ago',
-    description: 'Join our customer success team to help our clients achieve their goals using our platform. You will be responsible for onboarding, training, and supporting customers throughout their journey.',
-    requirements: [
-      'Bachelor\'s degree in Business, Communications, or related field',
-      '2+ years of experience in customer success or account management',
-      'Strong communication and interpersonal skills',
-      'Problem-solving abilities and attention to detail',
-      'Experience with CRM software and customer success tools'
-    ]
-  },
-  {
-    id: 7,
-    title: 'DevOps Engineer',
-    company: 'Cloud Services Inc',
-    location: 'Seattle, WA',
-    type: 'Full-time',
-    salary: '$115K - $140K',
-    posted: '3 days ago',
-    description: 'We are seeking a DevOps Engineer to help us build and maintain our cloud infrastructure. You will be responsible for automating deployments, monitoring systems, and ensuring high availability.',
-    requirements: [
-      'Bachelor\'s degree in Computer Science or related field',
-      '3+ years of experience in DevOps or Site Reliability Engineering',
-      'Experience with cloud platforms (AWS, Azure, or GCP)',
-      'Knowledge of infrastructure as code tools (Terraform, CloudFormation)',
-      'Experience with CI/CD pipelines and containerization technologies'
-    ]
-  },
-  {
-    id: 8,
-    title: 'Sales Representative',
-    company: 'Enterprise Solutions',
-    location: 'Denver, CO',
-    type: 'Full-time',
-    salary: '$60K - $80K + Commission',
-    posted: '4 days ago',
-    description: 'Join our sales team to help grow our business by identifying and closing new opportunities. You will be responsible for prospecting, demonstrating our products, and building relationships with clients.',
-    requirements: [
-      'Bachelor\'s degree in Business, Marketing, or related field',
-      '2+ years of experience in B2B sales',
-      'Strong communication and negotiation skills',
-      'Experience with CRM software and sales methodologies',
-      'Self-motivated with a track record of meeting or exceeding sales targets'
-    ]
-  }
+const WORK_SETTINGS = [
+  { value: 'ALL', name: 'All Settings' },
+  { value: 'HYBRID', name: 'Hybrid' },
+  { value: 'ONSITE', name: 'On-site' },
+  { value: 'REMOTE', name: 'Remote' }
 ];
-
-const WORK_SETTINGS = ['ALL', 'HYBRID', 'ONSITE', 'REMOTE'];
 
 const JobsPage: React.FC = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -232,80 +102,137 @@ const JobsPage: React.FC = () => {
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Header with search and filters */}
-      <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 md:mb-0">
-              Find Your Next Opportunity
-            </h1>
-            <Link to="/" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-medium transition-colors">
-              Back to Home
+      <div className="bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900/20 shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.4),0_10px_10px_-5px_rgba(0,0,0,0.2)] border-b border-gray-200 dark:border-gray-700 overflow-visible">
+        <div className="container mx-auto px-3 py-6 sm:px-6 lg:px-8 sm:py-8 overflow-visible">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 sm:mb-6">
+            <div className="text-center md:text-left mb-4 md:mb-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 bg-clip-text text-transparent mb-2">
+                Find Your Next Opportunity
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm lg:text-base px-2 sm:px-0">
+                Discover amazing career opportunities that match your skills and aspirations
+              </p>
+            </div>
+            <Link 
+              to="/" 
+              className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-white/60 dark:bg-gray-800/60 hover:bg-white dark:hover:bg-gray-800 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md"
+            >
+              ← Back to Home
             </Link>
           </div>
           
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+          <div className="space-y-3 sm:space-y-4 overflow-visible">
+            <div className="relative max-w-2xl mx-auto px-1 sm:px-0">
+              <div className="absolute inset-y-0 left-0 pl-4 sm:pl-4 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-500" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:placeholder-gray-400 dark:focus:placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm transition-all"
-                placeholder="Search jobs by title, company, or keywords"
+                className="block w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl leading-5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:placeholder-gray-400 dark:focus:placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 text-sm sm:text-base transition-all duration-200 shadow-lg hover:shadow-xl focus:shadow-xl"
+                placeholder="Search jobs by title, company..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             
-            <div className="mt-4 flex items-center">
-              <button
-                type="button"
-                className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <AdjustmentsHorizontalIcon className="h-4 w-4 mr-2" />
-                Filters
-                <ChevronDownIcon className={`ml-1 h-4 w-4 transition-transform ${showFilters ? 'transform rotate-180' : ''}`} />
-              </button>
-              
-              {selectedWorkSetting !== 'ALL' && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 px-1 sm:px-0 overflow-visible">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   type="button"
-                  className="ml-3 inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
-                  onClick={resetFilters}
+                  className="inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 dark:border-gray-600 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200 transform hover:scale-105"
+                  onClick={() => setShowFilters(!showFilters)}
                 >
-                  <XMarkIcon className="h-4 w-4 mr-1" />
-                  Clear Filters
+                  <AdjustmentsHorizontalIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                  Filters
+                  <ChevronDownIcon className={`ml-2 h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 ${showFilters ? 'transform rotate-180' : ''}`} />
                 </button>
-              )}
+                
+                {selectedWorkSetting !== 'ALL' && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 border border-red-300 dark:border-red-600 shadow-sm text-xs sm:text-sm font-medium rounded-lg text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transition-all duration-200 transform hover:scale-105"
+                    onClick={resetFilters}
+                  >
+                    <XMarkIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    Clear
+                  </button>
+                )}
+              </div>
               
-              <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
-                {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'} found
+              <div className="flex items-center justify-center sm:justify-end">
+                <div className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300">
+                  <BriefcaseIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm font-medium">
+                    {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'} found
+                  </span>
+                </div>
               </div>
             </div>
             
-            {/* Filter options */}
             {showFilters && (
-              <div className="mt-4 grid grid-cols-1 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                {/* Work Setting filter */}
-                <div>
-                  <label htmlFor="work-setting" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 p-4 sm:p-6 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-600/50 shadow-lg mx-1 sm:mx-0 overflow-visible relative z-[9000]">
+                <div className="overflow-visible">
+                  <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 sm:mb-3 flex items-center">
+                    <BuildingOfficeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-indigo-600 dark:text-indigo-400" />
                     Work Setting
                   </label>
-                  <select
-                    id="work-setting"
-                    name="work-setting"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm rounded-md transition-all"
-                    value={selectedWorkSetting}
-                    onChange={(e) => setSelectedWorkSetting(e.target.value)}
-                  >
-                    {WORK_SETTINGS.map((setting) => (
-                      <option key={setting} value={setting}>
-                        {setting === 'ALL' ? 'All Settings' : setting}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative overflow-visible z-[10000]">
+                    <Listbox value={selectedWorkSetting} onChange={setSelectedWorkSetting}>
+                      <div className="relative overflow-visible z-[10000]">
+                        <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-sm border border-gray-300 dark:border-gray-600 transition-all duration-200">
+                          <span className="block truncate text-gray-900 dark:text-gray-100">
+                            {WORK_SETTINGS.find(setting => setting.value === selectedWorkSetting)?.name || 'Select Work Setting'}
+                          </span>
+                          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                            <ChevronUpDownIcon
+                              className="h-5 w-5 text-gray-400"
+                              aria-hidden="true"
+                            />
+                          </span>
+                        </Listbox.Button>
+                        <Transition
+                          as={Fragment}
+                          enter="transition ease-out duration-100"
+                          enterFrom="transform opacity-0 scale-95"
+                          enterTo="transform opacity-100 scale-100"
+                          leave="transition ease-in duration-75"
+                          leaveFrom="transform opacity-100 scale-100"
+                          leaveTo="transform opacity-0 scale-95"
+                        >
+                          <Listbox.Options className="absolute z-[9999] mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-800 py-2 text-sm shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-300 dark:border-gray-600">
+                            {WORK_SETTINGS.map((setting) => (
+                              <Listbox.Option
+                                key={setting.value}
+                                className={({ active, selected }) =>
+                                  `relative cursor-pointer select-none py-2.5 pl-10 pr-4 transition-colors duration-150 ${
+                                    active 
+                                      ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-900 dark:text-indigo-100' 
+                                      : selected 
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100'
+                                        : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700/80'
+                                  }`
+                                }
+                                value={setting.value}
+                              >
+                                {({ selected }) => (
+                                  <>
+                                    <span className={`block truncate ${selected ? 'font-semibold' : 'font-normal'}`}>
+                                      {setting.name}
+                                    </span>
+                                    {selected ? (
+                                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                        <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                      </span>
+                                    ) : null}
+                                  </>
+                                )}
+                              </Listbox.Option>
+                            ))}
+                          </Listbox.Options>
+                        </Transition>
+                      </div>
+                    </Listbox>
+                  </div>
                 </div>
               </div>
             )}
@@ -313,9 +240,14 @@ const JobsPage: React.FC = () => {
         </div>
       </div>
       
-      {/* Job listings */}
-      <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] overflow-hidden sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+      <div className="container mx-auto px-3 py-6 sm:px-6 lg:px-8 sm:py-8">
+        <div className="bg-white dark:bg-gray-800 shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.4),0_10px_10px_-5px_rgba(0,0,0,0.2)] overflow-hidden rounded-lg sm:rounded-xl border border-gray-200/50 dark:border-gray-700/50">
+          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+              <BriefcaseIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+              Available Positions
+            </h2>
+          </div>
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {loading ? (
               <li className="px-4 py-12 text-center">
@@ -329,25 +261,45 @@ const JobsPage: React.FC = () => {
               <li className="px-4 py-12 text-center text-red-600 dark:text-red-400">{error}</li>
             ) : filteredJobs.length > 0 ? (
               filteredJobs.map(job => (
-                <li key={job.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
-                          <BuildingOfficeIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                <li key={job.id} className="hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-blue-50/50 dark:hover:from-indigo-900/10 dark:hover:to-blue-900/10 transition-all duration-200 transform hover:scale-[1.01]">
+                  <div className="px-3 py-4 sm:px-6 sm:py-6">
+                    <div className="flex flex-col space-y-3 sm:space-y-4">
+                      <div className="flex items-start space-x-3 sm:space-x-4">
+                        <div className="flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-indigo-100 to-blue-100 dark:from-indigo-900/40 dark:to-blue-900/40 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md">
+                          <BuildingOfficeIcon className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
                         </div>
-                        <div className="ml-4">
-                          <h3 className="text-lg font-medium text-indigo-600 dark:text-indigo-400">{job.title}</h3>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{job.department}</p>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1 leading-tight">{job.title}</h3>
+                          <div className="flex flex-col space-y-1 sm:space-y-0 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                            <span className="inline-flex items-center font-medium text-indigo-600 dark:text-indigo-400">
+                              <BuildingOfficeIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              {job.department}
+                            </span>
+                            <span className="inline-flex items-center">
+                              <MapPinIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              {job.location}
+                            </span>
+                            <span className="inline-flex items-center">
+                              <ClockIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              {job.workSetting}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                          {job.employmentType}
-                        </span>
+                      
+                      <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col space-y-1 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-2">
+                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-800 w-max">
+                            {job.employmentType}
+                          </span>
+                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 w-max">
+                            <CurrencyDollarIcon className="h-3 w-3 mr-1" />
+                            {job.salaryRange}
+                          </span>
+                        </div>
                         <button
                           type="button"
-                          className="ml-4 inline-flex items-center px-3 py-2 border border-indigo-600 dark:border-indigo-500 text-sm font-medium rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+                          className="inline-flex items-center justify-center px-3 py-2 sm:px-4 sm:py-2.5 border border-indigo-600 dark:border-indigo-500 text-xs sm:text-sm font-medium rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md w-full sm:w-auto"
                           onClick={() => toggleJobDetails(job.id)}
                         >
                           {selectedJob === job.id ? 'Hide Details' : 'View Details'}
@@ -355,67 +307,94 @@ const JobsPage: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="mt-2 sm:flex sm:justify-between">
-                      <div className="sm:flex">
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                          <MapPinIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
-                          {job.location}
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0 sm:ml-6">
-                          <CurrencyDollarIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
-                          {job.salaryRange}
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0">
-                        <ClockIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
-                        <p>Posted {new Date(job.postedDate).toLocaleDateString()}</p>
-                      </div>
+                    <div className="mt-3 flex items-center text-xs text-gray-500 dark:text-gray-400">
+                      <ClockIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                      <p>Posted {new Date(job.postedDate).toLocaleDateString()}</p>
                     </div>
                     
-                    {/* Job details (expanded view) */}
                     {selectedJob === job.id && (
-                      <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Job Description</h4>
-                          <div 
-                            className="mt-1 text-sm text-gray-500 dark:text-gray-400 prose prose-sm dark:prose-invert max-w-none"
-                            dangerouslySetInnerHTML={{ __html: job.description }}
-                          />
+                      <div className="mt-4 sm:mt-6 bg-gradient-to-r from-gray-50 to-indigo-50/30 dark:from-gray-700/30 dark:to-indigo-900/20 rounded-lg sm:rounded-xl p-3 sm:p-6 border border-gray-200 dark:border-gray-600">
+                        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+                          <div className="space-y-4 sm:space-y-6">
+                            <div>
+                              <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center mb-2 sm:mb-3">
+                                <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-indigo-600 dark:text-indigo-400" />
+                                Job Description
+                              </h4>
+                              <div 
+                                className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none bg-white/60 dark:bg-gray-800/60 rounded-lg p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50"
+                                dangerouslySetInnerHTML={{ __html: job.description }}
+                              />
+                            </div>
+                            
+                            {job.requirements && job.requirements.length > 0 && (
+                              <div>
+                                <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center mb-2 sm:mb-3">
+                                  <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-green-600 dark:text-green-400" />
+                                  Requirements
+                                </h4>
+                                <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50">
+                                  <ul className="space-y-2">
+                                    {job.requirements.map((req, index) => (
+                                      <li key={index} className="flex items-start text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                                        <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mt-1.5 sm:mt-2 mr-2 sm:mr-3 flex-shrink-0"></span>
+                                        {req}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-4 sm:space-y-6">
+                            {job.responsibilities && job.responsibilities.length > 0 && (
+                              <div>
+                                <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center mb-2 sm:mb-3">
+                                  <BriefcaseIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-blue-600 dark:text-blue-400" />
+                                  Responsibilities
+                                </h4>
+                                <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50">
+                                  <ul className="space-y-2">
+                                    {job.responsibilities.map((resp, index) => (
+                                      <li key={index} className="flex items-start text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                                        <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mt-1.5 sm:mt-2 mr-2 sm:mr-3 flex-shrink-0"></span>
+                                        {resp}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+
+                            {job.benefits && job.benefits.length > 0 && (
+                              <div>
+                                <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center mb-2 sm:mb-3">
+                                  <CurrencyDollarIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-purple-600 dark:text-purple-400" />
+                                  Benefits
+                                </h4>
+                                <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-3 sm:p-4 border border-gray-200/50 dark:border-gray-600/50">
+                                  <ul className="space-y-2">
+                                    {job.benefits.map((benefit, index) => (
+                                      <li key={index} className="flex items-start text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                                        <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 mr-2 sm:mr-3 flex-shrink-0"></span>
+                                        {benefit}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Requirements</h4>
-                          <ul className="mt-1 list-disc list-inside text-sm text-gray-500 dark:text-gray-400">
-                            {job.requirements?.map((req, index) => (
-                              <li key={index}>{req}</li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Responsibilities</h4>
-                          <ul className="mt-1 list-disc list-inside text-sm text-gray-500 dark:text-gray-400">
-                            {job.responsibilities?.map((resp, index) => (
-                              <li key={index}>{resp}</li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Benefits</h4>
-                          <ul className="mt-1 list-disc list-inside text-sm text-gray-500 dark:text-gray-400">
-                            {job.benefits?.map((benefit, index) => (
-                              <li key={index}>{benefit}</li>
-                            ))}
-                          </ul>
-                        </div>
-                        
-                        <div className="mt-6">
+                        <div className="mt-6 sm:mt-8 flex justify-center">
                           <Link
                             to={`/jobs/${job.id}`}
-                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transform hover:scale-[1.02] transition-all"
+                            className="inline-flex items-center w-full sm:w-auto justify-center px-4 sm:px-6 py-2.5 sm:py-3 border border-transparent text-sm sm:text-base font-medium rounded-lg sm:rounded-xl shadow-lg text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 dark:from-indigo-500 dark:to-blue-500 dark:hover:from-indigo-600 dark:hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transform hover:scale-105 transition-all duration-200 hover:shadow-xl"
                           >
-                            View Full Details →
+                            <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                            Apply for this Position
                           </Link>
                         </div>
                       </div>

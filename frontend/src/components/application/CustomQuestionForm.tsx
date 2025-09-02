@@ -1,16 +1,5 @@
 import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  TextField,
-  FormControl,
-  FormControlLabel,
-  RadioGroup,
-  Radio,
-  Checkbox,
-  FormGroup,
-  FormHelperText 
-} from '@mui/material';
+import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 export interface CustomQuestion {
   id: number;
@@ -52,144 +41,117 @@ const CustomQuestionForm: React.FC<CustomQuestionFormProps> = ({
     onChange(updatedAnswers);
   };
 
-  const handleCheckboxChange = (questionId: number, option: string, checked: boolean) => {
-    // Find existing answer
-    const existingAnswerIndex = answers.findIndex(a => a.questionId === questionId);
-    const currentOptions = existingAnswerIndex !== -1 
-      ? answers[existingAnswerIndex].answer.split(',').filter(Boolean) 
-      : [];
-    
-    let updatedOptions: string[];
-    
-    if (checked) {
-      // Add option if checked
-      updatedOptions = [...currentOptions, option];
-    } else {
-      // Remove option if unchecked
-      updatedOptions = currentOptions.filter(opt => opt !== option);
-    }
-    
-    // Update answers
-    const updatedAnswers = [...answers];
-    const updatedAnswer = updatedOptions.join(',');
-    
-    if (existingAnswerIndex !== -1) {
-      updatedAnswers[existingAnswerIndex].answer = updatedAnswer;
-    } else {
-      updatedAnswers.push({ questionId, answer: updatedAnswer });
-    }
-    
-    onChange(updatedAnswers);
-  };
-  
   const getQuestionAnswer = (questionId: number): string => {
     const answer = answers.find(a => a.questionId === questionId);
     return answer ? answer.answer : '';
   };
-  
-  const isOptionChecked = (questionId: number, option: string): boolean => {
-    const answer = getQuestionAnswer(questionId);
-    return answer.split(',').includes(option);
-  };
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-        Application Questions
-      </Typography>
-      
-      {questions.map((question) => (
-        <Box key={question.id} sx={{ mb: 4 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            {question.questionText}
-            {question.required && <span style={{ color: 'red' }}> *</span>}
-          </Typography>
-          
-          {question.questionType === 'TEXT' && (
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              placeholder="Your answer"
-              value={getQuestionAnswer(question.id)}
-              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-              error={!!errors[question.id]}
-              helperText={errors[question.id]}
-            />
-          )}
-          
-          {question.questionType === 'MULTIPLE_CHOICE' && question.options && (
-            <FormControl component="fieldset" error={!!errors[question.id]}>
-              <RadioGroup 
-                value={getQuestionAnswer(question.id)}
-                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-              >
-                {question.options.map((option, index) => (
-                  <FormControlLabel 
-                    key={index} 
-                    value={option} 
-                    control={<Radio />} 
-                    label={option} 
-                  />
-                ))}
-              </RadioGroup>
-              {errors[question.id] && (
-                <FormHelperText>{errors[question.id]}</FormHelperText>
-              )}
-            </FormControl>
-          )}
-          
-          {question.questionType === 'YES_NO' && (
-            <FormControl component="fieldset" error={!!errors[question.id]}>
-              <RadioGroup 
-                value={getQuestionAnswer(question.id)}
-                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-              >
-                <FormControlLabel 
-                  value="Yes" 
-                  control={<Radio />} 
-                  label="Yes" 
+    <div className="space-y-6">
+      {questions.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400">No additional questions for this position.</p>
+        </div>
+      ) : (
+        questions.map((question) => (
+          <div key={question.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <label className="block text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100 mb-3">
+              {question.questionText}
+              {question.required && <span className="text-red-600 dark:text-red-400 ml-1">*</span>}
+            </label>
+            
+            {question.questionType === 'TEXT' && (
+              <div>
+                <textarea
+                  rows={3}
+                  placeholder="Your answer"
+                  value={getQuestionAnswer(question.id)}
+                  onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                  className={`w-full px-3 py-2.5 border rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm sm:text-base transition-all duration-200 ${
+                    errors[question.id] 
+                      ? 'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 dark:border-gray-600'
+                  }`}
                 />
-                <FormControlLabel 
-                  value="No" 
-                  control={<Radio />} 
-                  label="No" 
-                />
-              </RadioGroup>
-              {errors[question.id] && (
-                <FormHelperText>{errors[question.id]}</FormHelperText>
-              )}
-            </FormControl>
-          )}
+                {errors[question.id] && (
+                  <div className="mt-2 flex items-center text-sm text-red-600 dark:text-red-400">
+                    <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                    {errors[question.id]}
+                  </div>
+                )}
+              </div>
+            )}
           
-          {/* {question.questionType === 'CHECKBOX' && question.options && (
-            <FormControl component="fieldset" error={!!errors[question.id]}>
-              <FormGroup>
-                {question.options.map((option, index) => (
-                  <FormControlLabel
-                    key={index}
-                    control={
-                      <Checkbox
-                        checked={isOptionChecked(question.id, option)}
-                        onChange={(e) => handleCheckboxChange(
-                          question.id, 
-                          option, 
-                          e.target.checked
-                        )}
+            {question.questionType === 'MULTIPLE_CHOICE' && question.options && (
+              <div>
+                <div className="space-y-3">
+                  {question.options.map((option, index) => (
+                    <label key={index} className="flex items-center cursor-pointer group">
+                      <input
+                        type="radio"
+                        name={`question_${question.id}`}
+                        value={option}
+                        checked={getQuestionAnswer(question.id) === option}
+                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                        className="w-4 h-4 text-indigo-600 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700"
                       />
-                    }
-                    label={option}
-                  />
-                ))}
-              </FormGroup>
-              {errors[question.id] && (
-                <FormHelperText>{errors[question.id]}</FormHelperText>
-              )}
-            </FormControl>
-          )} */}
-        </Box>
-      ))}
-    </Box>
+                      <span className="ml-3 text-sm sm:text-base text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                        {option}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {errors[question.id] && (
+                  <div className="mt-2 flex items-center text-sm text-red-600 dark:text-red-400">
+                    <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                    {errors[question.id]}
+                  </div>
+                )}
+              </div>
+            )}
+          
+            {question.questionType === 'YES_NO' && (
+              <div>
+                <div className="space-y-3">
+                  <label className="flex items-center cursor-pointer group">
+                    <input
+                      type="radio"
+                      name={`question_${question.id}`}
+                      value="Yes"
+                      checked={getQuestionAnswer(question.id) === 'Yes'}
+                      onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700"
+                    />
+                    <span className="ml-3 text-sm sm:text-base text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                      Yes
+                    </span>
+                  </label>
+                  <label className="flex items-center cursor-pointer group">
+                    <input
+                      type="radio"
+                      name={`question_${question.id}`}
+                      value="No"
+                      checked={getQuestionAnswer(question.id) === 'No'}
+                      onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 dark:bg-gray-700"
+                    />
+                    <span className="ml-3 text-sm sm:text-base text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                      No
+                    </span>
+                  </label>
+                </div>
+                {errors[question.id] && (
+                  <div className="mt-2 flex items-center text-sm text-red-600 dark:text-red-400">
+                    <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                    {errors[question.id]}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))
+      )}
+    </div>
   );
 };
 

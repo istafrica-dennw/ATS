@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { 
   EnvelopeIcon, 
   UserGroupIcon, 
@@ -7,6 +7,8 @@ import {
   CheckCircleIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline';
+import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
+import { Listbox, Transition } from '@headlessui/react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
 import axiosInstance from '../../utils/axios';
@@ -168,6 +170,40 @@ const BulkEmailPage: React.FC = () => {
     }
   };
 
+  const handleJobChange = (jobId: number | null) => {
+    setFormData(prev => ({
+      ...prev,
+      jobId: jobId
+    }));
+    setShowPreview(false);
+    setEmailPreview(null);
+  };
+
+  const handleStatusChange = (status: string | null) => {
+    setFormData(prev => ({
+      ...prev,
+      status: status
+    }));
+    setShowPreview(false);
+    setEmailPreview(null);
+  };
+
+  const jobOptions = [
+    { name: 'All Jobs', value: null },
+    ...jobs.map(job => ({
+      name: `${job.title} - ${job.department}`,
+      value: job.id
+    }))
+  ];
+
+  const statusOptions = [
+    { name: 'All Statuses', value: null },
+    ...statuses.map(status => ({
+      name: status.label,
+      value: status.value
+    }))
+  ];
+
   return (
     <div className="space-y-8">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50 mb-8">
@@ -193,36 +229,104 @@ const BulkEmailPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Job (Optional)
                   </label>
-                  <select
-                    value={formData.jobId || ''}
-                    onChange={(e) => handleInputChange('jobId', e.target.value ? parseInt(e.target.value) : null)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">All Jobs</option>
-                    {jobs.map(job => (
-                      <option key={job.id} value={job.id}>
-                        {job.title} - {job.department}
-                      </option>
-                    ))}
-                  </select>
+                  <Listbox value={formData.jobId} onChange={handleJobChange}>
+                    <div className="relative">
+                      <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                        <span className="block truncate">{jobOptions.find(j => j.value === formData.jobId)?.name || 'All Jobs'}</span>
+                        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                          <ChevronUpDownIcon
+                            className="h-5 w-5 text-gray-400"
+                            aria-hidden="true"
+                          />
+                        </span>
+                      </Listbox.Button>
+                      <Transition
+                        as={Fragment}
+                        leave="transition ease-in duration-100"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                      >
+                        <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                          {jobOptions.map((job, jobIdx) => (
+                            <Listbox.Option
+                              key={jobIdx}
+                              className={({ active }) =>
+                                `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                  active ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                }`
+                              }
+                              value={job.value}
+                            >
+                              {({ selected }) => (
+                                <>
+                                  <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                    {job.name}
+                                  </span>
+                                  {selected ? (
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                      <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                    </span>
+                                  ) : null}
+                                </>
+                              )}
+                            </Listbox.Option>
+                          ))}
+                        </Listbox.Options>
+                      </Transition>
+                    </div>
+                  </Listbox>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Status (Optional)
                   </label>
-                  <select
-                    value={formData.status || ''}
-                    onChange={(e) => handleInputChange('status', e.target.value || null)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">All Statuses</option>
-                    {statuses.map(status => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ))}
-                  </select>
+                  <Listbox value={formData.status} onChange={handleStatusChange}>
+                    <div className="relative">
+                      <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                        <span className="block truncate">{statusOptions.find(s => s.value === formData.status)?.name || 'All Statuses'}</span>
+                        <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                          <ChevronUpDownIcon
+                            className="h-5 w-5 text-gray-400"
+                            aria-hidden="true"
+                          />
+                        </span>
+                      </Listbox.Button>
+                      <Transition
+                        as={Fragment}
+                        leave="transition ease-in duration-100"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                      >
+                        <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                          {statusOptions.map((status, statusIdx) => (
+                            <Listbox.Option
+                              key={statusIdx}
+                              className={({ active }) =>
+                                `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                  active ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                }`
+                              }
+                              value={status.value}
+                            >
+                              {({ selected }) => (
+                                <>
+                                  <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                    {status.name}
+                                  </span>
+                                  {selected ? (
+                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                      <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                    </span>
+                                  ) : null}
+                                </>
+                              )}
+                            </Listbox.Option>
+                          ))}
+                        </Listbox.Options>
+                      </Transition>
+                    </div>
+                  </Listbox>
                 </div>
               </div>
 

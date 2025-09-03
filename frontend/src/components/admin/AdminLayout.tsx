@@ -79,10 +79,10 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             } rounded-lg transition-all duration-200`}
             title={isCollapsed ? "ATS System - Go to Home" : "Go to Home"}
           >
-            <div className={`flex-shrink-0 p-2 rounded-lg bg-white/20 ${
-              isCollapsed ? 'mr-0' : 'mr-3'
+            <div className={`flex-shrink-0 flex items-center justify-center rounded-lg bg-white/20 ${
+              isCollapsed ? 'w-10 h-10' : 'w-10 h-10 mr-3'
             }`}>
-              <HomeIcon className="h-5 w-5 text-white" />
+              <img src="/ist-logo.png" alt="IST Logo" className="h-5" />
             </div>
             {!isCollapsed && (
               <div>

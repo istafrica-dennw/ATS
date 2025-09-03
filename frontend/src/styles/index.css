@@ -1,0 +1,16 @@
+/* Custom styles for React Quill to match Tailwind's dark mode */
+.ql-snow.ql-toolbar {
+    @apply bg-white dark:bg-gray-800 rounded-t-md border-gray-300 dark:border-gray-600;
+}
+
+/* More robust way to hide the default calendar icon on datetime-local inputs */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    color: transparent;
+    -webkit-appearance: none;
+    display: none;
+}
+
+input[type="datetime-local"] {
+    -webkit-appearance: none;
+}

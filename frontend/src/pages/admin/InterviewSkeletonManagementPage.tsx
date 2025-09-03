@@ -310,8 +310,8 @@ const InterviewSkeletonManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Interview Skeletons</h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -320,7 +320,7 @@ const InterviewSkeletonManagementPage: React.FC = () => {
           </div>
           <button
             onClick={handleCreate}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 font-medium transform hover:scale-[1.02]"
+            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 font-medium transform hover:scale-[1.02]"
           >
             <PlusIcon className="h-4 w-4 mr-2" />
             Create Skeleton
@@ -341,7 +341,7 @@ const InterviewSkeletonManagementPage: React.FC = () => {
       )}
 
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
             Interview Skeletons ({skeletons.length})
           </h2>
@@ -365,8 +365,8 @@ const InterviewSkeletonManagementPage: React.FC = () => {
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {skeletons.map((skeleton) => (
-              <div key={skeleton.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                <div className="flex items-start justify-between">
+              <div key={skeleton.id} className="p-4 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{skeleton.name}</h3>
                     {skeleton.description && (
@@ -386,24 +386,24 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => handleJobAssociation(skeleton)}
-                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
                     >
                       <LinkIcon className="h-4 w-4 mr-1.5" />
                       Manage Jobs
                     </button>
                     <button
                       onClick={() => handleEdit(skeleton)}
-                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
                     >
                       <PencilIcon className="h-4 w-4 mr-1.5" />
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(skeleton.id)}
-                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
                     >
                       <TrashIcon className="h-4 w-4 mr-1.5" />
                       Delete
@@ -411,7 +411,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* Associated Jobs */}
                 {skeleton.associatedJobs.length > 0 && (
                   <div className="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
                     <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
@@ -588,7 +587,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
         document.body
       )}
 
-      {/* Job Association Modal */}
       {showJobAssociationModal && selectedSkeletonForJobs && ReactDOM.createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -609,7 +607,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                 Select which jobs this interview skeleton should be available for. When creating interviews, only associated skeletons will be shown for each job.
               </p>
 
-              {/* Current Associations Summary */}
               {selectedSkeletonForJobs && selectedSkeletonForJobs.associatedJobs.length > 0 && (
                 <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
                   <h4 className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
@@ -673,7 +670,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
             </div>
 
             <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
-              {/* Changes Summary */}
               <div className="mb-3">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {selectedJobIds.length} job(s) selected
@@ -685,7 +681,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                 </p>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex justify-between">
                 <div className="flex space-x-2">
                   {selectedSkeletonForJobs && selectedSkeletonForJobs.associatedJobs.length > 0 && (
@@ -726,7 +721,6 @@ const InterviewSkeletonManagementPage: React.FC = () => {
         document.body
       )}
 
-      {/* Toast Notification */}
       {toast && (
         <Toast
           message={toast.message}

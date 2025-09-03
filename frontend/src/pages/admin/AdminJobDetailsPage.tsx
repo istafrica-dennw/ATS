@@ -932,7 +932,7 @@ const AdminJobDetailsPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applications</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{applications.length}</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalElements}</p>
                 </div>
                 <DocumentTextIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
               </div>

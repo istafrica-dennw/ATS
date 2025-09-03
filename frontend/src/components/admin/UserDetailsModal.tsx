@@ -1,9 +1,17 @@
 // Enhanced with comprehensive dark mode support and theming
-import React, { useState, useEffect, useRef } from 'react';
-import { Dialog } from '@headlessui/react';
+import React, { useState, useEffect, useRef, Fragment } from 'react';
+import { Dialog, Listbox, Transition } from '@headlessui/react';
 import { XMarkIcon, CameraIcon } from '@heroicons/react/24/outline';
-import { User, Role, UserFormData } from '../../types/user';
+import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
+import { Role, UserFormData } from '../../types/user';
 import { toast } from 'react-toastify';
+
+const roleOptions = [
+  { name: 'Admin', value: Role.ADMIN },
+  { name: 'Interviewer', value: Role.INTERVIEWER },
+  { name: 'Hiring Manager', value: Role.HIRING_MANAGER },
+  { name: 'Candidate', value: Role.CANDIDATE },
+];
 
 interface UserDetailsModalProps {
   isOpen: boolean;
@@ -25,6 +33,18 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const [userData, setUserData] = useState<UserFormData | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRoleChange = (newRole: Role) => {
+    if (!userData) return;
+    setUserData({
+      ...userData,
+      role: newRole
+    });
+  };
+
+  const selectedRoleName = React.useMemo(() => 
+    roleOptions.find(r => r.value === userData?.role)?.name, [userData?.role]
+  );
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -300,23 +320,52 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                       Role
                     </label>
                     <div className="relative">
-                      <select
-                        id="role"
-                        name="role"
-                        value={userData.role || ''}
-                        onChange={handleChange}
-                        className="block w-full py-2.5 px-3 pr-8 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 appearance-none"
-                      >
-                        <option value={Role.ADMIN}>Admin</option>
-                        <option value={Role.INTERVIEWER}>Interviewer</option>
-                        <option value={Role.HIRING_MANAGER}>Hiring Manager</option>
-                        <option value={Role.CANDIDATE}>Candidate</option>
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                        <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 20 20" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
+                      <Listbox value={userData.role} onChange={handleRoleChange}>
+                        <div className="relative">
+                          <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                            <span className="block truncate">{selectedRoleName}</span>
+                            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                              <ChevronUpDownIcon
+                                className="h-5 w-5 text-gray-400"
+                                aria-hidden="true"
+                              />
+                            </span>
+                          </Listbox.Button>
+                          <Transition
+                            as={Fragment}
+                            leave="transition ease-in duration-100"
+                            leaveFrom="opacity-100"
+                            leaveTo="opacity-0"
+                          >
+                            <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                              {roleOptions.map((role, roleIdx) => (
+                                <Listbox.Option
+                                  key={role.value}
+                                  className={({ active }) =>
+                                    `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                      active ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-200' : 'text-gray-900 dark:text-gray-100'
+                                    }`
+                                  }
+                                  value={role.value}
+                                >
+                                  {({ selected }) => (
+                                    <>
+                                      <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                        {role.name}
+                                      </span>
+                                      {selected ? (
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                          <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                        </span>
+                                      ) : null}
+                                    </>
+                                  )}
+                                </Listbox.Option>
+                              ))}
+                            </Listbox.Options>
+                          </Transition>
+                        </div>
+                      </Listbox>
                     </div>
                   </div>
 

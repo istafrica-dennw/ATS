@@ -49,8 +49,8 @@ const AdminChatNotifications: React.FC<AdminChatNotificationsProps> = ({ adminId
       console.log('🔔 New unassigned conversation notification:', conversationData);
       setUnassignedCount(prev => prev + 1);
       
-      // Optional: Show browser notification if permission granted
-      if (Notification.permission === 'granted') {
+      // Optional: Show browser notification if permission granted and API is available
+      if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('New Support Request', {
           body: `${conversationData.candidateName} started a new conversation`,
           icon: '/favicon.ico'
@@ -71,8 +71,8 @@ const AdminChatNotifications: React.FC<AdminChatNotificationsProps> = ({ adminId
 
     setSocket(newSocket);
 
-    // Request notification permission
-    if (Notification.permission === 'default') {
+    // Request notification permission only if the API is available
+    if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
 

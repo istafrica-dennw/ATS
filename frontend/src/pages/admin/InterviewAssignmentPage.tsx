@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { interviewAPI, interviewSkeletonAPI, skeletonJobAssociationAPI } from '../../services/api';
 import { jobService, JobDTO } from '../../services/jobService';
-import { InterviewSkeleton, AssignInterviewRequest, Interview } from '../../types/interview';
+import { InterviewSkeleton, AssignInterviewRequest, Interview, InterviewStatus } from '../../types/interview';
 import { 
   UserIcon,
   BriefcaseIcon,
@@ -12,8 +12,13 @@ import {
   TrashIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
-  EyeIcon
+  EyeIcon,
+  ChevronUpDownIcon,
+  CheckIcon,
+  CalendarDaysIcon
 } from '@heroicons/react/24/outline';
+import { Listbox, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
 
 interface Application {
   id: number;
@@ -305,7 +310,7 @@ const InterviewAssignmentPage: React.FC = () => {
 
       {/* Filter Section */}
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-        <div className="px-6 py-4">
+        <div className="px-4 py-4 sm:px-6">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
@@ -322,29 +327,90 @@ const InterviewAssignmentPage: React.FC = () => {
             </div>
 
             {/* Job Filter */}
-            <div className="sm:w-64">
+            <div className="w-full sm:w-64">
+              <Listbox value={jobFilter} onChange={setJobFilter}>
               <div className="relative">
-                <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <select
-                  value={jobFilter}
-                  onChange={(e) => setJobFilter(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 shadow-sm"
-                >
-                  <option value="">All Jobs</option>
-                  {jobs.map(job => (
-                    <option key={job.id} value={job.id.toString()}>
+                  <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-3 pl-3 pr-10 text-left shadow-sm focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-500 sm:text-sm border border-gray-300 dark:border-gray-600">
+                    <span className="block truncate">{jobs.find(j => j.id.toString() === jobFilter)?.title || 'All Jobs'}</span>
+                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                      <ChevronUpDownIcon
+                        className="h-5 w-5 text-gray-400"
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </Listbox.Button>
+                  <Transition
+                    as={Fragment}
+                    leave="transition ease-in duration-100"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                  >
+                    <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-800 py-3 text-base shadow-xl ring-1 ring-black/5 focus:outline-none sm:text-sm border border-gray-300 dark:border-gray-600">
+                      <Listbox.Option
+                        key="all-jobs"
+                        className={({ active }) =>
+                          `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                            active ? 'bg-indigo-50 dark:bg-gray-700' : 'text-gray-900 dark:text-gray-100'
+                          }`
+                        }
+                        value=""
+                      >
+                        {({ selected }) => (
+                          <>
+                            <span
+                              className={`block truncate ${
+                                selected ? 'font-medium text-indigo-600 dark:text-indigo-400' : 'font-normal'
+                              }`}
+                            >
+                              All Jobs
+                            </span>
+                            {selected ? (
+                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                              </span>
+                            ) : null}
+                          </>
+                        )}
+                      </Listbox.Option>
+                      {jobs.map((job) => (
+                        <Listbox.Option
+                          key={job.id}
+                          className={({ active }) =>
+                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                              active ? 'bg-indigo-50 dark:bg-gray-700' : 'text-gray-900 dark:text-gray-100'
+                            }`
+                          }
+                          value={job.id.toString()}
+                        >
+                          {({ selected }) => (
+                            <>
+                              <span
+                                className={`block truncate ${
+                                  selected ? 'font-medium text-indigo-600 dark:text-indigo-400' : 'font-normal'
+                                }`}
+                              >
                       {job.title}
-                    </option>
-                  ))}
-                </select>
+                              </span>
+                              {selected ? (
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400">
+                                  <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </Listbox.Option>
+                      ))}
+                    </Listbox.Options>
+                  </Transition>
               </div>
+              </Listbox>
             </div>
           </div>
         </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-4 sm:px-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
             Shortlisted Applications ({getFilteredApplications().length})
           </h2>
@@ -369,11 +435,11 @@ const InterviewAssignmentPage: React.FC = () => {
               const applicationInterviews = getInterviewsForApplication(application.id);
               
               return (
-                <div key={application.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
+                <div key={application.id} className="px-4 sm:px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                        <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3">
-                        <UserIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                                <UserIcon className="h-6 w-6 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                         <div>
                           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {application.candidateName}
@@ -382,99 +448,102 @@ const InterviewAssignmentPage: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                            <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-500 dark:text-gray-400">
                         <div className="flex items-center">
-                          <BriefcaseIcon className="h-4 w-4 mr-1" />
-                          <span>{application.jobTitle}</span>
+                                    <BriefcaseIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                                    <span className="truncate">{application.jobTitle}</span>
                         </div>
-                        <span>•</span>
-                        <span>Applied: {formatDate(application.appliedAt)}</span>
-                        <span>•</span>
+                                <span className="hidden sm:inline">•</span>
+                                <span className="mt-1 sm:mt-0">Applied: {formatDate(application.appliedAt)}</span>
+                                <span className="hidden sm:inline">•</span>
+                                <div className="mt-2 sm:mt-0 flex items-center gap-x-2">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                           {application.status}
                         </span>
                         {applicationInterviews.length > 0 && (
-                          <>
-                            <span>•</span>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                               {applicationInterviews.length} Interview{applicationInterviews.length !== 1 ? 's' : ''}
                             </span>
-                          </>
                         )}
+                                </div>
                       </div>
 
                       {/* Display all interviews for this application */}
-                      {applicationInterviews.length > 0 && (
-                        <div className="mt-4 space-y-3">
-                          {applicationInterviews.map((interview, index) => (
-                            <div key={interview.id} className="p-4 bg-blue-50 dark:bg-gray-700/50 rounded-lg border border-blue-200/50 dark:border-blue-700/50 transform transition-transform duration-300 hover:scale-[1.01] shadow-inner">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-3">
-                                    <UserGroupIcon className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-                                    <div>
-                                      <span className="text-sm font-semibold text-blue-900 dark:text-blue-200">
-                                        {interview.skeletonName}
+                            <div className="flex-grow mt-4">
+                                {applicationInterviews.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {applicationInterviews.map((interview) => (
+                                            <div key={interview.id} className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+                                                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200/50 dark:border-blue-800/50 flex-grow w-full">
+                                                    <div className="flex items-center mb-2">
+                                                        <UserGroupIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2 flex-shrink-0" />
+                                                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{interview.skeletonName}</h4>
+                                                    </div>
+                                                    <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1 pl-7">
+                                                        <p>
+                                                            <span className="font-medium">Assigned to:</span> {interview.interviewerName}
+                                                        </p>
+                                                        {interview.scheduledAt && (
+                                                            <p>
+                                                                <span className="font-medium">Scheduled:</span> {formatDate(interview.scheduledAt)}
+                                                            </p>
+                                                        )}
+                                                        <p>
+                                                            <span className="font-medium">Status:</span> 
+                                                            <span className={`ml-1 font-semibold ${
+                                                                interview.status === InterviewStatus.COMPLETED ? 'text-green-600 dark:text-green-400' :
+                                                                interview.status === InterviewStatus.IN_PROGRESS ? 'text-yellow-600 dark:text-yellow-400' :
+                                                                interview.status === InterviewStatus.ASSIGNED ? 'text-blue-600 dark:text-blue-400' :
+                                                                'text-gray-600 dark:text-gray-400'
+                                                            }`}>
+                                                                {interview.status}
                                       </span>
-                                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                                        Assigned to: {interview.interviewerName}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="mt-2 ml-8 text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                                    <p>
-                                      {interview.scheduledAt 
-                                        ? `Scheduled: ${formatDate(interview.scheduledAt)}`
-                                        : 'Date TBD'
-                                      }
-                                    </p>
-                                    <p>Status: <span className={`font-medium ${
-                                      interview.status === 'COMPLETED' ? 'text-green-600 dark:text-green-400' :
-                                      interview.status === 'IN_PROGRESS' ? 'text-blue-600 dark:text-blue-400' :
-                                      'text-yellow-600 dark:text-yellow-400'
-                                    }`}>{interview.status}</span></p>
-                                    {interview.completedAt && (
-                                      <p>Completed: {formatDate(interview.completedAt)}</p>
+                                                        </p>
+                                                        {interview.completedAt && (
+                                                            <p>
+                                                                <span className="font-medium">Completed:</span> {formatDate(interview.completedAt)}
+                                                            </p>
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex flex-col space-y-2 ml-4">
-                                  {interview.status === 'COMPLETED' && (
+                                                <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0">
                                     <button
-                                      onClick={() => handleViewResults(interview)}
-                                      className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 dark:from-green-400 dark:to-green-500 dark:hover:from-green-500 dark:hover:to-green-600 transition-all shadow-sm hover:shadow-lg transform hover:scale-105"
-                                    >
-                                      <EyeIcon className="h-4 w-4 mr-1.5" />
+                                                        onClick={() => {
+                                                            setSelectedInterview(interview);
+                                                            setShowResultsModal(true);
+                                                        }}
+                                                        className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200"
+                                                    >
+                                                        <EyeIcon className="-ml-1 mr-2 h-5 w-5" />
                                       View Results
                                     </button>
-                                  )}
-                                  {interview.status === 'ASSIGNED' && (
                                     <button
-                                      onClick={() => handleCancelInterview(interview.id)}
-                                      className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 dark:from-red-400 dark:to-red-500 dark:hover:from-red-500 dark:hover:to-red-600 transition-all shadow-sm hover:shadow-lg transform hover:scale-105"
-                                    >
-                                      <TrashIcon className="h-4 w-4 mr-1.5" />
-                                      Cancel
+                                                        type="button"
+                                                        onClick={() => handleAssignInterview(application)}
+                                                        className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200"
+                                                        title="Assign another interview for this candidate"
+                                                    >
+                                                        <CalendarDaysIcon className="-ml-1 mr-2 h-5 w-5" />
+                                                        Add Interview
                                     </button>
-                                  )}
-                                </div>
                               </div>
                             </div>
                           ))}
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Always show the assign interview button */}
-                    <div className="flex items-center ml-4">
+                                ) : (
+                                    <div className="flex items-center justify-end mt-4">
                       <button
+                                            type="button"
                         onClick={() => handleAssignInterview(application)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 font-medium transform hover:scale-[1.02] transition-all"
+                                            className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200"
                       >
-                        <CalendarIcon className="h-4 w-4 mr-2" />
-                        {applicationInterviews.length > 0 ? 'Add Interview' : 'Assign Interview'}
+                                            <CalendarDaysIcon className="-ml-1 mr-2 h-5 w-5" />
+                                            Add Interview
                       </button>
-                    </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                   </div>
                 </div>
               );
@@ -484,21 +553,27 @@ const InterviewAssignmentPage: React.FC = () => {
       </div>
 
       {showModal && selectedApplication && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-75 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border border-gray-200/50 dark:border-gray-700/50 max-w-[95vw] sm:max-w-[90vw] md:w-2/3 lg:w-1/2 shadow-lg dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] rounded-md bg-white dark:bg-gray-800">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                Assign Interview - {selectedApplication.candidateName}
-              </h3>
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 dark:bg-gray-900 opacity-75"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full sm:p-6 border border-gray-200/50 dark:border-gray-700/50">
+              <div className="absolute top-0 right-0 pt-4 pr-4 z-10">
               <button
+                  type="button"
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 z-10"
+                  className="rounded-lg bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
               >
-                <XMarkIcon className="h-6 w-6" />
+                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
               </button>
             </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+                  Assign Interview - {selectedApplication.candidateName}
+                </h3>
+                <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
               <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-4">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Candidate Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -523,49 +598,84 @@ const InterviewAssignmentPage: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Interviewer *</label>
-                <select
-                  value={formData.interviewerId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, interviewerId: e.target.value }))}
-                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:shadow-md focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                  required
-                >
-                  <option value="">Select an interviewer</option>
-                  {interviewers.map((interviewer) => (
-                    <option key={interviewer.id} value={interviewer.id}>
-                      {interviewer.firstName} {interviewer.lastName} ({interviewer.email})
-                    </option>
-                  ))}
-                </select>
+                    <Listbox value={formData.interviewerId} onChange={(value) => setFormData(prev => ({ ...prev, interviewerId: value }))}>
+                      <div className="relative mt-1">
+                        <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                          <span className="block truncate">{interviewers.find(i => i.id.toString() === formData.interviewerId)?.firstName || 'Select an interviewer'} {interviewers.find(i => i.id.toString() === formData.interviewerId)?.lastName}</span>
+                          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                            <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                          </span>
+                        </Listbox.Button>
+                        <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                          <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                            {interviewers.map((interviewer) => (
+                              <Listbox.Option
+                                key={interviewer.id}
+                                className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'text-gray-900 dark:text-gray-100'}`}
+                                value={interviewer.id.toString()}
+                              >
+                                {({ selected }) => (
+                                  <>
+                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{interviewer.firstName} {interviewer.lastName} ({interviewer.email})</span>
+                                    {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400"><CheckIcon className="h-5 w-5" aria-hidden="true" /></span> : null}
+                                  </>
+                                )}
+                              </Listbox.Option>
+                            ))}
+                          </Listbox.Options>
+                        </Transition>
+                      </div>
+                    </Listbox>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Interview Template *</label>
-                <select
-                  value={formData.skeletonId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, skeletonId: e.target.value }))}
-                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:shadow-md focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                  required
-                >
-                  <option value="">Select an interview template</option>
-                  {filteredSkeletons.map((skeleton) => (
-                    <option key={skeleton.id} value={skeleton.id}>
-                      {skeleton.name} ({skeleton.focusAreas.length} focus areas)
-                    </option>
+                    <Listbox value={formData.skeletonId} onChange={(value) => setFormData(prev => ({ ...prev, skeletonId: value }))}>
+                      <div className="relative mt-1">
+                        <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                          <span className="block truncate">{skeletons.find(s => s.id.toString() === formData.skeletonId)?.name || 'Select an interview template'}</span>
+                          <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                            <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                          </span>
+                        </Listbox.Button>
+                        <Transition as={Fragment} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
+                          <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                            {filteredSkeletons.map((skeleton) => (
+                              <Listbox.Option
+                                key={skeleton.id}
+                                className={({ active }) => `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'text-gray-900 dark:text-gray-100'}`}
+                                value={skeleton.id.toString()}
+                              >
+                                {({ selected }) => (
+                                  <>
+                                    <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>{skeleton.name} ({skeleton.focusAreas.length} focus areas)</span>
+                                    {selected ? <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-indigo-600 dark:text-indigo-400"><CheckIcon className="h-5 w-5" aria-hidden="true" /></span> : null}
+                                  </>
+                                )}
+                              </Listbox.Option>
                   ))}
                   {filteredSkeletons.length === 0 && (
-                    <option value="" disabled>No interview templates associated with this job</option>
+                              <div className="relative cursor-default select-none py-2 px-4 text-gray-700 dark:text-gray-400">No interview templates associated with this job</div>
                   )}
-                </select>
+                          </Listbox.Options>
+                        </Transition>
+                      </div>
+                    </Listbox>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Scheduled Date & Time</label>
+                    <div className="relative mt-1">
                 <input
                   type="datetime-local"
                   value={formData.scheduledAt}
                   onChange={(e) => setFormData(prev => ({ ...prev, scheduledAt: e.target.value }))}
-                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:shadow-md focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                        className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 shadow-sm transition-all duration-200"
                 />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <CalendarDaysIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                      </div>
+                    </div>
               </div>
 
               <div>
@@ -574,7 +684,7 @@ const InterviewAssignmentPage: React.FC = () => {
                   rows={3}
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:shadow-md focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 shadow-sm transition-all duration-200"
                   placeholder="Optional notes for the interviewer"
                 />
               </div>
@@ -613,14 +723,21 @@ const InterviewAssignmentPage: React.FC = () => {
                 </button>
               </div>
             </form>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Interview Results Modal */}
       {showResultsModal && selectedInterview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 dark:bg-gray-900 opacity-75"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-200/50 dark:border-gray-700/50">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Interview Results</h2>
@@ -632,8 +749,7 @@ const InterviewAssignmentPage: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            <div className="p-6 space-y-6">
+              <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
               {/* Interview Summary */}
               <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -743,6 +859,7 @@ const InterviewAssignmentPage: React.FC = () => {
                   ) : (
                     <p className="text-gray-500 dark:text-gray-400">No detailed responses available.</p>
                   )}
+                  </div>
                 </div>
               </div>
             </div>

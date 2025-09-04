@@ -255,6 +255,26 @@ public class InterviewController {
     }
 
     /**
+     * Get all interviews for admin assignment management
+     * Admin only
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<InterviewDTO>> getAllInterviews() {
+        
+        log.debug("Fetching all interviews for admin assignment management");
+        
+        try {
+            List<InterviewDTO> interviews = interviewService.getAllInterviews();
+            return ResponseEntity.ok(interviews);
+            
+        } catch (Exception e) {
+            log.error("Error fetching all interviews: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
      * Shortlist an application
      * Admin only
      */

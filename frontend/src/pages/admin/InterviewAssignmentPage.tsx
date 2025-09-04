@@ -113,7 +113,7 @@ const InterviewAssignmentPage: React.FC = () => {
         interviewAPI.getAllShortlistedApplications(),
         interviewAPI.getAvailableInterviewers(),
         interviewSkeletonAPI.getAll(),
-        interviewAPI.getAssignedByMe(), // Get interviews assigned by current admin
+        interviewAPI.getAllInterviews(), // Get all interviews for admin assignment management
         jobService.getAllJobs()
       ]);
       

@@ -497,24 +497,24 @@ const InterviewAssignmentPage: React.FC = () => {
                                                                 'text-gray-600 dark:text-gray-400'
                                                             }`}>
                                                                 {interview.status}
-                                      </span>
+                                </span>
                                                         </p>
                                                         {interview.completedAt && (
-                                                            <p>
+                                <p>
                                                                 <span className="font-medium">Completed:</span> {formatDate(interview.completedAt)}
-                                                            </p>
+                                </p>
                                     )}
-                                  </div>
-                                </div>
+                              </div>
+                            </div>
                                                 <div className="w-full sm:w-auto flex flex-col items-center space-y-2 flex-shrink-0">
-                                    <button
+                              <button
                                                         type="button"
-                                                        onClick={() => handleAssignInterview(application)}
-                                                        className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200"
+                                onClick={() => handleAssignInterview(application)}
+                                                        className="w-full sm:w-36 inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 whitespace-nowrap"
                                                         title="Assign another interview for this candidate"
                                                     >
-                                                        <CalendarDaysIcon className="-ml-1 mr-2 h-5 w-5" />
-                                                        Add Interview
+                                                        <CalendarDaysIcon className="-ml-1 mr-2 h-5 w-5 flex-shrink-0" />
+                                                        <span>Add Interview</span>
                                     </button>
                                     {interview.status === 'COMPLETED' && (
                                         <button
@@ -522,11 +522,21 @@ const InterviewAssignmentPage: React.FC = () => {
                                                 setSelectedInterview(interview);
                                                 setShowResultsModal(true);
                                             }}
-                                            className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200"
+                                            className="w-full sm:w-36 inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 dark:from-green-500 dark:to-green-600 dark:hover:from-green-600 dark:hover:to-green-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 whitespace-nowrap"
                                         >
-                                            <EyeIcon className="-ml-1 mr-2 h-5 w-5" />
-                                            View Results
-                                        </button>
+                                            <EyeIcon className="-ml-1 mr-2 h-5 w-5 flex-shrink-0" />
+                                            <span>View Results</span>
+                              </button>
+                                    )}
+                                    {interview.status !== 'COMPLETED' && (
+                              <button
+                                onClick={() => handleCancelInterview(interview.id)}
+                                            className="w-full sm:w-36 inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 whitespace-nowrap"
+                                            title="Cancel this interview assignment"
+                              >
+                                            <TrashIcon className="-ml-1 mr-2 h-5 w-5 flex-shrink-0" />
+                                            <span className="truncate">Cancel Interview</span>
+                              </button>
                                     )}
                               </div>
                             </div>
@@ -534,16 +544,16 @@ const InterviewAssignmentPage: React.FC = () => {
                         </div>
                                 ) : (
                                     <div className="flex items-center justify-end mt-4">
-                      <button
+                        <button
                                             type="button"
-                        onClick={() => handleAssignInterview(application)}
-                                            className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200"
-                      >
-                                            <CalendarDaysIcon className="-ml-1 mr-2 h-5 w-5" />
-                                            Add Interview
-                      </button>
-                                    </div>
-                                )}
+                          onClick={() => handleAssignInterview(application)}
+                                            className="w-full sm:w-36 inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 whitespace-nowrap"
+                        >
+                                            <CalendarDaysIcon className="-ml-1 mr-2 h-5 w-5 flex-shrink-0" />
+                                            <span>Add Interview</span>
+                        </button>
+                      </div>
+                    )}
                             </div>
                         </div>
                   </div>

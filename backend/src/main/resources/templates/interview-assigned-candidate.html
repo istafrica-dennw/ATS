@@ -45,7 +45,9 @@
             <li>We'll discuss your background and how it relates to this role</li>
             <li>You'll have the opportunity to ask questions about the position and our company</li>
             <li th:unless="${scheduledDate}">Our team will contact you within 24-48 hours to schedule the exact time</li>
-            <li>The interview typically lasts 45-60 minutes</li>
+            <li th:if="${durationMinutes}" th:text="'The interview will last ' + ${durationMinutes} + ' minutes'">The interview will last 60 minutes</li>
+            <li th:unless="${durationMinutes}">The interview typically lasts 45-60 minutes</li>
+            <li th:text="'Location: ' + ${locationInfo}">Location: IST Africa Interview Room</li>
         </ul>
         
         <p><strong>How to prepare:</strong></p>

@@ -52,6 +52,8 @@
             <li>Review the candidate's application and resume in the system</li>
             <li th:unless="${scheduledDate}">Schedule the interview at a convenient time</li>
             <li th:if="${scheduledDate}">Prepare for the scheduled interview</li>
+            <li th:if="${durationMinutes}" th:text="'Plan for a ' + ${durationMinutes} + '-minute interview session'">Plan for a 60-minute interview session</li>
+            <li th:text="'Interview Location: ' + ${locationInfo}">Interview Location: IST Africa Interview Room</li>
             <li>Use the provided interview template to guide the session</li>
             <li>Submit your feedback and rating after the interview</li>
         </ul>

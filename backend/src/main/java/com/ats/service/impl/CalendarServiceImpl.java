@@ -1,6 +1,7 @@
 package com.ats.service.impl;
 
 import com.ats.model.Interview;
+import com.ats.model.LocationType;
 import com.ats.model.User;
 import com.ats.service.CalendarService;
 import com.ats.service.EmailService;
@@ -47,16 +48,21 @@ public class CalendarServiceImpl implements CalendarService {
         ics.append("UID:").append(uid).append("\n");
         
         // Timestamp
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"));
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"));
         ics.append("DTSTAMP:").append(timestamp).append("\n");
         
         // Start and End time with proper timezone
         LocalDateTime startTime = interview.getScheduledAt();
-        LocalDateTime endTime = startTime.plusHours(1); // Default 1 hour interview
+        LocalDateTime endTime;
+        if (interview.getDurationMinutes() != null) {
+            endTime = startTime.plusMinutes(interview.getDurationMinutes());
+        } else {
+            endTime = startTime.plusHours(1); // Default 1 hour interview if no duration set
+        }
         
-        // Format with UTC timezone for better compatibility
-        String startTimeStr = startTime.format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"));
-        String endTimeStr = endTime.format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"));
+        // Format with local timezone (no 'Z' suffix to avoid UTC conversion issues)
+        String startTimeStr = startTime.format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"));
+        String endTimeStr = endTime.format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"));
         
         ics.append("DTSTART:").append(startTimeStr).append("\n");
         ics.append("DTEND:").append(endTimeStr).append("\n");
@@ -85,15 +91,29 @@ public class CalendarServiceImpl implements CalendarService {
             description.append("Notes: ").append(interview.getNotes()).append("\n\n");
         }
         
-        description.append("Focus Areas:\n");
-        interview.getSkeleton().getFocusAreas().forEach(fa -> {
-            description.append("- ").append(fa.getTitle()).append("\n");
-        });
+        
+        // Add meeting link for online interviews
+        if (interview.getLocationType() == LocationType.ONLINE) {
+            description.append("\nMeeting Link: https://meet.google.com/abc-defg-hij\n");
+            description.append("(Actual meeting link will be provided before the interview)");
+        }
         
         ics.append(foldLine("DESCRIPTION", escapeIcsText(description.toString())));
         
         // Location (can be virtual or physical)
-        ics.append("LOCATION:").append(escapeIcsText("IST Africa Interview Room")).append("\n");
+        String location;
+        if (interview.getLocationType() != null) {
+            if (interview.getLocationType() == LocationType.OFFICE && interview.getLocationAddress() != null) {
+                location = interview.getLocationAddress();
+            } else if (interview.getLocationType() == LocationType.ONLINE) {
+                location = "Online Interview - Meeting link will be provided";
+            } else {
+                location = "IST Africa Interview Room";
+            }
+        } else {
+            location = "IST Africa Interview Room";
+        }
+        ics.append("LOCATION:").append(escapeIcsText(location)).append("\n");
         
         // Organizer (Admin who assigned)
         User admin = interview.getAssignedBy();
@@ -198,8 +218,26 @@ public class CalendarServiceImpl implements CalendarService {
         body.append("• Position: ").append(interview.getApplication().getJob().getTitle()).append("\n");
         body.append("• Interview Type: ").append(interview.getSkeleton().getName()).append("\n");
         body.append("• Date & Time: ").append(interview.getScheduledAt().format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a"))).append("\n");
-        body.append("• Duration: 1 hour\n");
-        body.append("• Location: IST Africa Interview Room\n\n");
+        if (interview.getDurationMinutes() != null) {
+            body.append("• Duration: ").append(interview.getDurationMinutes()).append(" minutes\n");
+        } else {
+            body.append("• Duration: 1 hour\n");
+        }
+        
+        // Location information
+        if (interview.getLocationType() != null) {
+            if (interview.getLocationType() == LocationType.OFFICE && interview.getLocationAddress() != null) {
+                body.append("• Location: ").append(interview.getLocationAddress()).append("\n");
+            } else if (interview.getLocationType() == LocationType.ONLINE) {
+                body.append("• Location: Online Interview\n");
+                body.append("• Meeting Link: https://meet.google.com/abc-defg-hij (Link will be provided)\n");
+            } else {
+                body.append("• Location: IST Africa Interview Room\n");
+            }
+        } else {
+            body.append("• Location: IST Africa Interview Room\n");
+        }
+        body.append("\n");
         
         body.append("👥 Participants:\n");
         body.append("• Interviewer: ").append(interviewer.getFirstName()).append(" ").append(interviewer.getLastName())
@@ -214,10 +252,6 @@ public class CalendarServiceImpl implements CalendarService {
             body.append(interview.getNotes()).append("\n\n");
         }
         
-        body.append("🎯 Focus Areas for this Interview:\n");
-        interview.getSkeleton().getFocusAreas().forEach(fa -> {
-            body.append("• ").append(fa.getTitle()).append("\n");
-        });
         
         body.append("\n📎 A calendar invite (.ics file) is attached to this email. Please add it to your calendar.\n\n");
         body.append("For any questions or rescheduling requests, please contact ").append(admin.getFirstName())

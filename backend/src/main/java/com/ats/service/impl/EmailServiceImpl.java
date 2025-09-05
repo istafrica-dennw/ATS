@@ -5,6 +5,7 @@ import com.ats.model.User;
 import com.ats.model.Application;
 import com.ats.model.EmailEvent;
 import com.ats.model.Interview;
+import com.ats.model.LocationType;
 import com.ats.model.RecipientType;
 import com.ats.repository.EmailNotificationRepository;
 import com.ats.service.EmailService;
@@ -114,6 +115,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
+            helper.setFrom("no-reply@ist.africa");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(emailContent, true);
@@ -325,6 +327,26 @@ public class EmailServiceImpl implements EmailService {
         if (interview.getScheduledAt() != null) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy 'at' hh:mm a");
             templateVars.put("scheduledDate", interview.getScheduledAt().format(formatter));
+        }
+        
+        // Add duration if available
+        if (interview.getDurationMinutes() != null) {
+            templateVars.put("durationMinutes", interview.getDurationMinutes());
+        }
+        
+        // Add location information
+        if (interview.getLocationType() != null) {
+            templateVars.put("locationType", interview.getLocationType().getDisplayName());
+            if (interview.getLocationType() == LocationType.OFFICE && interview.getLocationAddress() != null) {
+                templateVars.put("locationAddress", interview.getLocationAddress());
+                templateVars.put("locationInfo", interview.getLocationAddress());
+            } else if (interview.getLocationType() == LocationType.ONLINE) {
+                templateVars.put("locationInfo", "Online Interview (Meeting link will be provided)");
+            } else {
+                templateVars.put("locationInfo", "IST Africa Interview Room");
+            }
+        } else {
+            templateVars.put("locationInfo", "IST Africa Interview Room");
         }
         
         // Event-specific variables
@@ -600,6 +622,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
+            helper.setFrom("no-reply@ist.africa");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, false); // Plain text email

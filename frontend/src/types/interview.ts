@@ -68,6 +68,9 @@ export interface AssignInterviewRequest {
   interviewerId: number;
   skeletonId: number;
   scheduledAt?: string;
+  durationMinutes?: number;
+  locationType: 'OFFICE' | 'ONLINE';
+  locationAddress?: string;
   notes?: string;
   sendCalendarInvite?: boolean;
 }

@@ -42,6 +42,16 @@ public class Interview extends BaseEntity {
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
 
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "location_type")
+    private LocationType locationType;
+
+    @Column(name = "location_address", columnDefinition = "TEXT")
+    private String locationAddress;
+
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 

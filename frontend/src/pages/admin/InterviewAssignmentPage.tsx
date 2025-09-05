@@ -95,8 +95,10 @@ const InterviewAssignmentPage: React.FC = () => {
     interviewerId: '',
     skeletonId: '',
     scheduledAt: '',
-    notes: '',
-    sendCalendarInvite: false
+    durationMinutes: '',
+    locationType: 'OFFICE' as 'OFFICE' | 'ONLINE',
+    locationAddress: '',
+    notes: ''
   });
 
   useEffect(() => {
@@ -173,8 +175,10 @@ const InterviewAssignmentPage: React.FC = () => {
       interviewerId: '',
       skeletonId: '',
       scheduledAt: '',
-      notes: '',
-      sendCalendarInvite: false
+      durationMinutes: '',
+      locationType: 'OFFICE',
+      locationAddress: '',
+      notes: ''
     });
     
     try {
@@ -228,8 +232,14 @@ const InterviewAssignmentPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedApplication || !formData.interviewerId || !formData.skeletonId) {
-      setError('Please fill in all required fields');
+    if (!selectedApplication || !formData.interviewerId || !formData.skeletonId || !formData.durationMinutes || !formData.locationType) {
+      setError('Please fill in all required fields including duration and location type');
+      return;
+    }
+
+    // Validate location address for office interviews
+    if (formData.locationType === 'OFFICE' && (!formData.locationAddress || formData.locationAddress.trim() === '')) {
+      setError('Please provide the office address for office interviews');
       return;
     }
 
@@ -242,8 +252,11 @@ const InterviewAssignmentPage: React.FC = () => {
         interviewerId: parseInt(formData.interviewerId),
         skeletonId: parseInt(formData.skeletonId),
         scheduledAt: formData.scheduledAt || undefined,
+        durationMinutes: formData.durationMinutes ? parseInt(formData.durationMinutes) : undefined,
+        locationType: formData.locationType,
+        locationAddress: formData.locationAddress || undefined,
         notes: formData.notes || undefined,
-        sendCalendarInvite: formData.sendCalendarInvite
+        sendCalendarInvite: true // Always send calendar invites
       };
 
       await interviewAPI.assign(requestData);
@@ -691,6 +704,80 @@ const InterviewAssignmentPage: React.FC = () => {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Duration (minutes) <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.durationMinutes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, durationMinutes: e.target.value }))}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 shadow-sm transition-all duration-200"
+                  required
+                >
+                  <option value="">Select duration</option>
+                  <option value="15">15 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">60 minutes</option>
+                  <option value="75">75 minutes</option>
+                  <option value="90">90 minutes</option>
+                  <option value="105">105 minutes</option>
+                  <option value="120">120 minutes</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Interview Location <span className="text-red-500">*</span>
+                </label>
+                <div className="mt-2 space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="locationType"
+                      value="OFFICE"
+                      checked={formData.locationType === 'OFFICE'}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        locationType: e.target.value as 'OFFICE' | 'ONLINE'
+                      }))}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600"
+                    />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Office Interview</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="locationType"
+                      value="ONLINE"
+                      checked={formData.locationType === 'ONLINE'}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        locationType: e.target.value as 'OFFICE' | 'ONLINE'
+                      }))}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600"
+                    />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Online Interview</span>
+                  </label>
+                </div>
+              </div>
+
+              {formData.locationType === 'OFFICE' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Office Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.locationAddress}
+                    onChange={(e) => setFormData(prev => ({ ...prev, locationAddress: e.target.value }))}
+                    placeholder="Enter the office address for the interview"
+                    className="w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 shadow-sm transition-all duration-200"
+                    required
+                  />
+                </div>
+              )}
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
                 <textarea
                   rows={3}
@@ -701,21 +788,27 @@ const InterviewAssignmentPage: React.FC = () => {
                 />
               </div>
 
-              {/* Calendar Integration Option */}
-              <div className="flex items-center">
-                <input
-                  id="sendCalendarInvite"
-                  type="checkbox"
-                  checked={formData.sendCalendarInvite}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sendCalendarInvite: e.target.checked }))}
-                  className="h-4 w-4 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
-                />
-                <label htmlFor="sendCalendarInvite" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  📅 Send calendar invites to all participants
-                  <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Sends Outlook/Google calendar invites to interviewer, candidate, and admin
-                  </span>
-                </label>
+              {/* Calendar Integration Info */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      📅 Calendar Invites
+                    </h3>
+                    <div className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                      {formData.locationType === 'ONLINE' ? (
+                        <p>Calendar invites will be sent automatically with meeting link to all participants (interviewer, candidate, and admin).</p>
+                      ) : (
+                        <p>Calendar invites will be sent automatically with office address to all participants (interviewer, candidate, and admin).</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">

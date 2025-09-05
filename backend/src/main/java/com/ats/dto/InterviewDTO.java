@@ -1,6 +1,7 @@
 package com.ats.dto;
 
 import com.ats.model.InterviewStatus;
+import com.ats.model.LocationType;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,9 @@ public class InterviewDTO {
     private List<InterviewResponseDTO> responses;
     private InterviewStatus status;
     private LocalDateTime scheduledAt;
+    private Integer durationMinutes;
+    private LocationType locationType;
+    private String locationAddress;
     private LocalDateTime completedAt;
     private Long assignedById;
     private String assignedByName; // For display purposes

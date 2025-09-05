@@ -91,6 +91,12 @@ public class InterviewServiceImpl implements InterviewService {
             throw new IllegalStateException("Interview already assigned for this combination");
         }
 
+        // Validate location address for office interviews
+        if (request.getLocationType() == LocationType.OFFICE && 
+            (request.getLocationAddress() == null || request.getLocationAddress().trim().isEmpty())) {
+            throw new IllegalArgumentException("Location address is required for office interviews");
+        }
+
         // Create interview
         Interview interview = new Interview();
         interview.setApplication(application);
@@ -98,6 +104,9 @@ public class InterviewServiceImpl implements InterviewService {
         interview.setSkeleton(skeleton);
         interview.setStatus(InterviewStatus.ASSIGNED);
         interview.setScheduledAt(request.getScheduledAt());
+        interview.setDurationMinutes(request.getDurationMinutes());
+        interview.setLocationType(request.getLocationType());
+        interview.setLocationAddress(request.getLocationAddress());
         interview.setAssignedBy(admin);
         interview.setNotes(request.getNotes());
 
@@ -132,8 +141,8 @@ public class InterviewServiceImpl implements InterviewService {
             // Don't fail the entire operation if email fails - email is saved with FAILED status
         }
         
-        // Send calendar invites if requested
-        if (Boolean.TRUE.equals(request.getSendCalendarInvite()) && savedInterview.getScheduledAt() != null) {
+        // Always send calendar invites
+        if (savedInterview.getScheduledAt() != null) {
             try {
                 calendarService.sendCalendarInvites(savedInterview);
                 log.info("Calendar invites sent successfully for interview ID: {}", savedInterview.getId());
@@ -413,6 +422,9 @@ public class InterviewServiceImpl implements InterviewService {
         dto.setSkeletonName(interview.getSkeleton().getName());
         dto.setStatus(interview.getStatus());
         dto.setScheduledAt(interview.getScheduledAt());
+        dto.setDurationMinutes(interview.getDurationMinutes());
+        dto.setLocationType(interview.getLocationType());
+        dto.setLocationAddress(interview.getLocationAddress());
         dto.setCompletedAt(interview.getCompletedAt());
         dto.setAssignedById(interview.getAssignedBy().getId());
         dto.setAssignedByName(interview.getAssignedBy().getFirstName() + " " + interview.getAssignedBy().getLastName());

@@ -367,7 +367,7 @@ public class InterviewServiceImpl implements InterviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Interview not found with ID: " + interviewId));
 
         // Validate admin exists
-        User admin = userRepository.findById(adminId)
+        userRepository.findById(adminId)
                 .orElseThrow(() -> new ResourceNotFoundException("Admin not found with ID: " + adminId));
 
         // Only allow cancellation if interview is not yet completed
@@ -375,10 +375,32 @@ public class InterviewServiceImpl implements InterviewService {
             throw new IllegalStateException("Cannot cancel a completed interview");
         }
 
-        // Delete the interview
+        // Delete the interview FIRST
         interviewRepository.delete(interview);
         log.info("Interview {} cancelled successfully by admin {}", interviewId, adminId);
+
+        // Send email notifications AFTER successful deletion
+        try {
+            // Send email to interviewer
+            emailService.sendInterviewEmail(interview, EmailEvent.INTERVIEW_CANCELLED_TO_INTERVIEWER);
+            log.info("Interview cancellation email sent to interviewer for interview ID: {}", interviewId);
+        } catch (Exception e) {
+            log.error("Failed to send interview cancellation email to interviewer for interview ID: {}: {}", 
+                     interviewId, e.getMessage());
+            // Don't fail the entire operation if email fails - email is saved with FAILED status
+        }
+        
+        try {
+            // Send email to candidate
+            emailService.sendInterviewEmail(interview, EmailEvent.INTERVIEW_CANCELLED_TO_CANDIDATE);
+            log.info("Interview cancellation email sent to candidate for interview ID: {}", interviewId);
+        } catch (Exception e) {
+            log.error("Failed to send interview cancellation email to candidate for interview ID: {}: {}", 
+                     interviewId, e.getMessage());
+            // Don't fail the entire operation if email fails - email is saved with FAILED status
+        }
     }
+
 
     private InterviewDTO mapToDTO(Interview interview) {
         InterviewDTO dto = new InterviewDTO();

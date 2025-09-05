@@ -9,6 +9,8 @@ public enum EmailEvent {
     APPLICATION_SHORTLISTED("application-shortlisted"),
     INTERVIEW_ASSIGNED_TO_INTERVIEWER("interview-assigned-interviewer"),
     INTERVIEW_ASSIGNED_TO_CANDIDATE("interview-assigned-candidate"),
+    INTERVIEW_CANCELLED_TO_CANDIDATE("interview-cancelled"),
+    INTERVIEW_CANCELLED_TO_INTERVIEWER("interview-cancelled-interviewer"),
     USER_VERIFICATION("verification-email"),
     PASSWORD_RESET("password-reset-email"),
     NEW_USER_CREATED("new-user-email"),

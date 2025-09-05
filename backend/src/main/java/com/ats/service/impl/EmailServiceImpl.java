@@ -64,6 +64,8 @@ public class EmailServiceImpl implements EmailService {
         EmailEvent.APPLICATION_SHORTLISTED, new EventConfig(RecipientType.CANDIDATE, "Congratulations! You've Been Shortlisted - %s"),
         EmailEvent.INTERVIEW_ASSIGNED_TO_INTERVIEWER, new EventConfig(RecipientType.INTERVIEWER, "New Interview Assignment - %s"),
         EmailEvent.INTERVIEW_ASSIGNED_TO_CANDIDATE, new EventConfig(RecipientType.CANDIDATE, "Interview Scheduled - %s"),
+        EmailEvent.INTERVIEW_CANCELLED_TO_CANDIDATE, new EventConfig(RecipientType.CANDIDATE, "Interview Cancelled - %s"),
+        EmailEvent.INTERVIEW_CANCELLED_TO_INTERVIEWER, new EventConfig(RecipientType.INTERVIEWER, "Interview Assignment Cancelled - %s"),
         EmailEvent.JOB_OFFER, new EventConfig(RecipientType.CANDIDATE, "Job Offer - %s")
     );
 
@@ -335,6 +337,23 @@ public class EmailServiceImpl implements EmailService {
                 break;
             case INTERVIEW_ASSIGNED_TO_CANDIDATE:
                 templateVars.put("candidatePortalLink", frontendUrl + "/candidate/dashboard");
+                break;
+            case INTERVIEW_CANCELLED_TO_CANDIDATE:
+                templateVars.put("interviewTemplate", interview.getSkeleton().getName());
+                templateVars.put("candidatePortalLink", frontendUrl + "/candidate/dashboard");
+                if (interview.getScheduledAt() != null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy 'at' hh:mm a");
+                    templateVars.put("scheduledAt", interview.getScheduledAt().format(formatter));
+                }
+                break;
+            case INTERVIEW_CANCELLED_TO_INTERVIEWER:
+                templateVars.put("interviewerName", interview.getInterviewer().getFirstName() + " " + interview.getInterviewer().getLastName());
+                templateVars.put("interviewTemplate", interview.getSkeleton().getName());
+                templateVars.put("interviewerPortalLink", frontendUrl + "/interviewer/dashboard");
+                if (interview.getScheduledAt() != null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy 'at' hh:mm a");
+                    templateVars.put("scheduledAt", interview.getScheduledAt().format(formatter));
+                }
                 break;
         }
         

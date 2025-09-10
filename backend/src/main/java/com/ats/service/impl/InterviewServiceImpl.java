@@ -28,6 +28,7 @@ public class InterviewServiceImpl implements InterviewService {
     private final InterviewRepository interviewRepository;
     private final ApplicationRepository applicationRepository;
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
     private final InterviewSkeletonRepository interviewSkeletonRepository;
     private final JobRepository jobRepository;
     private final EmailService emailService;
@@ -38,6 +39,7 @@ public class InterviewServiceImpl implements InterviewService {
             InterviewRepository interviewRepository,
             ApplicationRepository applicationRepository,
             UserRepository userRepository,
+            UserRoleRepository userRoleRepository,
             InterviewSkeletonRepository interviewSkeletonRepository,
             JobRepository jobRepository,
             EmailService emailService,
@@ -45,6 +47,7 @@ public class InterviewServiceImpl implements InterviewService {
         this.interviewRepository = interviewRepository;
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
+        this.userRoleRepository = userRoleRepository;
         this.interviewSkeletonRepository = interviewSkeletonRepository;
         this.jobRepository = jobRepository;
         this.emailService = emailService;
@@ -68,7 +71,7 @@ public class InterviewServiceImpl implements InterviewService {
         User interviewer = userRepository.findById(request.getInterviewerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Interviewer not found with ID: " + request.getInterviewerId()));
         
-        if (interviewer.getRole() != Role.INTERVIEWER) {
+        if (!interviewer.hasRole(Role.INTERVIEWER)) {
             throw new IllegalStateException("User must have INTERVIEWER role to be assigned an interview");
         }
 
@@ -352,7 +355,7 @@ public class InterviewServiceImpl implements InterviewService {
     @Transactional(readOnly = true)
     public List<UserDTO> getAvailableInterviewers() {
         log.debug("Fetching available interviewers");
-        return userRepository.findByRole(Role.INTERVIEWER).stream()
+        return userRoleRepository.findUsersByRole(Role.INTERVIEWER).stream()
                 .map(this::mapToUserDTO)
                 .collect(Collectors.toList());
     }

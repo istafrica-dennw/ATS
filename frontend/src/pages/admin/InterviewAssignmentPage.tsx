@@ -6,12 +6,9 @@ import { getProfilePictureUrl, getUserInitials } from '../../utils/profilePictur
 import { 
   UserIcon,
   BriefcaseIcon,
-  CalendarIcon,
   XMarkIcon,
-  CheckCircleIcon,
   UserGroupIcon,
   TrashIcon,
-  FunnelIcon,
   MagnifyingGlassIcon,
   EyeIcon,
   ChevronUpDownIcon,
@@ -56,11 +53,6 @@ const Toast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () 
         : 'bg-red-100 border-red-500 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300'
     } border rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-4`}>
       <div className="flex items-center">
-        {type === 'success' ? (
-          <CheckCircleIcon className="h-5 w-5 mr-2" />
-        ) : (
-          <XMarkIcon className="h-5 w-5 mr-2" />
-        )}
         <span className="font-medium">{message}</span>
         <button
           onClick={onClose}
@@ -92,6 +84,9 @@ const InterviewAssignmentPage: React.FC = () => {
   // Filter states
   const [jobFilter, setJobFilter] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [interviewToCancel, setInterviewToCancel] = useState<Interview | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -176,6 +171,7 @@ const InterviewAssignmentPage: React.FC = () => {
 
   const handleAssignInterview = async (application: Application) => {
     setSelectedApplication(application);
+    setError(null); // Clear previous errors
     setFormData({
       interviewerId: '',
       skeletonId: '',
@@ -206,14 +202,23 @@ const InterviewAssignmentPage: React.FC = () => {
     setShowModal(true);
   };
 
-  // Handle interview cancellation
-  const handleCancelInterview = async (interviewId: number) => {
-    if (!window.confirm('Are you sure you want to cancel this interview assignment?')) {
-      return;
-    }
+  const handleCancelClick = (interview: Interview) => {
+    setInterviewToCancel(interview);
+    setShowCancelModal(true);
+  };
 
+  const closeCancelModal = () => {
+    setShowCancelModal(false);
+    setInterviewToCancel(null);
+  };
+
+  // Handle interview cancellation
+  const confirmCancelInterview = async () => {
+    if (!interviewToCancel) return;
+
+    setIsCancelling(true);
     try {
-      await interviewAPI.cancelInterview(interviewId);
+      await interviewAPI.cancelInterview(interviewToCancel.id);
       setToast({
         message: 'Interview assignment cancelled successfully',
         type: 'success'
@@ -225,6 +230,9 @@ const InterviewAssignmentPage: React.FC = () => {
         message: 'Failed to cancel interview assignment',
         type: 'error'
       });
+    } finally {
+      setIsCancelling(false);
+      closeCancelModal();
     }
   };
 
@@ -276,9 +284,10 @@ const InterviewAssignmentPage: React.FC = () => {
       setShowModal(false);
       fetchData(); // Refresh the applications list
       
-    } catch (err) {
+    } catch (err: any) { // Changed to any to access err.response
       console.error('Error assigning interview:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to assign interview';
+      // Try to get the specific error message from the backend response
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to assign interview';
       setError(errorMessage);
       setToast({
         message: errorMessage,
@@ -567,7 +576,7 @@ const InterviewAssignmentPage: React.FC = () => {
                                     )}
                                     {interview.status !== 'COMPLETED' && (
                               <button
-                                onClick={() => handleCancelInterview(interview.id)}
+                                onClick={() => handleCancelClick(interview)}
                                             className="w-full sm:w-36 inline-flex items-center justify-center rounded-md border border-transparent bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 focus:ring-offset-2 transform hover:scale-[1.02] transition-all duration-200 whitespace-nowrap"
                                             title="Cancel this interview assignment"
                               >
@@ -623,6 +632,11 @@ const InterviewAssignmentPage: React.FC = () => {
                   Assign Interview - {selectedApplication.candidateName}
                 </h3>
                 <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                  {error && (
+                    <div className="bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700/50 rounded-md p-3">
+                      <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>
+                    </div>
+                  )}
               <div className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-4">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Candidate Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -996,6 +1010,86 @@ const InterviewAssignmentPage: React.FC = () => {
         </div>
       )}
       
+      {showCancelModal && interviewToCancel && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 py-6 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-gray-500 dark:bg-gray-900 opacity-75 transition-opacity" 
+              onClick={closeCancelModal}
+              aria-hidden="true"
+            ></div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+          
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200 dark:border-gray-700">
+              <div className="absolute top-0 right-0 pt-4 pr-4 z-10">
+                <button
+                  type="button"
+                  onClick={closeCancelModal}
+                  className="rounded-lg bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
+                >
+                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="px-6 py-6">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <TrashIcon className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <h3 className="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100">
+                      Cancel Interview
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Are you sure you want to cancel the interview for{' '}
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          {interviewToCancel.application.candidateName}
+                        </span>
+                        ?
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                        This action will notify the candidate and interviewer, and the interview will be removed from their calendars. This cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3">
+                  <button
+                    type="button"
+                    onClick={closeCancelModal}
+                    disabled={isCancelling}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2.5 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200 ${isCancelling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Keep Interview
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmCancelInterview}
+                    disabled={isCancelling}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-sm font-medium text-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all duration-200 ${isCancelling ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isCancelling ? (
+                      <>
+                        <div className="animate-spin -ml-1 mr-2 h-5 w-5 border-2 border-white rounded-full border-t-transparent" />
+                        Cancelling...
+                      </>
+                    ) : (
+                      <>
+                        <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                        Yes, Cancel
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <Toast
           message={toast.message}

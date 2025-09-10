@@ -36,6 +36,9 @@ const UserManagementPage: React.FC = () => {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isUserDetailsModalOpen, setIsUserDetailsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -108,26 +111,40 @@ const UserManagementPage: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
-  const handleDeleteUser = async (userId: number, userName: string) => {
-    if (window.confirm(`Are you sure you want to delete ${userName}?`)) {
-      try {
-        const response = await fetch(`/api/users/${userId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (response.ok) {
-          toast.success(`User ${userName} deleted successfully`);
-          setUsers(users.filter(u => u.id !== userId));
-        } else {
-          const errorData = await response.json();
-          toast.error(`Failed to delete user: ${errorData.message || 'Unknown error'}`);
-        }
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        toast.error('Network error when deleting user. Please try again.');
+  const handleDeleteClick = (userId: number, userName: string) => {
+    setUserToDelete({ id: userId, name: userName });
+    setShowDeleteModal(true);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/users/${userToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        toast.success(`User ${userToDelete.name} deleted successfully`);
+        setUsers(users.filter(u => u.id !== userToDelete.id));
+      } else {
+        const errorData = await response.json();
+        toast.error(`Failed to delete user: ${errorData.message || 'Unknown error'}`);
       }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Network error when deleting user. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     }
   };
 
@@ -382,7 +399,7 @@ const UserManagementPage: React.FC = () => {
                       <button
                         type="button"
                         className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
-                        onClick={() => handleDeleteUser(user.id, `${user.firstName} ${user.lastName}`)}
+                        onClick={() => handleDeleteClick(user.id, `${user.firstName} ${user.lastName}`)}
                         title="Delete user"
                       >
                         <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
@@ -417,6 +434,86 @@ const UserManagementPage: React.FC = () => {
         token={token!}
         onUserUpdated={handleUserUpdated}
       />
+
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 py-6 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-gray-500 dark:bg-gray-900 opacity-75 transition-opacity" 
+              onClick={cancelDelete}
+              aria-hidden="true"
+            ></div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+          
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200 dark:border-gray-700">
+              <div className="absolute top-0 right-0 pt-4 pr-4 z-10">
+                <button
+                  type="button"
+                  onClick={cancelDelete}
+                  className="rounded-lg bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
+                >
+                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="px-6 py-6">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <TrashIcon className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <h3 className="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100">
+                      Delete User
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Are you sure you want to delete{' '}
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          "{userToDelete.name}"
+                        </span>
+                        ?
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                        This action cannot be undone and will permanently remove this user's account.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3">
+                  <button
+                    type="button"
+                    onClick={cancelDelete}
+                    disabled={isDeleting}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2.5 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmDeleteUser}
+                    disabled={isDeleting}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-sm font-medium text-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all duration-200 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="animate-spin -ml-1 mr-2 h-5 w-5 border-2 border-white rounded-full border-t-transparent" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                        Delete User
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -212,7 +212,7 @@ const JobDetailsPage: React.FC = () => {
                   <button 
                     onClick={() => {
                       const url = window.location.href;
-                      const text = `We're hiring for a ${job.title}! Check out the details and apply here: ${url}`;
+                      const text = `We're is hiring for a ${job.title}! Check out the details and apply here: ${url}`;
                       
                       // Differentiate between mobile and desktop to use the best sharing method
                       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);

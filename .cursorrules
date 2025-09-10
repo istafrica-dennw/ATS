@@ -148,6 +148,36 @@
 - Return user-friendly error messages in APIs
 - Implement circuit breaker pattern for external services
 
+## Docker Development Rules
+
+### Container-First Development
+- **ALWAYS use Docker containers** for all development, testing, and deployment
+- **NEVER run direct Maven or npm commands** - everything must be done through Docker
+- Use `docker-compose.yml` for local development
+- Use `docker-compose.aws.yml` for AWS deployment
+- Use `docker-compose.prod.yml` for production deployment
+
+### Docker Commands
+- **Build**: `docker-compose build` or `docker-compose up --build`
+- **Start**: `docker-compose up -d`
+- **Stop**: `docker-compose down`
+- **Logs**: `docker-compose logs -f [service-name]`
+- **Shell Access**: `docker-compose exec [service-name] bash`
+- **Database Access**: `docker-compose exec postgres psql -U [username] -d [database]`
+
+### Testing in Docker
+- All tests must run inside Docker containers
+- Use `docker-compose exec backend mvn test` for backend tests
+- Use `docker-compose exec frontend npm test` for frontend tests
+- Database migrations run automatically on container startup
+
+### Development Workflow
+1. Make code changes
+2. Rebuild containers: `docker-compose up --build`
+3. Test functionality in browser/API
+4. Check logs: `docker-compose logs -f`
+5. Deploy using appropriate docker-compose file
+
 ## Code Review Checklist
 - [ ] No code duplication
 - [ ] Proper error handling
@@ -156,4 +186,5 @@
 - [ ] Database relationships properly defined
 - [ ] Security considerations addressed
 - [ ] Performance implications considered
-- [ ] Documentation updated 
+- [ ] Documentation updated
+- [ ] **Docker containers used for all operations**

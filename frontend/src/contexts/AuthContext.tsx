@@ -3,6 +3,7 @@ import axiosInstance from '../utils/axios';
 import { User, Role } from '../types/user';
 import { toast } from 'react-toastify';
 import { authService, AuthResponse, MfaRequiredResponse, MfaLoginRequest } from '../services/authService';
+import roleAPI, { RoleDTO } from '../services/roleAPI';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +24,11 @@ interface AuthContextType {
   manuallySetToken: (token: string) => Promise<User>;
   mfaVerified: boolean;
   setMfaVerified: (verified: boolean) => void;
+  // Role switching functionality
+  availableRoles: RoleDTO[];
+  currentRole: Role | null;
+  switchRole: (role: Role) => Promise<void>;
+  loadAvailableRoles: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,6 +72,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mfaVerified, setMfaVerified] = useState(false);
+  // Role switching state
+  const [availableRoles, setAvailableRoles] = useState<RoleDTO[]>([]);
+  const [currentRole, setCurrentRole] = useState<Role | null>(null);
+
+  // Role switching methods
+  const loadAvailableRoles = async () => {
+    if (!user) return;
+    
+    try {
+      const [roles, currentRoleData] = await Promise.all([
+        roleAPI.getAvailableRoles(),
+        roleAPI.getCurrentRole()
+      ]);
+      
+      setAvailableRoles(roles);
+      setCurrentRole(currentRoleData.role);
+    } catch (error) {
+      console.error('Failed to load available roles:', error);
+    }
+  };
+
+  // Load available roles when user changes
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      loadAvailableRoles();
+    } else {
+      setAvailableRoles([]);
+      setCurrentRole(null);
+    }
+  }, [user, isAuthenticated]);
 
   // Safely set authentication data with fallbacks if localStorage fails
   const safeSetAuthData = (userData: any, tokenData: string) => {
@@ -461,6 +497,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
   };
 
+  const switchRole = async (newRole: Role) => {
+    if (!user || newRole === currentRole) return;
+
+    try {
+      const updatedUser = await roleAPI.switchRole({ role: newRole });
+      
+      // Update user context
+      setUser(updatedUser);
+      setCurrentRole(newRole);
+      
+      // Reload available roles
+      await loadAvailableRoles();
+      
+      toast.success(`Switched to ${getRoleDisplayName(newRole)} role`);
+    } catch (error) {
+      console.error('Failed to switch role:', error);
+      toast.error('Failed to switch role');
+    }
+  };
+
+  const getRoleDisplayName = (role: Role): string => {
+    switch (role) {
+      case Role.ADMIN:
+        return 'Administrator';
+      case Role.HIRING_MANAGER:
+        return 'Hiring Manager';
+      case Role.INTERVIEWER:
+        return 'Interviewer';
+      case Role.CANDIDATE:
+        return 'Candidate';
+      default:
+        return role;
+    }
+  };
+
   const value = {
     user,
     token,
@@ -479,7 +550,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     validateTokenAndGetUser,
     manuallySetToken,
     mfaVerified,
-    setMfaVerified
+    setMfaVerified,
+    // Role switching functionality
+    availableRoles,
+    currentRole,
+    switchRole,
+    loadAvailableRoles
   };
 
   // Return children regardless of loading state

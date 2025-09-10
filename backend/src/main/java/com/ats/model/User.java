@@ -7,6 +7,9 @@ import java.time.LocalDateTime;
 import java.time.LocalDate;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -103,4 +106,80 @@ public class User extends BaseEntity {
     // Temporarily using @Transient to avoid hypersistence-utils conflicts
     @Transient
     private String[] mfaRecoveryCodes;
+    
+    // Multiple roles support
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<UserRole> userRoles = new HashSet<>();
+    
+    // Helper methods for multiple roles
+    /**
+     * Get all available roles for this user
+     */
+    public Set<Role> getAvailableRoles() {
+        return userRoles.stream()
+            .map(UserRole::getRole)
+            .collect(Collectors.toSet());
+    }
+    
+    /**
+     * Get the current active role (backward compatibility)
+     */
+    public Role getCurrentRole() {
+        return this.role;
+    }
+    
+    /**
+     * Check if user has a specific role
+     */
+    public boolean hasRole(Role role) {
+        return userRoles.stream()
+            .anyMatch(ur -> ur.getRole().equals(role));
+    }
+    
+    /**
+     * Get primary role
+     */
+    public Role getPrimaryRole() {
+        return userRoles.stream()
+            .filter(UserRole::getIsPrimary)
+            .map(UserRole::getRole)
+            .findFirst()
+            .orElse(this.role); // Fallback to current role
+    }
+    
+    /**
+     * Add a role to the user
+     */
+    public void addRole(Role role) {
+        if (!hasRole(role)) {
+            UserRole userRole = UserRole.builder()
+                .user(this)
+                .role(role)
+                .isPrimary(false)
+                .assignedAt(LocalDateTime.now())
+                .build();
+            userRoles.add(userRole);
+        }
+    }
+    
+    /**
+     * Remove a role from the user
+     */
+    public void removeRole(Role role) {
+        userRoles.removeIf(ur -> ur.getRole().equals(role));
+    }
+    
+    /**
+     * Set primary role
+     */
+    public void setPrimaryRole(Role role) {
+        // Remove primary flag from all roles
+        userRoles.forEach(ur -> ur.setIsPrimary(false));
+        
+        // Set the specified role as primary
+        userRoles.stream()
+            .filter(ur -> ur.getRole().equals(role))
+            .findFirst()
+            .ifPresent(ur -> ur.setIsPrimary(true));
+    }
 } 

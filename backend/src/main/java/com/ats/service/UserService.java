@@ -24,4 +24,7 @@ public interface UserService {
     boolean disableMfa(String email, String currentPassword);
     boolean validateMfaCode(String email, String code);
     boolean validateMfaRecoveryCode(String email, String recoveryCode);
+    
+    // Utility methods
+    UserDTO convertToDTO(User user);
 } 

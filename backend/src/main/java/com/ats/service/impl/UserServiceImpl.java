@@ -308,7 +308,8 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
-    private UserDTO convertToDTO(User user) {
+    @Override
+    public UserDTO convertToDTO(User user) {
         logger.debug("=== MFA DEBUG START ===");
         logger.debug("Converting user to DTO for email: {}", user.getEmail());
         logger.debug("user.getMfaEnabled() = {}", user.getMfaEnabled());

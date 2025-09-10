@@ -13,7 +13,6 @@ import {
   EyeIcon,
   PlusIcon,
   MagnifyingGlassIcon,
-  UserIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';

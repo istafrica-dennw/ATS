@@ -16,6 +16,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { getFullProfilePictureUrl } from '../../utils/imageUtils';
 import ChangePasswordModal from '../../components/profile/ChangePasswordModal';
+import RoleSwitcher from '../../components/RoleSwitcher';
 
 const ProfilePage: React.FC = () => {
   const { user, token } = useAuth();
@@ -91,7 +92,7 @@ const ProfilePage: React.FC = () => {
   return (
     <>
       <div className="space-y-8">
-        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
           <div className="p-6">
             <div className="flex flex-col md:flex-row items-center md:space-x-6">
               <div className="flex-shrink-0 mb-4 md:mb-0">
@@ -111,9 +112,9 @@ const ProfilePage: React.FC = () => {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {userData.firstName} {userData.lastName}
                 </h1>
-                <p className="mt-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                  {userData.role}
-                </p>
+                <div className="mt-1">
+                  <RoleSwitcher />
+                </div>
               </div>
               <div className="flex flex-col lg:flex-row space-y-3 lg:space-y-0 lg:space-x-3 mt-4 md:mt-0 w-full lg:w-auto shrink-0">
                 <Link

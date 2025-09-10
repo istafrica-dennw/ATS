@@ -75,6 +75,7 @@ import javax.sql.DataSource;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import com.ats.repository.UserRepository;
+import com.ats.repository.UserRoleRepository;
 import com.ats.security.CustomUserDetailsService;
 import com.ats.security.JwtTokenProvider;
 import com.ats.security.JwtAuthenticationEntryPoint;
@@ -94,6 +95,7 @@ public class SecurityConfig {
     private final JdbcTemplate jdbcTemplate;
     private final DataSource dataSource;
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
     private final JwtTokenProvider tokenProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
@@ -102,7 +104,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(tokenProvider, new CustomUserDetailsService(userRepository));
+        return new JwtAuthenticationFilter(tokenProvider, new CustomUserDetailsService(userRepository, userRoleRepository));
     }
 
     @Bean
@@ -194,7 +196,7 @@ public class SecurityConfig {
                     }
                 }, OAuth2LoginAuthenticationFilter.class)
             .authenticationProvider(customOidcAuthenticationProvider())
-            .authenticationProvider(daoAuthenticationProvider(new CustomUserDetailsService(userRepository)));
+                .authenticationProvider(daoAuthenticationProvider(new CustomUserDetailsService(userRepository, userRoleRepository)));
 
         System.out.println("[DEBUG] Security Filter Chain Configuration Complete");
         return http.build();

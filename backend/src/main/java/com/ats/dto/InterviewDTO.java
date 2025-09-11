@@ -64,5 +64,6 @@ public class InterviewDTO {
         private String jobTitle;
         private String resumeUrl;
         private ZonedDateTime appliedAt;
+        private com.ats.dto.ResumeAnalysisDTO resumeAnalysis; // Include AI analytics for interviewers
     }
 } 

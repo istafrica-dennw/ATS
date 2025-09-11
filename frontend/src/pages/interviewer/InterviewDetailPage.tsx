@@ -10,7 +10,8 @@ import {
   UserIcon,
   BriefcaseIcon,
   DocumentTextIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 const InterviewDetailPage: React.FC = () => {
@@ -200,6 +201,12 @@ const InterviewDetailPage: React.FC = () => {
     });
   };
 
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
   const isCompleted = interview?.status === InterviewStatus.COMPLETED;
   const canStart = interview?.status === InterviewStatus.ASSIGNED;
   const canSubmit = interview?.status === InterviewStatus.IN_PROGRESS;
@@ -350,6 +357,89 @@ const InterviewDetailPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* AI Resume Analysis */}
+            {interview.application.resumeAnalysis && (
+              <div className="bg-white shadow-lg rounded-xl mb-6 sm:mb-8 dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                    <ChartBarIcon className="h-5 w-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+                    AI Resume Analysis
+                  </h2>
+                </div>
+                <div className="px-4 sm:px-6 py-4 sm:py-6">
+                  <div className="space-y-6">
+                    {/* Scores */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Overall</p>
+                        <p className={`text-2xl font-bold ${getScoreColor(interview.application.resumeAnalysis.resume_score.overall_score)}`}>
+                          {interview.application.resumeAnalysis.resume_score.overall_score.toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Job Match</p>
+                        <p className={`text-2xl font-bold ${getScoreColor(interview.application.resumeAnalysis.resume_score.job_match_score)}`}>
+                          {interview.application.resumeAnalysis.resume_score.job_match_score.toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Experience</p>
+                        <p className={`text-2xl font-bold ${getScoreColor(interview.application.resumeAnalysis.resume_score.experience_score)}`}>
+                          {interview.application.resumeAnalysis.resume_score.experience_score.toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Skills Match</p>
+                        <p className={`text-2xl font-bold ${getScoreColor(interview.application.resumeAnalysis.resume_score.skills_match_score)}`}>
+                          {interview.application.resumeAnalysis.resume_score.skills_match_score.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Experience Summary */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Experience Summary</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">{interview.application.resumeAnalysis.total_experience_years}</span> years total experience
+                        </div>
+                        <div>
+                          Worked at <span className="font-medium">{interview.application.resumeAnalysis.total_companies_worked}</span> companies
+                        </div>
+                        <div className="md:col-span-2">
+                          Current: <span className="font-medium">{interview.application.resumeAnalysis.current_position}</span> at {interview.application.resumeAnalysis.current_company}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Skills */}
+                    {interview.application.resumeAnalysis.skills_extracted && interview.application.resumeAnalysis.skills_extracted.length > 0 && (
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Key Skills</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {interview.application.resumeAnalysis.skills_extracted.slice(0, 8).map((skill, index) => (
+                            <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">
+                              {skill}
+                            </span>
+                          ))}
+                          {interview.application.resumeAnalysis.skills_extracted.length > 8 && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">+{interview.application.resumeAnalysis.skills_extracted.length - 8} more</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Analysis Metadata */}
+                    <div className="text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 pt-4">
+                      Processed on {new Date(interview.application.resumeAnalysis.analysis_metadata.processed_at).toLocaleDateString()}
+                      using {interview.application.resumeAnalysis.analysis_metadata.ai_model_used}
+                      (Confidence: {(interview.application.resumeAnalysis.analysis_metadata.confidence_score * 100).toFixed(1)}%)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {(canStart || canSubmit) && (
               <div className="mb-6 sm:mb-8 flex justify-center px-4 sm:px-0">

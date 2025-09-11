@@ -10,6 +10,47 @@ export interface InterviewResponse {
   rating: number; // 0-100
 }
 
+export interface ResumeAnalysis {
+  total_experience_years: number;
+  total_companies_worked: number;
+  current_company: string;
+  current_position: string;
+  previous_positions?: Array<{
+    company: string;
+    position: string;
+    duration_months: number;
+    start_date: string;
+    end_date: string;
+    responsibilities: string[];
+  }>;
+  skills_extracted: string[];
+  education?: Array<{
+    degree: string;
+    institution: string;
+    graduation_year: number;
+    grade: string;
+  }>;
+  resume_score: {
+    overall_score: number;
+    job_match_score: number;
+    experience_score: number;
+    skills_match_score: number;
+    scoring_criteria: {
+      required_skills_match: number;
+      experience_level_match: number;
+      industry_relevance: number;
+      education_level_match: number;
+    };
+  };
+  analysis_metadata: {
+    processed_at: string;
+    ai_model_used: string;
+    confidence_score: number;
+    processing_time_ms: number;
+    processingNotes: string[];
+  };
+}
+
 export interface ApplicationSummary {
   id: number;
   candidateName: string;
@@ -18,6 +59,7 @@ export interface ApplicationSummary {
   jobTitle: string;
   resumeUrl?: string;
   appliedAt: string;
+  resumeAnalysis?: ResumeAnalysis;
 }
 
 export interface InterviewSkeleton {

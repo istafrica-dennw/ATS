@@ -458,6 +458,12 @@ public class InterviewServiceImpl implements InterviewService {
         dto.setJobTitle(application.getJob().getTitle());
         dto.setResumeUrl(application.getResumeUrl());
         dto.setAppliedAt(application.getCreatedAt());
+        
+        // Include resume analysis for interviewers
+        if (application.getResumeAnalysis() != null) {
+            dto.setResumeAnalysis(mapResumeAnalysisToDTO(application.getResumeAnalysis()));
+        }
+        
         return dto;
     }
 
@@ -484,5 +490,10 @@ public class InterviewServiceImpl implements InterviewService {
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
         return dto;
+    }
+
+    private com.ats.dto.ResumeAnalysisDTO mapResumeAnalysisToDTO(com.ats.dto.ResumeAnalysisDTO resumeAnalysis) {
+        // ResumeAnalysis is already stored as DTO in the Application entity
+        return resumeAnalysis;
     }
 } 

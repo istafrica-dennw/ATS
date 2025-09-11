@@ -1,8 +1,8 @@
 // Enhanced with comprehensive dark mode support and theming
-import React, { useState, useEffect, useRef, Fragment } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon, CameraIcon } from '@heroicons/react/24/outline';
-import { Role, UserFormData } from '../../types/user';
+import { UserFormData } from '../../types/user';
 import { toast } from 'react-toastify';
 import RoleManager from '../RoleManager';
 
@@ -25,17 +25,12 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserFormData | null>(null);
+  const [initialUserData, setInitialUserData] = useState<UserFormData | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
-  useEffect(() => {
-    if (isOpen && userId) {
-      fetchUserDetails();
-    }
-  }, [isOpen, userId]);
-
-  const fetchUserDetails = async () => {
+  const fetchUserDetails = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/users/${userId}`, {
@@ -47,6 +42,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
       if (response.ok) {
         const data = await response.json();
         setUserData(data);
+        setInitialUserData(data);
       } else {
         toast.error('Failed to load user details');
       }
@@ -56,7 +52,13 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, token]);
+
+  useEffect(() => {
+    if (isOpen && userId) {
+      fetchUserDetails();
+    }
+  }, [isOpen, userId, fetchUserDetails]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (!userData) return;
@@ -158,6 +160,20 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     }
   };
 
+  const hasFormChanges = () => {
+    if (!userData || !initialUserData) {
+      return false;
+    }
+    return (
+      userData.firstName !== initialUserData.firstName ||
+      userData.lastName !== initialUserData.lastName ||
+      userData.department !== initialUserData.department ||
+      userData.phoneNumber !== initialUserData.phoneNumber ||
+      userData.isActive !== initialUserData.isActive ||
+      userData.profilePictureUrl !== initialUserData.profilePictureUrl
+    );
+  };
+
   const toggleUserStatus = async () => {
     if (!userData || !userId) return;
     
@@ -196,10 +212,10 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-gray-500 dark:bg-gray-900/75 bg-opacity-75 transition-opacity" aria-hidden="true" />
       
-      <div className="fixed inset-0 flex items-center rounded-xl justify-center p-4 overflow-hidden">
-        <Dialog.Panel className="mx-auto max-w-5xl rounded-xl overflow-hidden bg-white dark:bg-gray-800 text-left shadow-xl dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 w-full">
-          <div className="bg-white dark:bg-gray-800 px-6 pt-5 pb-5 sm:px-8 sm:pt-6 sm:pb-4">
-            <div className="flex justify-between items-center mb-6">
+      <div className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Panel className="mx-auto max-w-5xl rounded-xl bg-white dark:bg-gray-800 text-left shadow-xl dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] border border-gray-200/50 dark:border-gray-700/50 w-full flex flex-col max-h-[90vh]">
+          <div className="dark:bg-gray-800 px-6 pt-5 pb-5 sm:px-8 sm:pt-6 sm:pb-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center">
               <Dialog.Title className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 {userData ? `User Details: ${userData.firstName} ${userData.lastName}` : 'Loading User Details...'}
               </Dialog.Title>
@@ -211,7 +227,9 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                 <XMarkIcon className="h-6 w-6" aria-hidden="true" />
               </button>
             </div>
+          </div>
 
+          <div className="overflow-y-auto px-6 pt-5 pb-5 sm:px-8 sm:pt-6 sm:pb-4 flex-1">
             {loading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500 dark:border-indigo-400"></div>
@@ -252,143 +270,140 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      First name
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      id="firstName"
-                      value={userData.firstName || ''}
-                      onChange={handleChange}
-                      className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Last name
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      id="lastName"
-                      value={userData.lastName || ''}
-                      onChange={handleChange}
-                      className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      id="email"
-                      value={userData.email || ''}
-                      disabled
-                      className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 focus:outline-none shadow-sm cursor-not-allowed"
-                    />
-                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Roles
-                    </label>
-                    {userId && (
-                      <RoleManager 
-                        userId={userId}
-                        onUserUpdated={() => {
-                          // Refresh user data after role changes
-                          fetchUserDetails();
-                          onUserUpdated();
-                        }}
-                        className="mb-4"
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        First name
+                      </label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        id="firstName"
+                        value={userData.firstName || ''}
+                        onChange={handleChange}
+                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
+                        required
                       />
-                    )}
-                  </div>
+                    </div>
 
-                  <div>
-                    <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Department
-                    </label>
-                    <input
-                      type="text"
-                      name="department"
-                      id="department"
-                      value={userData.department || ''}
-                      onChange={handleChange}
-                      className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
-                    />
-                  </div>
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Last name
+                      </label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        id="lastName"
+                        value={userData.lastName || ''}
+                        onChange={handleChange}
+                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
+                        required
+                      />
+                    </div>
 
-                  <div>
-                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Phone Number
-                    </label>
-                    <input
-                      type="text"
-                      name="phoneNumber"
-                      id="phoneNumber"
-                      value={userData.phoneNumber || ''}
-                      onChange={handleChange}
-                      className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
-                    />
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        value={userData.email || ''}
+                        disabled
+                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 focus:outline-none shadow-sm cursor-not-allowed"
+                      />
+                      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Department
+                      </label>
+                      <input
+                        type="text"
+                        name="department"
+                        id="department"
+                        value={userData.department || ''}
+                        onChange={handleChange}
+                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Phone Number
+                      </label>
+                      <input
+                        type="text"
+                        name="phoneNumber"
+                        id="phoneNumber"
+                        value={userData.phoneNumber || ''}
+                        onChange={handleChange}
+                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Status Information */}
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4 border border-gray-200/50 dark:border-gray-600/50">
-                  <h4 className="text-base font-medium text-gray-900 dark:text-gray-100">Account Status</h4>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  {userId && (
+                    <RoleManager 
+                      userId={userId}
+                      onUserUpdated={() => {
+                        fetchUserDetails();
+                        onUserUpdated();
+                      }}
+                    />
+                  )}
+                </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-start">
-                      <div className="flex items-center h-6">
-                        <input
-                          id="isActive"
-                          name="isActive"
-                          type="checkbox"
-                          checked={userData.isActive || false}
-                          onChange={handleCheckboxChange}
-                          className="h-5 w-5 text-indigo-600 dark:text-indigo-500 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:ring-2 focus:ring-offset-0 transition-colors duration-200"
-                        />
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4 border border-gray-200/50 dark:border-gray-600/50">
+                    <h4 className="text-base font-medium text-gray-900 dark:text-gray-100">Account Status</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-start">
+                        <div className="flex items-center h-6">
+                          <input
+                            id="isActive"
+                            name="isActive"
+                            type="checkbox"
+                            checked={userData.isActive || false}
+                            onChange={handleCheckboxChange}
+                            className="h-5 w-5 text-indigo-600 dark:text-indigo-500 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:ring-2 focus:ring-offset-0 transition-colors duration-200"
+                          />
+                        </div>
+                        <div className="ml-3">
+                          <label htmlFor="isActive" className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            Active Account
+                          </label>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {userData.isActive
+                              ? 'User can log in and access the system'
+                              : 'User is deactivated and cannot log in'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="ml-3">
-                        <label htmlFor="isActive" className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          Active Account
-                        </label>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {userData.isActive
-                            ? 'User can log in and access the system'
-                            : 'User is deactivated and cannot log in'}
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="flex items-start">
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Verification:</span>
-                        <span className={`ml-3 px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          userData.isEmailVerified 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
-                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                        }`}>
-                          {userData.isEmailVerified ? 'Verified' : 'Not Verified'}
-                        </span>
+                      <div className="flex items-start">
+                        <div className="flex items-center">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Verification:</span>
+                          <span className={`ml-3 px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            userData.isEmailVerified 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                          }`}>
+                            {userData.isEmailVerified ? 'Verified' : 'Not Verified'}
+                          </span>
+                        </div>
                       </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {userData.isEmailVerified
+                          ? 'User has verified their email address'
+                          : 'User has not yet verified their email address'}
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {userData.isEmailVerified
-                        ? 'User has verified their email address'
-                        : 'User has not yet verified their email address'}
-                    </p>
                   </div>
                 </div>
               </form>
@@ -400,9 +415,8 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             )}
           </div>
 
-          {/* Footer Actions */}
           {userData && (
-            <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-3 sm:px-8 border-t border-gray-200 dark:border-gray-700">
+            <div className="dark:bg-gray-700/50 px-6 py-3 sm:px-8 border-t border-gray-200 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
                 <div>
                   <button
@@ -429,7 +443,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   <button
                     type="submit"
                     onClick={handleSubmit}
-                    disabled={saving}
+                    disabled={saving || !hasFormChanges()}
                     className="inline-flex justify-center rounded-lg border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {saving ? 'Saving...' : 'Save Changes'}

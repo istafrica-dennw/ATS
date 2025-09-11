@@ -5,6 +5,7 @@ import { XMarkIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { UserFormData } from '../../types/user';
 import { toast } from 'react-toastify';
 import RoleManager from '../RoleManager';
+import { useAuth } from '../../contexts/AuthContext';
 
 
 interface UserDetailsModalProps {
@@ -28,6 +29,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   const [initialUserData, setInitialUserData] = useState<UserFormData | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user: currentUser } = useAuth();
 
 
   const fetchUserDetails = useCallback(async () => {
@@ -419,18 +421,20 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             <div className="dark:bg-gray-700/50 px-6 py-3 sm:px-8 border-t border-gray-200 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
                 <div>
-                  <button
-                    type="button"
-                    onClick={toggleUserStatus}
-                    disabled={saving}
-                    className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
-                      userData.isActive 
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:ring-red-500 dark:focus:ring-red-400' 
-                        : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:ring-green-500 dark:focus:ring-green-400'
-                    }`}
-                  >
-                    {userData.isActive ? 'Deactivate User' : 'Activate User'}
-                  </button>
+                  {currentUser?.id !== userId && (
+                    <button
+                      type="button"
+                      onClick={toggleUserStatus}
+                      disabled={saving}
+                      className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+                        userData.isActive 
+                          ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:ring-red-500 dark:focus:ring-red-400' 
+                          : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:ring-green-500 dark:focus:ring-green-400'
+                      }`}
+                    >
+                      {userData.isActive ? 'Deactivate User' : 'Activate User'}
+                    </button>
+                  )}
                 </div>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                   <button

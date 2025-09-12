@@ -80,6 +80,11 @@ const InterviewSkeletonManagementPage: React.FC = () => {
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [skeletonToDelete, setSkeletonToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -90,6 +95,20 @@ const InterviewSkeletonManagementPage: React.FC = () => {
   useEffect(() => {
     fetchSkeletons();
   }, []);
+
+  // ESC key listener for delete modal
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showDeleteModal) {
+        cancelDelete();
+      }
+    };
+
+    if (showDeleteModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showDeleteModal]);
 
   const fetchSkeletons = async () => {
     try {
@@ -111,7 +130,10 @@ const InterviewSkeletonManagementPage: React.FC = () => {
       
     } catch (err) {
       console.error('Error fetching data:', err);
-      setError('Failed to load skeletons. Please try again.');
+      setToast({
+        message: 'Failed to load skeletons. Please try again.',
+        type: 'error'
+      });
       setSkeletons([]);
     } finally {
       setLoading(false);
@@ -141,36 +163,67 @@ const InterviewSkeletonManagementPage: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this interview skeleton?')) {
-      return;
-    }
+  const handleDelete = (id: number, name: string) => {
+    setSkeletonToDelete({ id, name });
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteSkeleton = async () => {
+    if (!skeletonToDelete || isDeleting) return;
+    
+    setIsDeleting(true);
+    
     try {
-      await interviewSkeletonAPI.delete(id);
-      fetchSkeletons();
-    } catch (err) {
+      await interviewSkeletonAPI.delete(skeletonToDelete.id);
+      
+      setToast({
+        message: `Interview skeleton "${skeletonToDelete.name}" deleted successfully!`,
+        type: 'success'
+      });
+      
+      await fetchSkeletons();
+      
+    } catch (err: any) {
       console.error('Error deleting skeleton:', err);
-      setError('Failed to delete interview skeleton');
+      
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to delete interview skeleton. Please try again.';
+      setToast({
+        message: errorMessage,
+        type: 'error'
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setSkeletonToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setSkeletonToDelete(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name.trim()) {
-      setError('Name is required');
+      setToast({
+        message: 'Name is required',
+        type: 'error'
+      });
       return;
     }
 
     if (formData.focusAreas.length === 0 || !formData.focusAreas[0].title.trim()) {
-      setError('At least one focus area is required');
+      setToast({
+        message: 'At least one focus area is required',
+        type: 'error'
+      });
       return;
     }
 
     try {
       setSubmitting(true);
-      setError(null);
 
       const requestData: CreateInterviewSkeletonRequest = {
         name: formData.name.trim(),
@@ -191,9 +244,19 @@ const InterviewSkeletonManagementPage: React.FC = () => {
 
       setShowModal(false);
       fetchSkeletons();
-    } catch (err) {
+      
+      setToast({
+        message: `Interview skeleton ${editingSkeleton ? 'updated' : 'created'} successfully!`,
+        type: 'success'
+      });
+    } catch (err: any) {
       console.error('Error saving skeleton:', err);
-      setError('Failed to save interview skeleton');
+      
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to save interview skeleton. Please try again.';
+      setToast({
+        message: errorMessage,
+        type: 'error'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -402,7 +465,7 @@ const InterviewSkeletonManagementPage: React.FC = () => {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(skeleton.id)}
+                      onClick={() => handleDelete(skeleton.id, skeleton.name)}
                       className="w-full sm:w-auto inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 transition-colors shadow-sm hover:shadow-md transform hover:scale-105"
                     >
                       <TrashIcon className="h-4 w-4 mr-1.5" />
@@ -719,6 +782,86 @@ const InterviewSkeletonManagementPage: React.FC = () => {
           </div>
         </div>,
         document.body
+      )}
+
+      {showDeleteModal && skeletonToDelete && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 py-6 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-gray-500 dark:bg-gray-900 opacity-75 transition-opacity" 
+              onClick={cancelDelete}
+              aria-hidden="true"
+            ></div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+          
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200 dark:border-gray-700">
+              <div className="absolute top-0 right-0 pt-4 pr-4 z-10">
+                <button
+                  type="button"
+                  onClick={cancelDelete}
+                  className="rounded-lg bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
+                >
+                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                </button>
+              </div>
+
+              <div className="px-6 py-6">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <TrashIcon className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <h3 className="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100">
+                      Delete Interview Skeleton
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Are you sure you want to delete{' '}
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          "{skeletonToDelete.name}"
+                        </span>
+                        ?
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                        This action cannot be undone and will permanently remove the interview skeleton and all its focus areas. Any interviews currently using this skeleton may be affected.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3">
+                  <button
+                    type="button"
+                    onClick={cancelDelete}
+                    disabled={isDeleting}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2.5 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmDeleteSkeleton}
+                    disabled={isDeleting}
+                    className={`w-full sm:w-auto inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 text-sm font-medium text-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all duration-200 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="animate-spin -ml-1 mr-2 h-5 w-5 border-2 border-white rounded-full border-t-transparent" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <TrashIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                        Delete Skeleton
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && (

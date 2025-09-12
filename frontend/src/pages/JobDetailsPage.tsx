@@ -234,7 +234,7 @@ const JobDetailsPage: React.FC = () => {
                   <button 
                     onClick={() => {
                       const url = window.location.href;
-                      const text = `IST Africa is hiring for a ${job.title}! Check out the details and apply here:`;
+                      const text = `We're hiring for a ${job.title}! Check out the details and apply here:`;
                       window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
                     }}
                     className="flex-1 flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#1DA1F2] hover:bg-[#0C85D0] transition-colors duration-200 transform hover:scale-[1.02]"

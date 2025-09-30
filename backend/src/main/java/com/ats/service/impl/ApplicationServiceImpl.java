@@ -94,6 +94,11 @@ public class ApplicationServiceImpl implements ApplicationService {
 			throw new BadRequestException("Phone number is required to apply for jobs. Please add a phone number to your profile.");
 		}
 
+		// Validate candidate has profile picture set
+		if (candidate.getProfilePictureUrl() == null || candidate.getProfilePictureUrl().trim().isEmpty()) {
+			throw new BadRequestException("Profile picture is required to apply for jobs. Please add a profile picture to your profile.");
+		}
+
 		// Validate required custom questions are answered
 		validateCustomQuestions(applicationDTO, job.getId());
 

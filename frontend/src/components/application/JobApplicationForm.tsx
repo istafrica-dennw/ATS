@@ -49,6 +49,9 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   
   // Phone number validation
   const hasPhoneNumber = user?.phoneNumber && user.phoneNumber.trim() !== '';
+  
+  // Profile picture validation
+  const hasProfilePicture = user?.profilePictureUrl && user.profilePictureUrl.trim() !== '';
 
   // Fetch job custom questions and check if user already applied
   useEffect(() => {
@@ -293,8 +296,18 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
     );
   }
 
-  // Check if user has phone number set
-  if (!hasPhoneNumber) {
+  // Check if user has required profile information
+  if (!hasPhoneNumber || !hasProfilePicture) {
+    const missingItems = [];
+    if (!hasPhoneNumber) missingItems.push('phone number');
+    if (!hasProfilePicture) missingItems.push('profile picture');
+    
+    const missingItemsText = missingItems.length === 1 
+      ? missingItems[0] 
+      : missingItems.length === 2 
+        ? `${missingItems[0]} and ${missingItems[1]}`
+        : missingItems.join(', ');
+
     return (
       <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 sm:p-6">
         <div className="flex">
@@ -303,11 +316,11 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-              Phone Number Required
+              Profile Information Required
             </h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
-              You need to add a phone number to your profile before you can apply for jobs. 
-              This helps us contact you regarding your application.
+              You need to add a {missingItemsText} to your profile before you can apply for jobs. 
+              This helps us better understand and contact you regarding your application.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
@@ -315,7 +328,7 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
                 className="inline-flex items-center px-4 py-2 border border-yellow-300 dark:border-yellow-600 text-sm font-medium rounded-lg text-yellow-700 dark:text-yellow-300 bg-white dark:bg-yellow-900/20 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-colors duration-200"
               >
                 <PhoneIcon className="h-4 w-4 mr-2" />
-                Add Phone Number
+                Complete Profile
               </button>
               <button
                 onClick={() => navigate('/dashboard')}

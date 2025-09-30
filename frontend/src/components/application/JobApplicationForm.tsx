@@ -8,12 +8,14 @@ import {
   ArrowRightIcon,
   CheckIcon,
   ExclamationTriangleIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  PhoneIcon
 } from '@heroicons/react/24/outline';
 import CustomQuestionForm, { CustomQuestion, QuestionAnswer } from './CustomQuestionForm';
 import { applicationService, ApplicationDTO } from '../../services/applicationService';
 import axiosInstance from '../../utils/axios';
 import StyledFileUploader from './StyledFileUploader';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface JobApplicationFormProps {
   jobId: string | number;
@@ -23,6 +25,7 @@ interface JobApplicationFormProps {
 
 const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle, department }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Form state
   const [activeStep, setActiveStep] = useState<number>(0);
@@ -43,6 +46,9 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   // Check if user has already applied
   const [alreadyApplied, setAlreadyApplied] = useState<boolean>(false);
   const [checkingApplication, setCheckingApplication] = useState<boolean>(true);
+  
+  // Phone number validation
+  const hasPhoneNumber = user?.phoneNumber && user.phoneNumber.trim() !== '';
 
   // Fetch job custom questions and check if user already applied
   useEffect(() => {
@@ -281,6 +287,43 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
           >
             Go to Dashboard
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user has phone number set
+  if (!hasPhoneNumber) {
+    return (
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 sm:p-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+              Phone Number Required
+            </h3>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
+              You need to add a phone number to your profile before you can apply for jobs. 
+              This helps us contact you regarding your application.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => navigate('/profile')}
+                className="inline-flex items-center px-4 py-2 border border-yellow-300 dark:border-yellow-600 text-sm font-medium rounded-lg text-yellow-700 dark:text-yellow-300 bg-white dark:bg-yellow-900/20 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-colors duration-200"
+              >
+                <PhoneIcon className="h-4 w-4 mr-2" />
+                Add Phone Number
+              </button>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+              >
+                Go to Dashboard
+              </button>
+            </div>
           </div>
         </div>
       </div>

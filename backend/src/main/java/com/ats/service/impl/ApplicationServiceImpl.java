@@ -89,6 +89,11 @@ public class ApplicationServiceImpl implements ApplicationService {
 		User candidate = userRepository.findById(candidateId)
 				.orElseThrow(() -> new NotFoundException("User not found with ID: " + candidateId));
 
+		// Validate candidate has phone number set
+		if (candidate.getPhoneNumber() == null || candidate.getPhoneNumber().trim().isEmpty()) {
+			throw new BadRequestException("Phone number is required to apply for jobs. Please add a phone number to your profile.");
+		}
+
 		// Validate required custom questions are answered
 		validateCustomQuestions(applicationDTO, job.getId());
 

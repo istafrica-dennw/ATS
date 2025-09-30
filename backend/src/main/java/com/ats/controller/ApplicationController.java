@@ -229,6 +229,33 @@ public class ApplicationController {
 		}
 	}
 
+	@Operation(summary = "Get applications by user ID", description = "Get all applications for a specific user (admin only)")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Returns paginated list of applications"),
+			@ApiResponse(responseCode = "404", description = "User not found"),
+			@ApiResponse(responseCode = "403", description = "Forbidden - not authorized"),
+			@ApiResponse(responseCode = "500", description = "Internal server error") })
+	@GetMapping("/user/{userId}")
+	@PreAuthorize("hasRole('ADMIN')")
+	public ResponseEntity<?> getApplicationsByUserId(@PathVariable Long userId,
+			@PageableDefault(size = 10) Pageable pageable) {
+
+		try {
+			Page<ApplicationDTO> applications = applicationService.getApplicationsByCandidateId(userId, pageable);
+			return ResponseEntity.ok(applications);
+
+		} catch (NotFoundException e) {
+			log.warn("User not found: {}", e.getMessage());
+			Map<String, String> response = new HashMap<>();
+			response.put("error", e.getMessage());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+
+		} catch (Exception e) {
+			log.error("Error getting applications for user", e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+					"An error occurred while retrieving applications", e);
+		}
+	}
+
 	@Operation(summary = "Update application status", description = "Update the status of an application (admin only)")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Status updated successfully"),
 			@ApiResponse(responseCode = "404", description = "Application not found"),

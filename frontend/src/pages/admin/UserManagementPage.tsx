@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, Fragment } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { User, Role } from '../../types/user';
 import AddUserModal from '../../components/admin/AddUserModal';
 import UserDetailsModal from '../../components/admin/UserDetailsModal';
@@ -13,6 +13,7 @@ import {
   EyeIcon,
   PlusIcon,
   MagnifyingGlassIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
 
@@ -27,6 +28,7 @@ const roleOptions = [
 const UserManagementPage: React.FC = () => {
   const { token } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -80,6 +82,10 @@ const UserManagementPage: React.FC = () => {
   const handleViewUser = (userId: number) => {
     setSelectedUserId(userId);
     setIsUserDetailsModalOpen(true);
+  };
+
+  const handleViewFullProfile = (userId: number) => {
+    navigate(`/admin/users/${userId}`);
   };
 
   const handleCloseUserDetailsModal = () => {
@@ -351,9 +357,17 @@ const UserManagementPage: React.FC = () => {
                     <div className="flex justify-end space-x-1 sm:space-x-2">
                       <button
                         type="button"
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 p-2 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
+                        onClick={() => handleViewFullProfile(user.id)}
+                        title="View full profile"
+                      >
+                        <UserIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
                         className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
                         onClick={() => handleViewUser(user.id)}
-                        title="View user"
+                        title="Quick view"
                       >
                         <EyeIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                       </button>

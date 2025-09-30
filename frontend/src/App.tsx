@@ -9,6 +9,7 @@ import AdminLayout from './components/admin/AdminLayout';
 import MainLayout from './layouts/MainLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
+import AdminUserProfilePage from './pages/admin/AdminUserProfilePage';
 import EmailManagementPage from './pages/admin/EmailManagementPage';
 import JobManagementPage from './pages/admin/JobManagementPage';
 import AdminJobDetailsPage from './pages/admin/AdminJobDetailsPage';
@@ -229,6 +230,7 @@ const App: React.FC = () => {
               >
                                <Route index element={<AdminDashboardPage />} />
                <Route path="users" element={<UserManagementPage />} />
+               <Route path="users/:userId" element={<AdminUserProfilePage />} />
                <Route path="emails" element={<EmailManagementPage />} />
                <Route path="bulk-email" element={<BulkEmailPage />} />
                <Route path="jobs" element={<JobManagementPage />} />

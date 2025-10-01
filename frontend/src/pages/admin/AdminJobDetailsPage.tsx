@@ -4,6 +4,7 @@ import axiosInstance from '../../utils/axios';
 import { interviewAPI } from '../../services/api';
 import { Interview } from '../../types/interview';
 import { toast } from 'react-toastify';
+import { getProfilePictureUrl, getUserInitials } from '../../utils/profilePictureUtils';
 import {
   ArrowLeftIcon,
   MapPinIcon,
@@ -140,7 +141,7 @@ const AdminJobDetailsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<{[key: string]: number}>({});
-  const [candidateDetails, setCandidateDetails] = useState<{[key: number]: {name: string, email: string}}>({});
+  const [candidateDetails, setCandidateDetails] = useState<{[key: number]: {name: string, email: string, profilePictureUrl?: string, linkedinProfileUrl?: string}}>({});
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(0);
@@ -385,7 +386,7 @@ const AdminJobDetailsPage: React.FC = () => {
   const fetchCandidateDetails = async (applications: Application[]) => {
     try {
       const candidateIds = Array.from(new Set(applications.map(app => app.candidateId)));
-      const candidateDetailsMap: {[key: number]: {name: string, email: string}} = {};
+      const candidateDetailsMap: {[key: number]: {name: string, email: string, profilePictureUrl?: string, linkedinProfileUrl?: string}} = {};
       
       // Fetch details for each unique candidate
       const candidatePromises = candidateIds.map(async (candidateId) => {
@@ -394,7 +395,9 @@ const AdminJobDetailsPage: React.FC = () => {
           const user = response.data;
           candidateDetailsMap[candidateId] = {
             name: `${user.firstName} ${user.lastName}`,
-            email: user.email
+            email: user.email,
+            profilePictureUrl: user.profilePictureUrl,
+            linkedinProfileUrl: user.linkedinProfileUrl
           };
         } catch (error) {
           console.error(`Error fetching candidate ${candidateId}:`, error);
@@ -691,7 +694,7 @@ const AdminJobDetailsPage: React.FC = () => {
   };
 
       // Handle interview assignment (redirect to interview management page)
-    const handleAssignInterview = (applicationId: number) => {
+  const handleAssignInterview = (applicationId: number) => {
       navigate('/admin/interview-management');
   };
 
@@ -791,534 +794,551 @@ const AdminJobDetailsPage: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('/admin/jobs')}
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        <button
+          onClick={() => navigate('/admin/jobs')}
             className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-1" /> Back to Job Management
-          </button>
+        >
+          <ArrowLeftIcon className="h-5 w-5 mr-1" /> Back to Job Management
+        </button>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{job.title}</h1>
           <p className="text-lg text-gray-500 dark:text-gray-400">{job.department || 'IST Africa'}</p>
-        </div>
-        
+      </div>
+      
         <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] overflow-hidden sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50 mb-8">
           <div className="px-4 py-5 sm:px-6 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Job Details</h2>
-          </div>
+        </div>
           <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-0">
             <dl className="sm:divide-y sm:divide-gray-200 dark:sm:divide-gray-700">
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                   <MapPinIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Location
-                </dt>
+              </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {job.location || 'Remote'} ({job.workSetting})
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                {job.location || 'Remote'} ({job.workSetting})
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                   <BriefcaseIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Department
-                </dt>
+              </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {job.department}
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                {job.department}
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                   <ClockIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Employment Type
-                </dt>
+              </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {job.employmentType}
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                {job.employmentType}
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                   <CurrencyDollarIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Salary Range
-                </dt>
+              </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {job.salaryRange || 'Competitive'}
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                {job.salaryRange || 'Competitive'}
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                   <ClockIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Posted Date
-                </dt>
+              </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  {formatDate(job.postedDate)}
-                </dd>
-              </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                {formatDate(job.postedDate)}
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                   <ArrowsUpDownIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Skills
-                </dt>
+              </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                  <div className="flex flex-wrap gap-2">
-                    {job.skills && job.skills.map((skill, index) => (
+                <div className="flex flex-wrap gap-2">
+                  {job.skills && job.skills.map((skill, index) => (
                       <span key={index} className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 text-xs px-2 py-1 rounded-full">
-                        {skill}
-                      </span>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </dd>
+            </div>
+            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</dt>
+                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2 whitespace-pre-line">
+                  <div dangerouslySetInnerHTML={{ __html: job.description }} />
+              </dd>
+            </div>
+            {/* Custom Questions Section */}
+            {job.customQuestions && job.customQuestions.length > 0 && (
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
+                    <QuestionMarkCircleIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Custom Questions
+                </dt>
+                  <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
+                  <div className="space-y-4">
+                    {job.customQuestions.map((question, index) => (
+                        <div key={question.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                Question {index + 1}
+                              </span>
+                              {question.required && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                  Required
+                                </span>
+                              )}
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                {question.questionType.replace('_', ' ').toLowerCase()}
+                              </span>
+                            </div>
+                              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                              {question.questionText}
+                            </p>
+                            {question.options && question.options.length > 0 && (
+                              <div className="mt-2">
+                                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Options:</p>
+                                  <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                                  {question.options.map((option, optionIndex) => (
+                                    <li key={optionIndex}>{option}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {question.maxCharacterLimit && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                Character limit: {question.maxCharacterLimit}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </dd>
               </div>
-              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Description</dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2 whitespace-pre-line">
-                  <div dangerouslySetInnerHTML={{ __html: job.description }} />
-                </dd>
+            )}
+          </dl>
+        </div>
+      </div>
+      
+      <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Applications</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applications</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalElements}</p>
               </div>
-              {/* Custom Questions Section */}
-              {job.customQuestions && job.customQuestions.length > 0 && (
-                <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                    <QuestionMarkCircleIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" /> Custom Questions
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
-                    <div className="space-y-4">
-                      {job.customQuestions.map((question, index) => (
-                        <div key={question.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  Question {index + 1}
-                                </span>
-                                {question.required && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                                    Required
-                                  </span>
-                                )}
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                  {question.questionType.replace('_', ' ').toLowerCase()}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                                {question.questionText}
-                              </p>
-                              {question.options && question.options.length > 0 && (
-                                <div className="mt-2">
-                                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Options:</p>
-                                  <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                                    {question.options.map((option, optionIndex) => (
-                                      <li key={optionIndex}>{option}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {question.maxCharacterLimit && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                                  Character limit: {question.maxCharacterLimit}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </dd>
-                </div>
-              )}
-            </dl>
+                <DocumentTextIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
+          </div>
+            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Interviews Scheduled</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.INTERVIEWING || 0}</p>
+              </div>
+                <UserGroupIcon className="h-8 w-8 text-yellow-500 dark:text-yellow-400" />
+            </div>
+          </div>
+            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Offers Extended</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.OFFERED || 0}</p>
+              </div>
+                <DocumentTextIcon className="h-8 w-8 text-green-500 dark:text-green-400" />
+            </div>
+          </div>
+            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Accepted Offers</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.OFFER_ACCEPTED || 0}</p>
+              </div>
+                <CheckCircleIcon className="h-8 w-8 text-green-500 dark:text-green-400" />
+            </div>
           </div>
         </div>
         
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Applications</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Applications</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalElements}</p>
-                </div>
-                <DocumentTextIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Interviews Scheduled</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.INTERVIEWING || 0}</p>
-                </div>
-                <UserGroupIcon className="h-8 w-8 text-yellow-500 dark:text-yellow-400" />
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Offers Extended</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.OFFERED || 0}</p>
-                </div>
-                <DocumentTextIcon className="h-8 w-8 text-green-500 dark:text-green-400" />
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Accepted Offers</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{stats.OFFER_ACCEPTED || 0}</p>
-                </div>
-                <CheckCircleIcon className="h-8 w-8 text-green-500 dark:text-green-400" />
-              </div>
-            </div>
-          </div>
-          
-          {applications.length === 0 ? (
+        {applications.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-8 text-center">
               <DocumentTextIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Applications Yet</h3>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                There are no applications for this job posting yet.
-              </p>
-            </div>
-          ) : (
+              There are no applications for this job posting yet.
+            </p>
+          </div>
+        ) : (
             <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] overflow-hidden sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-              {/* Sorting Controls */}
+            {/* Sorting Controls */}
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Applications ({applications.length})</h3>
-                  <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
-                    <button
-                      onClick={() => handleSortChange('date')}
+                  <button
+                    onClick={() => handleSortChange('date')}
                       className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'date' 
+                      sortBy === 'date' 
                           ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' 
                           : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      Date Applied
-                      {sortBy === 'date' && (
-                        <ArrowsUpDownIcon className={`ml-1 h-4 w-4 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleSortChange('score')}
+                    }`}
+                  >
+                    Date Applied
+                    {sortBy === 'date' && (
+                      <ArrowsUpDownIcon className={`ml-1 h-4 w-4 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleSortChange('score')}
                       className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'score' 
+                      sortBy === 'score' 
                           ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' 
                           : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      Resume Score
-                      {sortBy === 'score' && (
-                        <ArrowsUpDownIcon className={`ml-1 h-4 w-4 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
-                      )}
-                    </button>
-                    
-                    {/* Bulk Rescore Button */}
+                    }`}
+                  >
+                    Resume Score
+                    {sortBy === 'score' && (
+                      <ArrowsUpDownIcon className={`ml-1 h-4 w-4 ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
+                  
+                  {/* Bulk Rescore Button */}
                     <div className="border-l border-gray-300 dark:border-gray-600 pl-4">
-                      <button
-                        onClick={handleBulkRescore}
-                        disabled={rescoringApplications.size > 0}
+                    <button
+                      onClick={handleBulkRescore}
+                      disabled={rescoringApplications.size > 0}
                         className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        title="Rescore all resumes for this job"
-                      >
-                        {rescoringApplications.size > 0 ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Rescoring...
-                          </>
-                        ) : (
-                          <>
-                            <ChartBarIcon className="h-4 w-4 mr-2" />
-                            Rescore All
-                          </>
-                        )}
-                      </button>
-                    </div>
+                      title="Rescore all resumes for this job"
+                    >
+                      {rescoringApplications.size > 0 ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Rescoring...
+                        </>
+                      ) : (
+                        <>
+                          <ChartBarIcon className="h-4 w-4 mr-2" />
+                          Rescore All
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
-              
-              <div className="overflow-x-auto">
+            </div>
+            
+            <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-700/50">
-                    <tr>
+                  <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Candidate
-                      </th>
+                      Candidate
+                    </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Applied On
-                      </th>
+                      Applied On
+                    </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Current Position
-                      </th>
+                      Current Position
+                    </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Resume Analysis
-                      </th>
+                      Resume Analysis
+                    </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Interview Assignment
-                      </th>
+                      Interview Assignment
+                    </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
+                      Status
+                    </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Documents
-                      </th>
+                      Documents
+                    </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {sortedApplications.map((application) => (
+                  {sortedApplications.map((application) => (
                       <tr key={application.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="ml-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                            {(() => {
+                              const candidate = candidateDetails[application.candidateId];
+                              const profilePictureUrl = candidate ? getProfilePictureUrl(candidate) : null;
+                              const initials = candidate ? getUserInitials(candidate) : (application.candidateName || `Candidate ${application.candidateId}`).split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                              
+                              return profilePictureUrl ? (
+                                <img
+                                  src={profilePictureUrl}
+                                  alt={application.candidateName || `Candidate ${application.candidateId}`}
+                                  className="h-10 w-10 rounded-full object-cover ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-800 dark:text-indigo-300 text-sm font-medium ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400">
+                                  {initials}
+                                </div>
+                              );
+                            })()}
+                          <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {application.candidateName || 
-                                 (candidateDetails[application.candidateId]?.name) || 
-                                 `Candidate ${application.candidateId}`}
-                              </div>
+                              {application.candidateName || 
+                               (candidateDetails[application.candidateId]?.name) || 
+                               `Candidate ${application.candidateId}`}
+                            </div>
                               <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {application.candidateEmail || 
-                                 candidateDetails[application.candidateId]?.email || 
-                                 'No email available'}
-                              </div>
+                              {application.candidateEmail || 
+                               candidateDetails[application.candidateId]?.email || 
+                               'No email available'}
                             </div>
                           </div>
-                        </td>
+                        </div>
+                      </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(application.createdAt)}
-                        </td>
+                        {formatDate(application.createdAt)}
+                      </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {application.currentPosition || 'Not specified'} 
-                          {application.currentCompany && `at ${application.currentCompany}`}
-                        </td>
+                        {application.currentPosition || 'Not specified'} 
+                        {application.currentCompany && `at ${application.currentCompany}`}
+                      </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {application.resumeAnalysis ? (
-                            <div className="relative">
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => openAnalysisModal(application.resumeAnalysis!)}
-                                  onMouseEnter={() => setHoveredApplication(application.id)}
-                                  onMouseLeave={() => setHoveredApplication(null)}
-                                  className="group flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 p-2 rounded-md transition-colors duration-150"
-                                >
-                                  <ChartBarIcon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-                                  {getScoreBadge(application.resumeAnalysis.resume_score.overall_score)}
-                                  <span className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400">
-                                    View Details
-                                  </span>
-                                </button>
-                                
-                                {/* Rescore Button */}
-                                <button
-                                  onClick={() => handleRescore(application.id)}
-                                  disabled={rescoringApplications.has(application.id)}
-                                  className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                  title="Rescore resume analysis"
-                                >
-                                  {rescoringApplications.has(application.id) ? (
-                                    <>
-                                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                      </svg>
-                                      Rescoring...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ArrowsUpDownIcon className="h-3 w-3 mr-1" />
-                                      Rescore
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                              
-                              {/* Hover Tooltip */}
-                              {hoveredApplication === application.id && (
-                                <div className="absolute z-10 w-64 p-3 mt-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)]">
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">Overall Score:</span>
-                                      <span className={getScoreColor(application.resumeAnalysis.resume_score.overall_score)}>
-                                        {application.resumeAnalysis.resume_score.overall_score.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">Job Match:</span>
-                                      <span className={getScoreColor(application.resumeAnalysis.resume_score.job_match_score)}>
-                                        {application.resumeAnalysis.resume_score.job_match_score.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">Experience:</span>
-                                      <span className={getScoreColor(application.resumeAnalysis.resume_score.experience_score)}>
-                                        {application.resumeAnalysis.resume_score.experience_score.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">Skills Match:</span>
-                                      <span className={getScoreColor(application.resumeAnalysis.resume_score.skills_match_score)}>
-                                        {application.resumeAnalysis.resume_score.skills_match_score.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        Experience: {application.resumeAnalysis.total_experience_years} years
-                                      </div>
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                                        Companies: {application.resumeAnalysis.total_companies_worked}
-                                      </div>
-                                    </div>
-                                    <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                                      Click to view full analysis
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
+                        {application.resumeAnalysis ? (
+                          <div className="relative">
                             <div className="flex items-center space-x-2">
-                              <div className="flex items-center space-x-2 text-gray-400 dark:text-gray-500">
-                                <ChartBarIcon className="h-4 w-4" />
-                                <span className="text-xs">
-                                  {rescoringApplications.has(application.id) ? 'Rescoring...' : 'Processing...'}
+                              <button
+                                onClick={() => openAnalysisModal(application.resumeAnalysis!)}
+                                onMouseEnter={() => setHoveredApplication(application.id)}
+                                onMouseLeave={() => setHoveredApplication(null)}
+                                  className="group flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 p-2 rounded-md transition-colors duration-150"
+                              >
+                                  <ChartBarIcon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+                                {getScoreBadge(application.resumeAnalysis.resume_score.overall_score)}
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400">
+                                  View Details
                                 </span>
-                              </div>
+                              </button>
                               
-                              {/* Rescore Button for when no analysis exists yet */}
-                              {application.resumeUrl && (
-                                <button
-                                  onClick={() => handleRescore(application.id)}
-                                  disabled={rescoringApplications.has(application.id)}
+                              {/* Rescore Button */}
+                              <button
+                                onClick={() => handleRescore(application.id)}
+                                disabled={rescoringApplications.has(application.id)}
                                   className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                  title="Trigger resume analysis"
-                                >
-                                  {rescoringApplications.has(application.id) ? (
-                                    <>
-                                      <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                      </svg>
-                                      Analyzing...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <ChartBarIcon className="h-3 w-3 mr-1" />
-                                      Analyze
-                                    </>
-                                  )}
-                                </button>
-                              )}
+                                title="Rescore resume analysis"
+                              >
+                                {rescoringApplications.has(application.id) ? (
+                                  <>
+                                    <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Rescoring...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ArrowsUpDownIcon className="h-3 w-3 mr-1" />
+                                    Rescore
+                                  </>
+                                )}
+                              </button>
                             </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {(() => {
-                            const interview = getInterviewForApplication(application.id);
-                            console.log('Interview check for application', application.id, ':', interview);
-                            if (interview) {
-                              // Show current interview assignment
-                              return (
+                            
+                            {/* Hover Tooltip */}
+                            {hoveredApplication === application.id && (
+                                <div className="absolute z-10 w-64 p-3 mt-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)]">
                                 <div className="space-y-2">
-                                  <div className="flex items-center space-x-2">
-                                    <UserGroupIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                      {interview.interviewerName}
+                                  <div className="flex justify-between">
+                                      <span className="font-medium text-gray-700 dark:text-gray-300">Overall Score:</span>
+                                    <span className={getScoreColor(application.resumeAnalysis.resume_score.overall_score)}>
+                                      {application.resumeAnalysis.resume_score.overall_score.toFixed(1)}%
                                     </span>
                                   </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {interview.scheduledAt 
-                                      ? formatDate(interview.scheduledAt)
-                                      : 'Date TBD'
-                                    }
+                                  <div className="flex justify-between">
+                                      <span className="font-medium text-gray-700 dark:text-gray-300">Job Match:</span>
+                                    <span className={getScoreColor(application.resumeAnalysis.resume_score.job_match_score)}>
+                                      {application.resumeAnalysis.resume_score.job_match_score.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                      <span className="font-medium text-gray-700 dark:text-gray-300">Experience:</span>
+                                    <span className={getScoreColor(application.resumeAnalysis.resume_score.experience_score)}>
+                                      {application.resumeAnalysis.resume_score.experience_score.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                      <span className="font-medium text-gray-700 dark:text-gray-300">Skills Match:</span>
+                                    <span className={getScoreColor(application.resumeAnalysis.resume_score.skills_match_score)}>
+                                      {application.resumeAnalysis.resume_score.skills_match_score.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      Experience: {application.resumeAnalysis.total_experience_years} years
+                                    </div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      Companies: {application.resumeAnalysis.total_companies_worked}
+                                    </div>
+                                  </div>
+                                    <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                                    Click to view full analysis
                                   </div>
                                 </div>
-                              );
-                            } else if (application.status === 'SHORTLISTED') {
-                              // Show assign button for shortlisted applications
-                              return (
-                                <button
-                                  onClick={() => handleAssignInterview(application.id)}
-                                  className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-xs font-medium text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 transform hover:scale-[1.02] transition-all"
-                                  title="Assign interview"
-                                >
-                                  <CalendarIcon className="h-3 w-3 mr-1" />
-                                  Assign Interview
-                                </button>
-                              );
-                            } else {
-                              // Show status info for non-shortlisted applications
-                              return (
-                                <span className="text-xs text-gray-400 dark:text-gray-500">
-                                  {application.status === 'APPLIED' && 'Application under review'}
-                                  {application.status === 'REVIEWED' && 'Ready for shortlisting'}
-                                  {application.status === 'INTERVIEWING' && 'Interview in progress'}
-                                  {application.status === 'OFFERED' && 'Offer extended'}
-                                  {application.status === 'OFFER_ACCEPTED' && 'Offer accepted'}
-                                  {application.status === 'OFFER_REJECTED' && 'Offer rejected'}
-                                  {application.status === 'REJECTED' && 'Application rejected'}
-                                  {application.status === 'WITHDRAWN' && 'Application withdrawn'}
-                                </span>
-                              );
-                            }
-                          })()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {getStatusBadge(application.status)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          <div className="space-y-1">
-                            {application.resumeUrl && (
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleViewResume(application.resumeUrl!)}
-                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
-                                >
-                                  <PaperClipIcon className="h-4 w-4 mr-1" /> Resume
-                                </button>
-                                <button
-                                  onClick={() => handleDownloadResume(application.resumeUrl!)}
-                                  className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 text-xs transition-colors"
-                                >
-                                  ↓
-                                </button>
                               </div>
-                            )}
-                            
-                            {application.coverLetterUrl && (
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleViewCoverLetter(application.coverLetterUrl!)}
-                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
-                                >
-                                  <PaperClipIcon className="h-4 w-4 mr-1" /> Cover Letter
-                                </button>
-                                <button
-                                  onClick={() => handleDownloadCoverLetter(application.coverLetterUrl!)}
-                                  className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 text-xs transition-colors"
-                                >
-                                  ↓
-                                </button>
-                              </div>
-                            )}
-                            
-                            {application.portfolioUrl && (
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleViewPortfolio(application.portfolioUrl!)}
-                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
-                                >
-                                  <PaperClipIcon className="h-4 w-4 mr-1" /> Portfolio
-                                </button>
-                              </div>
-                            )}
-                            
-                            {!application.resumeUrl && !application.coverLetterUrl && !application.portfolioUrl && (
-                              <span className="text-gray-400 dark:text-gray-500 text-xs">No documents</span>
                             )}
                           </div>
-                        </td>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-2 text-gray-400 dark:text-gray-500">
+                              <ChartBarIcon className="h-4 w-4" />
+                              <span className="text-xs">
+                                {rescoringApplications.has(application.id) ? 'Rescoring...' : 'Processing...'}
+                              </span>
+                            </div>
+                            
+                            {/* Rescore Button for when no analysis exists yet */}
+                            {application.resumeUrl && (
+                              <button
+                                onClick={() => handleRescore(application.id)}
+                                disabled={rescoringApplications.has(application.id)}
+                                  className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                title="Trigger resume analysis"
+                              >
+                                {rescoringApplications.has(application.id) ? (
+                                  <>
+                                    <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Analyzing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChartBarIcon className="h-3 w-3 mr-1" />
+                                    Analyze
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {(() => {
+                          const interview = getInterviewForApplication(application.id);
+                          console.log('Interview check for application', application.id, ':', interview);
+                          if (interview) {
+                            // Show current interview assignment
+                            return (
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2">
+                                    <UserGroupIcon className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    {interview.interviewerName}
+                                  </span>
+                                </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {interview.scheduledAt 
+                                    ? formatDate(interview.scheduledAt)
+                                    : 'Date TBD'
+                                  }
+                                </div>
+                              </div>
+                            );
+                          } else if (application.status === 'SHORTLISTED') {
+                            // Show assign button for shortlisted applications
+                            return (
+                              <button
+                                onClick={() => handleAssignInterview(application.id)}
+                                  className="inline-flex items-center px-3 py-1 border border-transparent rounded-md text-xs font-medium text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 transform hover:scale-[1.02] transition-all"
+                                title="Assign interview"
+                              >
+                                <CalendarIcon className="h-3 w-3 mr-1" />
+                                Assign Interview
+                              </button>
+                            );
+                          } else {
+                            // Show status info for non-shortlisted applications
+                            return (
+                                <span className="text-xs text-gray-400 dark:text-gray-500">
+                                {application.status === 'APPLIED' && 'Application under review'}
+                                {application.status === 'REVIEWED' && 'Ready for shortlisting'}
+                                {application.status === 'INTERVIEWING' && 'Interview in progress'}
+                                {application.status === 'OFFERED' && 'Offer extended'}
+                                  {application.status === 'OFFER_ACCEPTED' && 'Offer accepted'}
+                                  {application.status === 'OFFER_REJECTED' && 'Offer rejected'}
+                                {application.status === 'REJECTED' && 'Application rejected'}
+                                {application.status === 'WITHDRAWN' && 'Application withdrawn'}
+                              </span>
+                            );
+                          }
+                        })()}
+                      </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {getStatusBadge(application.status)}
+                      </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <div className="space-y-1">
+                          {application.resumeUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewResume(application.resumeUrl!)}
+                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Resume
+                              </button>
+                              <button
+                                onClick={() => handleDownloadResume(application.resumeUrl!)}
+                                  className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 text-xs transition-colors"
+                              >
+                                ↓
+                              </button>
+                            </div>
+                          )}
+                          
+                          {application.coverLetterUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewCoverLetter(application.coverLetterUrl!)}
+                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Cover Letter
+                              </button>
+                              <button
+                                onClick={() => handleDownloadCoverLetter(application.coverLetterUrl!)}
+                                  className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 text-xs transition-colors"
+                              >
+                                ↓
+                              </button>
+                            </div>
+                          )}
+                          
+                          {application.portfolioUrl && (
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleViewPortfolio(application.portfolioUrl!)}
+                                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center text-xs transition-colors"
+                              >
+                                <PaperClipIcon className="h-4 w-4 mr-1" /> Portfolio
+                              </button>
+                            </div>
+                          )}
+                          
+                          {!application.resumeUrl && !application.coverLetterUrl && !application.portfolioUrl && (
+                              <span className="text-gray-400 dark:text-gray-500 text-xs">No documents</span>
+                          )}
+                        </div>
+                      </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           <div className="space-y-2">
                             <button
@@ -1341,17 +1361,17 @@ const AdminJobDetailsPage: React.FC = () => {
                             )}
                             {application.status !== 'REJECTED' && application.status !== 'OFFER_ACCEPTED' && (
                               <div className="relative">
-                                <button
-                                  type="button"
+                            <button
+                              type="button"
                                   className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors duration-200"
-                                  onClick={() => {
+                              onClick={() => {
                                     setOpenStatusDropdownId(openStatusDropdownId === application.id ? null : application.id);
-                                  }}
-                                >
+                              }}
+                            >
                                   <ArrowsUpDownIcon className="h-4 w-4 mr-2" />
-                                  Change Status
+                              Change Status
                                   <ChevronDownIcon className={`ml-2 h-4 w-4 transition-transform duration-200 ${openStatusDropdownId === application.id ? 'rotate-180' : ''}`} />
-                                </button>
+                            </button>
                               </div>
                             )}
                           </div>
@@ -1360,25 +1380,25 @@ const AdminJobDetailsPage: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
-              
+                          </div>
+                          
               {/* Pagination Controls */}
                 <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
                   <div className="flex-1 flex justify-between sm:hidden">
-                    <button
+                              <button
                       onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                       disabled={currentPage === 0 || loadingApplications}
                       className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Previous
-                    </button>
-                    <button
+                              </button>
+                              <button
                       onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                       disabled={currentPage >= totalPages - 1 || loadingApplications}
                       className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Next
-                    </button>
+                              </button>
                   </div>
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div className="flex items-center space-x-4">
@@ -1419,7 +1439,7 @@ const AdminJobDetailsPage: React.FC = () => {
                   </div>
                   <div>
                     <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      <button
+                              <button
                         onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                         disabled={currentPage === 0 || loadingApplications}
                         className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1428,7 +1448,7 @@ const AdminJobDetailsPage: React.FC = () => {
                         <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                           <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                      </button>
+                              </button>
                       
                       {/* Page numbers */}
                       {[...Array(Math.min(totalPages, 5))].map((_, index) => {
@@ -1444,7 +1464,7 @@ const AdminJobDetailsPage: React.FC = () => {
                         }
                         
                         return (
-                          <button
+                              <button
                             key={pageNum}
                             onClick={() => setCurrentPage(pageNum)}
                             disabled={loadingApplications}
@@ -1455,11 +1475,11 @@ const AdminJobDetailsPage: React.FC = () => {
                             } disabled:opacity-50 disabled:cursor-not-allowed`}
                           >
                             {pageNum + 1}
-                          </button>
+                              </button>
                         );
                       })}
                       
-                      <button
+                              <button
                         onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                         disabled={currentPage >= totalPages - 1 || loadingApplications}
                         className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1468,36 +1488,36 @@ const AdminJobDetailsPage: React.FC = () => {
                         <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                           <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                         </svg>
-                      </button>
+                              </button>
                     </nav>
-                  </div>
-                </div>
-              </div>
+                            </div>
+                          </div>
             </div>
-          )}
-        </div>
-        
-        {/* Resume Analysis Modal */}
-        {isModalOpen && selectedAnalysis && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+          </div>
+        )}
+      </div>
+      
+      {/* Resume Analysis Modal */}
+      {isModalOpen && selectedAnalysis && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
                 <div className="absolute inset-0 bg-gray-500 dark:bg-gray-900 opacity-75 dark:opacity-85" onClick={closeAnalysisModal}></div>
-              </div>
+            </div>
 
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
               <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg border border-gray-200/50 dark:border-gray-700/50 text-left overflow-hidden shadow-xl dark:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.5),0_10px_10px_-5px_rgba(0,0,0,0.3)] transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
                 <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
+                <div className="sm:flex sm:items-start">
                     <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 sm:mx-0 sm:h-10 sm:w-10">
                       <ChartBarIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-                    </div>
-                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100" id="modal-title">
-                          Resume Analysis Details
-                        </h3>
+                      Resume Analysis Details
+                    </h3>
                         <button
                           onClick={closeAnalysisModal}
                           className="text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 rounded-full p-1 transition-colors"
@@ -1505,198 +1525,198 @@ const AdminJobDetailsPage: React.FC = () => {
                           <XMarkIcon className="h-5 w-5" />
                         </button>
                       </div>
-                      <div className="mt-4">
-                        {/* Score Overview */}
+                    <div className="mt-4">
+                      {/* Score Overview */}
                         <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
                           <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Score Overview</h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.overall_score)}`}>
-                                {selectedAnalysis.resume_score.overall_score.toFixed(1)}%
-                              </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.overall_score)}`}>
+                              {selectedAnalysis.resume_score.overall_score.toFixed(1)}%
+                            </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">Overall Score</div>
+                          </div>
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.job_match_score)}`}>
+                              {selectedAnalysis.resume_score.job_match_score.toFixed(1)}%
                             </div>
-                            <div className="text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.job_match_score)}`}>
-                                {selectedAnalysis.resume_score.job_match_score.toFixed(1)}%
-                              </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">Job Match</div>
+                          </div>
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.experience_score)}`}>
+                              {selectedAnalysis.resume_score.experience_score.toFixed(1)}%
                             </div>
-                            <div className="text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.experience_score)}`}>
-                                {selectedAnalysis.resume_score.experience_score.toFixed(1)}%
-                              </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">Experience</div>
+                          </div>
+                          <div className="text-center">
+                            <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.skills_match_score)}`}>
+                              {selectedAnalysis.resume_score.skills_match_score.toFixed(1)}%
                             </div>
-                            <div className="text-center">
-                              <div className={`text-2xl font-bold ${getScoreColor(selectedAnalysis.resume_score.skills_match_score)}`}>
-                                {selectedAnalysis.resume_score.skills_match_score.toFixed(1)}%
-                              </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">Skills Match</div>
-                            </div>
                           </div>
                         </div>
+                      </div>
 
-                        {/* Detailed Scoring Criteria */}
+                      {/* Detailed Scoring Criteria */}
                         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-6">
                           <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Detailed Scoring Criteria</h4>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
                               <span className="text-sm text-gray-600 dark:text-gray-400">Required Skills Match:</span>
                               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedAnalysis.resume_score.scoring_criteria.required_skills_match.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between">
+                          </div>
+                          <div className="flex justify-between">
                               <span className="text-sm text-gray-600 dark:text-gray-400">Experience Level Match:</span>
                               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedAnalysis.resume_score.scoring_criteria.experience_level_match.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between">
+                          </div>
+                          <div className="flex justify-between">
                               <span className="text-sm text-gray-600 dark:text-gray-400">Industry Relevance:</span>
                               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedAnalysis.resume_score.scoring_criteria.industry_relevance.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between">
+                          </div>
+                          <div className="flex justify-between">
                               <span className="text-sm text-gray-600 dark:text-gray-400">Education Level Match:</span>
                               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedAnalysis.resume_score.scoring_criteria.education_level_match.toFixed(1)}%</span>
-                            </div>
                           </div>
                         </div>
+                      </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Professional Summary */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Professional Summary */}
                           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                             <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Professional Summary</h4>
-                            <div className="space-y-2">
-                              <div>
+                          <div className="space-y-2">
+                            <div>
                                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Experience:</span>
                                 <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{selectedAnalysis.total_experience_years} years</span>
-                              </div>
-                              <div>
+                            </div>
+                            <div>
                                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Companies Worked:</span>
                                 <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{selectedAnalysis.total_companies_worked}</span>
-                              </div>
-                              <div>
+                            </div>
+                            <div>
                                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Company:</span>
                                 <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{selectedAnalysis.current_company || 'Not specified'}</span>
-                              </div>
-                              <div>
+                            </div>
+                            <div>
                                 <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Position:</span>
                                 <span className="ml-2 text-sm text-gray-900 dark:text-gray-100">{selectedAnalysis.current_position || 'Not specified'}</span>
-                              </div>
                             </div>
                           </div>
+                        </div>
 
-                          {/* Skills */}
+                        {/* Skills */}
                           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                             <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Extracted Skills</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedAnalysis.skills_extracted?.map((skill, index) => (
+                          <div className="flex flex-wrap gap-2">
+                            {selectedAnalysis.skills_extracted?.map((skill, index) => (
                                 <span key={index} className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs px-2 py-1 rounded-full">
-                                  {skill}
-                                </span>
+                                {skill}
+                              </span>
                               )) || <span className="text-sm text-gray-500 dark:text-gray-400">No skills extracted</span>}
-                            </div>
                           </div>
                         </div>
+                      </div>
 
-                        {/* Previous Positions */}
-                        {selectedAnalysis.previous_positions && selectedAnalysis.previous_positions.length > 0 && (
+                      {/* Previous Positions */}
+                      {selectedAnalysis.previous_positions && selectedAnalysis.previous_positions.length > 0 && (
                           <div className="mt-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                             <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Work Experience</h4>
-                            <div className="space-y-4">
-                              {selectedAnalysis.previous_positions.map((position, index) => (
+                          <div className="space-y-4">
+                            {selectedAnalysis.previous_positions.map((position, index) => (
                                 <div key={index} className="border-l-4 border-indigo-200 dark:border-indigo-700 pl-4">
-                                  <div className="flex justify-between items-start">
-                                    <div>
+                                <div className="flex justify-between items-start">
+                                  <div>
                                       <h5 className="text-sm font-medium text-gray-900 dark:text-gray-100">{position.position}</h5>
                                       <p className="text-sm text-gray-600 dark:text-gray-400">{position.company}</p>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">{position.start_date} - {position.end_date}</p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">{position.duration_months} months</p>
-                                    </div>
-                                  </div>
-                                  {position.responsibilities && position.responsibilities.length > 0 && (
-                                    <ul className="mt-2 list-disc list-inside text-xs text-gray-600 dark:text-gray-400">
-                                      {position.responsibilities.slice(0, 3).map((resp, respIndex) => (
-                                        <li key={respIndex}>{resp}</li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Education */}
-                        {selectedAnalysis.education && selectedAnalysis.education.length > 0 && (
-                          <div className="mt-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Education</h4>
-                            <div className="space-y-3">
-                              {selectedAnalysis.education.map((edu, index) => (
-                                <div key={index} className="flex justify-between items-center">
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{edu.degree}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">{edu.institution}</p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm text-gray-900 dark:text-gray-100">{edu.graduation_year}</p>
-                                    {edu.grade && <p className="text-xs text-gray-500 dark:text-gray-400">{edu.grade}</p>}
+                                      <p className="text-xs text-gray-500 dark:text-gray-400">{position.start_date} - {position.end_date}</p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400">{position.duration_months} months</p>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
+                                {position.responsibilities && position.responsibilities.length > 0 && (
+                                    <ul className="mt-2 list-disc list-inside text-xs text-gray-600 dark:text-gray-400">
+                                    {position.responsibilities.slice(0, 3).map((resp, respIndex) => (
+                                      <li key={respIndex}>{resp}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {/* Analysis Metadata */}
+                      {/* Education */}
+                      {selectedAnalysis.education && selectedAnalysis.education.length > 0 && (
+                          <div className="mt-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Education</h4>
+                          <div className="space-y-3">
+                            {selectedAnalysis.education.map((edu, index) => (
+                              <div key={index} className="flex justify-between items-center">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{edu.degree}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{edu.institution}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm text-gray-900 dark:text-gray-100">{edu.graduation_year}</p>
+                                    {edu.grade && <p className="text-xs text-gray-500 dark:text-gray-400">{edu.grade}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Analysis Metadata */}
                         <div className="mt-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                           <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-3">Analysis Information</h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
                               <span className="text-gray-600 dark:text-gray-400">Processed:</span>
                               <span className="ml-2 text-gray-900 dark:text-gray-100">{new Date(selectedAnalysis.analysis_metadata.processed_at).toLocaleString()}</span>
-                            </div>
-                            <div>
+                          </div>
+                          <div>
                               <span className="text-gray-600 dark:text-gray-400">AI Model:</span>
                               <span className="ml-2 text-gray-900 dark:text-gray-100">{selectedAnalysis.analysis_metadata.ai_model_used}</span>
-                            </div>
-                            <div>
+                          </div>
+                          <div>
                               <span className="text-gray-600 dark:text-gray-400">Confidence:</span>
                               <span className="ml-2 text-gray-900 dark:text-gray-100">{(selectedAnalysis.analysis_metadata.confidence_score * 100).toFixed(1)}%</span>
-                            </div>
-                            <div>
+                          </div>
+                          <div>
                               <span className="text-gray-600 dark:text-gray-400">Processing Time:</span>
                               <span className="ml-2 text-gray-900 dark:text-gray-100">{selectedAnalysis.analysis_metadata.processing_time_ms}ms</span>
-                            </div>
                           </div>
-                          {selectedAnalysis.analysis_metadata.processingNotes && selectedAnalysis.analysis_metadata.processingNotes.length > 0 && (
-                            <div className="mt-3">
+                        </div>
+                        {selectedAnalysis.analysis_metadata.processingNotes && selectedAnalysis.analysis_metadata.processingNotes.length > 0 && (
+                          <div className="mt-3">
                               <span className="text-sm text-gray-600 dark:text-gray-400">Processing Notes:</span>
                               <ul className="mt-1 list-disc list-inside text-xs text-gray-600 dark:text-gray-400">
-                                {selectedAnalysis.analysis_metadata.processingNotes.map((note, index) => (
-                                  <li key={index}>{note}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
+                              {selectedAnalysis.analysis_metadata.processingNotes.map((note, index) => (
+                                <li key={index}>{note}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200 dark:border-gray-600">
-                  <button
-                    type="button"
+                <button
+                  type="button"
                     className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
-                    onClick={closeAnalysisModal}
-                  >
-                    Close
-                  </button>
-                </div>
+                  onClick={closeAnalysisModal}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Job Offer Email Modal */}
         {selectedApplication && (
@@ -1733,7 +1753,7 @@ const AdminJobDetailsPage: React.FC = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       Application #{openStatusDropdownId} • Current: <span className="font-medium text-indigo-600 dark:text-indigo-400">{applications.find(app => app.id === openStatusDropdownId)?.status}</span>
                     </p>
-                  </div>
+    </div>
                   <button
                     onClick={() => setOpenStatusDropdownId(null)}
                     className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-white hover:bg-opacity-50 dark:hover:bg-gray-700 dark:hover:bg-opacity-50 rounded-lg p-2 transition-all duration-150"

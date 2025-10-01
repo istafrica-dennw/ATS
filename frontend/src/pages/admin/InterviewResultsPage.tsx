@@ -3,6 +3,7 @@ import { interviewAPI, skeletonJobAssociationAPI } from '../../services/api';
 import { jobService } from '../../services/jobService';
 import { Interview, InterviewStatus } from '../../types/interview';
 import { JobDTO } from '../../services/jobService';
+import { getProfilePictureUrl, getUserInitials } from '../../utils/profilePictureUtils';
 import {
   MagnifyingGlassIcon,
   ChevronUpIcon,
@@ -19,6 +20,8 @@ import { Fragment } from 'react';
 interface InterviewResult {
   candidateName: string;
   candidateEmail: string;
+  candidateProfilePictureUrl?: string;
+  candidateLinkedinProfileUrl?: string;
   jobId: number;
   jobTitle: string;
   interviews: {
@@ -574,12 +577,34 @@ const InterviewResultsPage: React.FC = () => {
                 {filteredResults.map((result) => (
                   <tr key={`${result.candidateEmail}-${result.jobId}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {result.candidateName}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {result.candidateEmail}
+                      <div className="flex items-center">
+                        {(() => {
+                          const profilePictureUrl = getProfilePictureUrl({
+                            profilePictureUrl: result.candidateProfilePictureUrl,
+                            linkedinProfileUrl: result.candidateLinkedinProfileUrl,
+                            name: result.candidateName
+                          });
+                          const initials = getUserInitials({ name: result.candidateName });
+                          
+                          return profilePictureUrl ? (
+                            <img
+                              src={profilePictureUrl}
+                              alt={result.candidateName}
+                              className="h-10 w-10 rounded-full object-cover ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-800 dark:text-indigo-300 text-sm font-medium ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400">
+                              {initials}
+                            </div>
+                          );
+                        })()}
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {result.candidateName}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {result.candidateEmail}
+                          </div>
                         </div>
                       </div>
                     </td>

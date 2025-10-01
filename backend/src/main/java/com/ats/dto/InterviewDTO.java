@@ -60,6 +60,8 @@ public class InterviewDTO {
         private Long id;
         private String candidateName;
         private String candidateEmail;
+        private String candidateProfilePictureUrl;
+        private String candidateLinkedinProfileUrl;
         private Long jobId;
         private String jobTitle;
         private String resumeUrl;

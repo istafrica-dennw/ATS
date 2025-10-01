@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { interviewAPI, interviewSkeletonAPI, skeletonJobAssociationAPI } from '../../services/api';
 import { jobService, JobDTO } from '../../services/jobService';
 import { InterviewSkeleton, AssignInterviewRequest, Interview, InterviewStatus } from '../../types/interview';
+import { getProfilePictureUrl, getUserInitials } from '../../utils/profilePictureUtils';
 import { 
   UserIcon,
   BriefcaseIcon,
@@ -28,6 +29,8 @@ interface Application {
   jobId: number;
   status: string;
   appliedAt: string;
+  candidateProfilePictureUrl?: string;
+  candidateLinkedinProfileUrl?: string;
 }
 
 interface Interviewer {
@@ -127,7 +130,9 @@ const InterviewAssignmentPage: React.FC = () => {
         jobTitle: app.jobTitle,
         jobId: app.jobId,
         status: 'SHORTLISTED',
-        appliedAt: app.appliedAt
+        appliedAt: app.appliedAt,
+        candidateProfilePictureUrl: app.candidateProfilePictureUrl,
+        candidateLinkedinProfileUrl: app.candidateLinkedinProfileUrl
       }));
 
       // Map the interviewer response to our local interface
@@ -452,7 +457,26 @@ const InterviewAssignmentPage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
                         <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3">
-                                <UserIcon className="h-6 w-6 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                        {(() => {
+                          const profilePictureUrl = getProfilePictureUrl({
+                            profilePictureUrl: application.candidateProfilePictureUrl,
+                            linkedinProfileUrl: application.candidateLinkedinProfileUrl,
+                            name: application.candidateName
+                          });
+                          const initials = getUserInitials({ name: application.candidateName });
+                          
+                          return profilePictureUrl ? (
+                            <img
+                              src={profilePictureUrl}
+                              alt={application.candidateName}
+                              className="h-10 w-10 rounded-full object-cover ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-800 dark:text-indigo-300 text-sm font-medium ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400 flex-shrink-0">
+                              {initials}
+                            </div>
+                          );
+                        })()}
                         <div>
                           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {application.candidateName}

@@ -55,6 +55,8 @@ export interface ApplicationSummary {
   id: number;
   candidateName: string;
   candidateEmail: string;
+  candidateProfilePictureUrl?: string;
+  candidateLinkedinProfileUrl?: string;
   jobId: number;
   jobTitle: string;
   resumeUrl?: string;

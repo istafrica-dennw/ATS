@@ -2,6 +2,7 @@ import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { interviewAPI } from '../../services/api';
 import { Interview, InterviewStatus } from '../../types/interview';
+import { getProfilePictureUrl, getUserInitials } from '../../utils/profilePictureUtils';
 import { 
   FunnelIcon,
   EyeIcon,
@@ -357,14 +358,38 @@ const InterviewListPage: React.FC = () => {
                 <div key={interview.id} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate">
-                          {interview.application.candidateName}
-                        </h3>
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(interview.status)} self-start sm:self-auto`}>
-                          <span className="mr-1.5">{getStatusIcon(interview.status)}</span>
-                          {interview.status.replace('_', ' ')}
-                        </span>
+                      <div className="flex items-center space-x-3">
+                        {(() => {
+                          const profilePictureUrl = getProfilePictureUrl({
+                            profilePictureUrl: interview.application.candidateProfilePictureUrl,
+                            linkedinProfileUrl: interview.application.candidateLinkedinProfileUrl,
+                            name: interview.application.candidateName
+                          });
+                          const initials = getUserInitials({ name: interview.application.candidateName });
+                          
+                          return profilePictureUrl ? (
+                            <img
+                              src={profilePictureUrl}
+                              alt={interview.application.candidateName}
+                              className="h-10 w-10 rounded-full object-cover ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-800 dark:text-indigo-300 text-sm font-medium ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400 flex-shrink-0">
+                              {initials}
+                            </div>
+                          );
+                        })()}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                            <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100 truncate">
+                              {interview.application.candidateName}
+                            </h3>
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(interview.status)} self-start sm:self-auto`}>
+                              <span className="mr-1.5">{getStatusIcon(interview.status)}</span>
+                              {interview.status.replace('_', ' ')}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       
                       <div className="mt-2 space-y-1 sm:space-y-0">

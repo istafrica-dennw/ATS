@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { interviewAPI } from '../../services/api';
 import { Interview, InterviewStatus, SubmitInterviewRequest } from '../../types/interview';
+import { getProfilePictureUrl, getUserInitials } from '../../utils/profilePictureUtils';
 import { 
   ArrowLeftIcon, 
   PlayIcon, 
@@ -255,15 +256,39 @@ const InterviewDetailPage: React.FC = () => {
             </div>
 
             <div className="text-center mb-8 sm:mb-10">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                Interview with {interview.application.candidateName}
-              </h1>
-              <p className="mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">
-                {interview.application.jobTitle}
-              </p>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-500">
-                {interview.skeletonName}
-              </p>
+              <div className="flex flex-col items-center space-y-4">
+                {(() => {
+                  const profilePictureUrl = getProfilePictureUrl({
+                    profilePictureUrl: interview.application.candidateProfilePictureUrl,
+                    linkedinProfileUrl: interview.application.candidateLinkedinProfileUrl,
+                    name: interview.application.candidateName
+                  });
+                  const initials = getUserInitials({ name: interview.application.candidateName });
+                  
+                  return profilePictureUrl ? (
+                    <img
+                      src={profilePictureUrl}
+                      alt={interview.application.candidateName}
+                      className="h-16 w-16 sm:h-20 sm:w-20 rounded-full object-cover ring-4 ring-offset-4 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-800 dark:text-indigo-300 text-lg sm:text-xl font-semibold ring-4 ring-offset-4 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400">
+                      {initials}
+                    </div>
+                  );
+                })()}
+                <div>
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                    Interview with {interview.application.candidateName}
+                  </h1>
+                  <p className="mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400">
+                    {interview.application.jobTitle}
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-500">
+                    {interview.skeletonName}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {error && (
@@ -300,9 +325,28 @@ const InterviewDetailPage: React.FC = () => {
               <div className="px-4 sm:px-6 py-4 sm:py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   <div className="flex items-start space-x-3 p-3 sm:p-4 rounded-lg bg-gray-50/50 dark:bg-gray-700/30 border border-gray-200/50 dark:border-gray-600/50">
-                    <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                      <UserIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
+                    {(() => {
+                      const profilePictureUrl = getProfilePictureUrl({
+                        profilePictureUrl: interview.application.candidateProfilePictureUrl,
+                        linkedinProfileUrl: interview.application.candidateLinkedinProfileUrl,
+                        name: interview.application.candidateName
+                      });
+                      const initials = getUserInitials({ name: interview.application.candidateName });
+                      
+                      return profilePictureUrl ? (
+                        <img
+                          src={profilePictureUrl}
+                          alt={interview.application.candidateName}
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 ring-2 ring-offset-2 dark:ring-offset-gray-800 ring-indigo-500 dark:ring-indigo-400">
+                          <span className="text-xs sm:text-sm font-medium text-indigo-800 dark:text-indigo-300">
+                            {initials}
+                          </span>
+                        </div>
+                      );
+                    })()}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Candidate</h3>
                       <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium truncate">{interview.application.candidateName}</p>

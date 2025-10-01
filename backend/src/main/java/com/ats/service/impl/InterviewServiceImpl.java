@@ -454,6 +454,8 @@ public class InterviewServiceImpl implements InterviewService {
         dto.setId(application.getId());
         dto.setCandidateName(application.getCandidate().getFirstName() + " " + application.getCandidate().getLastName());
         dto.setCandidateEmail(application.getCandidate().getEmail());
+        dto.setCandidateProfilePictureUrl(application.getCandidate().getProfilePictureUrl());
+        dto.setCandidateLinkedinProfileUrl(application.getCandidate().getLinkedinProfileUrl());
         dto.setJobId(application.getJob().getId());
         dto.setJobTitle(application.getJob().getTitle());
         dto.setResumeUrl(application.getResumeUrl());

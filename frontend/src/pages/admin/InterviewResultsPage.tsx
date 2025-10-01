@@ -133,6 +133,8 @@ const InterviewResultsPage: React.FC = () => {
           candidateGroups.set(key, {
             candidateName: interview.application.candidateName,
             candidateEmail: interview.application.candidateEmail,
+            candidateProfilePictureUrl: interview.application.candidateProfilePictureUrl,
+            candidateLinkedinProfileUrl: interview.application.candidateLinkedinProfileUrl,
             jobId: interview.application.jobId,
             jobTitle: interview.application.jobTitle,
             interviews: [],

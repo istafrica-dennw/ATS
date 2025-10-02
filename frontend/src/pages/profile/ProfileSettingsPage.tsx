@@ -564,13 +564,19 @@ const ProfileSettingsPage: React.FC = () => {
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
             
-            <button
-              type="button"
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all"
-              onClick={() => setShowDeactivateModal(true)}
-            >
-              Deactivate Account
-            </button>
+            {user?.role !== 'ADMIN' ? (
+              <button
+                type="button"
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all"
+                onClick={() => setShowDeactivateModal(true)}
+              >
+                Deactivate Account
+              </button>
+            ) : (
+              <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                Admin accounts cannot be self-deactivated. Please ask another admin to deactivate your account if needed.
+              </div>
+            )}
           </div>
         </form>
       </div>

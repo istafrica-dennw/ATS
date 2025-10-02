@@ -45,7 +45,7 @@ interface UserProfileData extends User {
 
 const AdminUserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { token } = useAuth();
+  const { token, user: currentUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
@@ -241,6 +241,12 @@ const AdminUserProfilePage: React.FC = () => {
 
   const toggleUserStatus = async () => {
     if (!editingUser || !userId) return;
+    
+    // Check if current user is trying to deactivate themselves
+    if (currentUser && userId && currentUser.id === parseInt(userId) && currentUser.role === 'ADMIN' && editingUser.isActive) {
+      toast.error('Cannot deactivate your own admin account. Please ask another admin to do this.');
+      return;
+    }
     
     setSaving(true);
     try {
@@ -795,18 +801,26 @@ const AdminUserProfilePage: React.FC = () => {
                   {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <div>
-                      <button
-                        type="button"
-                        onClick={toggleUserStatus}
-                        disabled={saving}
-                        className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
-                          editingUser.isActive 
-                            ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:ring-red-500 dark:focus:ring-red-400' 
-                            : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:ring-green-500 dark:focus:ring-green-400'
-                        }`}
-                      >
-                        {editingUser.isActive ? 'Deactivate User' : 'Activate User'}
-                      </button>
+                      {(() => {
+                        const isCurrentUserAdmin = currentUser && userId && currentUser.id === parseInt(userId) && currentUser.role === 'ADMIN';
+                        const isDeactivatingSelf = Boolean(isCurrentUserAdmin && editingUser.isActive);
+                        
+                        return (
+                          <button
+                            type="button"
+                            onClick={toggleUserStatus}
+                            disabled={saving || isDeactivatingSelf}
+                            className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+                              editingUser.isActive 
+                                ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:ring-red-500 dark:focus:ring-red-400' 
+                                : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:ring-green-500 dark:focus:ring-green-400'
+                            }`}
+                            title={isDeactivatingSelf ? 'Cannot deactivate your own admin account' : ''}
+                          >
+                            {editingUser.isActive ? 'Deactivate User' : 'Activate User'}
+                          </button>
+                        );
+                      })()}
                     </div>
                     <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                       <button

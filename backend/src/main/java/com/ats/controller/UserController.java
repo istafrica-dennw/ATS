@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -179,40 +180,44 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     @Operation(
         summary = "Deactivate user account",
-        description = "Deactivates a user account with reason. Users can deactivate their own account or admins can deactivate any account."
+        description = "Deactivates a user account with reason. Users can deactivate their own account or admins can deactivate any account. Admins cannot deactivate their own account."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Account deactivated successfully"),
+        @ApiResponse(responseCode = "400", description = "Cannot deactivate your own admin account"),
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<UserDTO> deactivateAccount(
             @Parameter(description = "User ID", example = "1")
             @PathVariable Long id,
             @Parameter(description = "Deactivation reason", required = true)
-            @RequestBody Map<String, String> requestBody) {
+            @RequestBody Map<String, String> requestBody,
+            Authentication authentication) {
         String reason = requestBody.get("reason");
         if (reason == null || reason.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(userService.deactivateAccount(id, reason));
+        return ResponseEntity.ok(userService.deactivateAccount(id, reason, authentication));
     }
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Update user status",
-        description = "Updates a user's active status. Admin only."
+        description = "Updates a user's active status. Admin only. Admins cannot deactivate their own account."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "User status updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Cannot deactivate your own admin account"),
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<UserDTO> updateUserStatus(
             @Parameter(description = "User ID", example = "1")
             @PathVariable Long id,
             @Parameter(description = "Active status", example = "true")
-            @RequestParam Boolean isActive) {
-        return ResponseEntity.ok(userService.updateUserStatus(id, isActive));
+            @RequestParam Boolean isActive,
+            Authentication authentication) {
+        return ResponseEntity.ok(userService.updateUserStatus(id, isActive, authentication));
     }
 
     @PatchMapping("/{id}/role")

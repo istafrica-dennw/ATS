@@ -485,6 +485,11 @@ public class AuthController {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
+        // Prevent admin from deactivating their own account
+        if (user.getRole() == Role.ADMIN) {
+            throw new IllegalArgumentException("Cannot deactivate your own admin account. Please ask another admin to do this.");
+        }
+        
         String reason = request.get("reason");
         if (reason == null || reason.trim().isEmpty()) {
             throw new IllegalArgumentException("Deactivation reason is required");

@@ -191,6 +191,27 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public UserDTO updateUserStatus(Long id, boolean isActive, Authentication authentication) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // Get current user from authentication
+        String currentUserEmail = authentication.getName();
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+        
+        // Prevent admin from deactivating their own account
+        if (currentUser.getId().equals(id) && currentUser.getRole() == Role.ADMIN && !isActive) {
+            throw new IllegalArgumentException("Cannot deactivate your own admin account. Please ask another admin to do this.");
+        }
+        
+        user.setIsActive(isActive);
+        User updatedUser = userRepository.save(user);
+        return convertToDTO(updatedUser);
+    }
+
+    @Override
+    @Transactional
     public UserDTO updateUserRole(Long id, Role role) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -204,6 +225,29 @@ public class UserServiceImpl implements UserService {
     public UserDTO deactivateAccount(Long id, String reason) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setIsActive(false);
+        user.setDeactivationReason(reason);
+        user.setDeactivationDate(LocalDateTime.now());
+        User updatedUser = userRepository.save(user);
+        return convertToDTO(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserDTO deactivateAccount(Long id, String reason, Authentication authentication) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // Get current user from authentication
+        String currentUserEmail = authentication.getName();
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+            .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+        
+        // Prevent admin from deactivating their own account
+        if (currentUser.getId().equals(id) && currentUser.getRole() == Role.ADMIN) {
+            throw new IllegalArgumentException("Cannot deactivate your own admin account. Please ask another admin to do this.");
+        }
+        
         user.setIsActive(false);
         user.setDeactivationReason(reason);
         user.setDeactivationDate(LocalDateTime.now());

@@ -212,8 +212,19 @@ const JobDetailsPage: React.FC = () => {
                   <button 
                     onClick={() => {
                       const url = window.location.href;
-                      // Note: LinkedIn does not support a custom 'text' parameter in its share URL.
-                      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
+                      const text = `We're hiring for a ${job.title}! Check out the details and apply here: ${url}`;
+                      
+                      // Differentiate between mobile and desktop to use the best sharing method
+                      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+                      if (isMobile) {
+                        // On mobile, use the official share-offsite link which is more reliable with native apps,
+                        // even though it doesn't support pre-filled text. It generates a clean preview card.
+                        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'noopener,noreferrer');
+                      } else {
+                        const linkedInUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`;
+                        window.open(linkedInUrl, '_blank', 'noopener,noreferrer');
+                      }
                     }}
                     className="flex-1 flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#0077B5] hover:bg-[#005E8E] transition-colors duration-200 transform hover:scale-[1.02]"
                   >

@@ -117,6 +117,12 @@ const AdminUserProfilePage: React.FC = () => {
   }, [fetchUserProfile]);
 
   useEffect(() => {
+    if (userId && token) {
+      fetchUserApplications();
+    }
+  }, [userId, token, fetchUserApplications]);
+
+  useEffect(() => {
     if (activeTab === 'applications' && applications.length === 0) {
       fetchUserApplications();
     }

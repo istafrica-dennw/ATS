@@ -203,12 +203,17 @@ public class ApplicationController {
 	@GetMapping("/job/{jobId}")
 	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<?> getApplicationsByJobId(@PathVariable Long jobId,
-			@RequestParam(required = false) ApplicationStatus status, @PageableDefault(size = 10) Pageable pageable) {
+			@RequestParam(required = false) ApplicationStatus status,
+			@RequestParam(required = false) String search,
+			@PageableDefault(size = 10) Pageable pageable) {
 
 		try {
 			Page<ApplicationDTO> applications;
 
-			if (status != null) {
+			if (search != null && !search.trim().isEmpty()) {
+				// Use search functionality
+				applications = applicationService.getApplicationsByJobIdWithSearch(jobId, search, pageable);
+			} else if (status != null) {
 				applications = applicationService.getApplicationsByJobIdAndStatus(jobId, status, pageable);
 			} else {
 				applications = applicationService.getApplicationsByJobId(jobId, pageable);

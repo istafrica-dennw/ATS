@@ -148,4 +148,24 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * @return list of shortlisted applications
      */
     List<Application> findByIsShortlisted(Boolean isShortlisted);
+    
+    /**
+     * Find applications by job ID with search functionality
+     * Searches across candidate name, email, current position, and current company
+     * 
+     * @param jobId the job ID
+     * @param searchTerm the search term (case-insensitive)
+     * @param pageable pagination information
+     * @return a page of applications matching the search criteria
+     */
+    @Query("SELECT a FROM Application a " +
+           "JOIN FETCH a.candidate c " +
+           "WHERE a.job.id = :jobId " +
+           "AND (LOWER(c.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(CONCAT(c.firstName, ' ', c.lastName)) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(c.email) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(a.currentPosition) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(a.currentCompany) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    Page<Application> findByJobIdWithSearch(@Param("jobId") Long jobId, @Param("searchTerm") String searchTerm, Pageable pageable);
 }

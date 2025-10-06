@@ -163,11 +163,14 @@ const AdminJobDetailsPage: React.FC = () => {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [openStatusDropdownId, setOpenStatusDropdownId] = useState<number | null>(null);
   
+  // Search state
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  
   // Application Details Modal state
   const [isApplicationDetailsModalOpen, setIsApplicationDetailsModalOpen] = useState(false);
   const [selectedApplicationForDetails, setSelectedApplicationForDetails] = useState<Application | null>(null);
 
-  // Sorting function
+  // Sorting function (client-side sorting for current page only)
   const sortApplications = (apps: Application[], criteria: 'date' | 'score', order: 'asc' | 'desc') => {
     return [...apps].sort((a, b) => {
       let compareValue = 0;
@@ -184,7 +187,7 @@ const AdminJobDetailsPage: React.FC = () => {
     });
   };
 
-  // Get sorted applications
+  // Get sorted applications (server-side search is handled in fetchApplications)
   const sortedApplications = sortApplications(applications, sortBy, sortOrder);
 
   // Handle sort change
@@ -348,12 +351,19 @@ const AdminJobDetailsPage: React.FC = () => {
     try {
       setLoadingApplications(true);
       
+      const params: any = {
+        page: currentPage,
+        size: pageSize,
+        sort: 'createdAt,desc' // Sort by creation date descending
+      };
+      
+      // Add search parameter if search query exists
+      if (searchQuery && searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+      
       const applicationsResponse = await axiosInstance.get(`/applications/job/${jobId}`, {
-        params: {
-          page: currentPage,
-          size: pageSize,
-          sort: 'createdAt,desc' // Sort by creation date descending
-        }
+        params
       });
       
       const pageData = applicationsResponse.data;
@@ -441,7 +451,14 @@ const AdminJobDetailsPage: React.FC = () => {
     if (jobId) {
       fetchApplications();
     }
-  }, [jobId, currentPage, pageSize]);
+  }, [jobId, currentPage, pageSize, searchQuery]);
+  
+  // Reset to first page when search query changes
+  useEffect(() => {
+    if (searchQuery !== '') {
+      setCurrentPage(0);
+    }
+  }, [searchQuery]);
   
   const handleStatusChange = async (applicationId: number, newStatus: string) => {
     try {
@@ -930,6 +947,39 @@ const AdminJobDetailsPage: React.FC = () => {
       <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Applications</h2>
         
+        {/* Search Input */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search by name, email, position, or company..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <svg className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Showing {sortedApplications.length} of {applications.length} applications
+            </p>
+          )}
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-4">
             <div className="flex items-center justify-between">
@@ -982,7 +1032,9 @@ const AdminJobDetailsPage: React.FC = () => {
             {/* Sorting Controls */}
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
               <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Applications ({applications.length})</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    Applications ({searchQuery ? `${sortedApplications.length} of ${applications.length}` : applications.length})
+                  </h3>
                 <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-500 dark:text-gray-400">Sort by:</span>
                   <button

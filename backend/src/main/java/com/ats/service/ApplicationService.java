@@ -53,6 +53,16 @@ public interface ApplicationService {
 	Page<ApplicationDTO> getApplicationsByJobIdAndStatus(Long jobId, ApplicationStatus status, Pageable pageable);
 
 	/**
+	 * Get applications for a job with search functionality
+	 *
+	 * @param jobId      the job ID
+	 * @param searchTerm the search term to filter by
+	 * @param pageable   pagination information
+	 * @return a page of applications matching the search criteria
+	 */
+	Page<ApplicationDTO> getApplicationsByJobIdWithSearch(Long jobId, String searchTerm, Pageable pageable);
+
+	/**
 	 * Get all applications for a candidate with pagination
 	 *
 	 * @param candidateId the candidate ID

@@ -250,6 +250,25 @@ public class ApplicationServiceImpl implements ApplicationService {
 	}
 
 	@Override
+	public Page<ApplicationDTO> getApplicationsByJobIdWithSearch(Long jobId, String searchTerm, Pageable pageable) {
+		log.info("Getting applications for job ID: {} with search term: {}", jobId, searchTerm);
+
+		// Validate job exists
+		if (!jobRepository.existsById(jobId)) {
+			throw new NotFoundException("Job not found with ID: " + jobId);
+		}
+
+		Page<Application> applications;
+		if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+			applications = applicationRepository.findByJobIdWithSearch(jobId, searchTerm.trim(), pageable);
+		} else {
+			applications = applicationRepository.findByJobId(jobId, pageable);
+		}
+		
+		return applications.map(this::mapToDTO);
+	}
+
+	@Override
 	@Transactional
 	public ApplicationDTO updateApplicationStatus(Long applicationId, ApplicationStatus newStatus) {
 		log.info("Updating application status to {} for application ID: {}", newStatus, applicationId);

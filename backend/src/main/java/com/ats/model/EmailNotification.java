@@ -47,6 +47,9 @@ public class EmailNotification extends BaseEntity {
     @JoinColumn(name = "related_user_id")
     private User relatedUser;
     
+    @Column(name = "bulk_email_campaign_id")
+    private String bulkEmailCampaignId;
+    
     public enum EmailStatus {
         PENDING,
         SENT,

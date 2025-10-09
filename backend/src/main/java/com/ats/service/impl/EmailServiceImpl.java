@@ -381,11 +381,34 @@ public class EmailServiceImpl implements EmailService {
         
         return templateVars;
     }
+    
+    /**
+     * Generate a unique campaign ID for bulk email tracking
+     */
+    private String generateBulkEmailCampaignId(BulkEmailRequestDTO request, User senderUser, ZonedDateTime startTime) {
+        StringBuilder campaignId = new StringBuilder();
+        campaignId.append("bulk-").append(startTime.toEpochSecond());
+        
+        if (request.getJobId() != null) {
+            campaignId.append("-job").append(request.getJobId());
+        }
+        
+        if (request.getStatus() != null) {
+            campaignId.append("-").append(request.getStatus().toString().toLowerCase());
+        }
+        
+        campaignId.append("-").append(senderUser.getId());
+        
+        return campaignId.toString();
+    }
 
     @Override
     @Transactional
     public BulkEmailResponseDTO sendBulkEmailToApplicants(BulkEmailRequestDTO request, User senderUser) {
         ZonedDateTime startTime = ZonedDateTime.now();
+        
+        // Generate a unique campaign ID for this bulk email
+        String campaignId = generateBulkEmailCampaignId(request, senderUser, startTime);
         
         // Get the list of applications to send emails to
         List<Application> applications = getApplicationsForBulkEmail(request);
@@ -397,12 +420,14 @@ public class EmailServiceImpl implements EmailService {
         // Send test email first if requested
         if (request.getSendTest() && request.getTestEmailRecipient() != null) {
             try {
-                EmailNotification testEmail = sendCustomEmail(
+                EmailNotification testEmail = sendEmailWithNotification(
                     request.getTestEmailRecipient(),
                     "[TEST] " + request.getSubject(),
                     request.getContent(),
                     request.getIsHtml(),
-                    senderUser
+                    senderUser,
+                    "bulk-email-test",
+                    campaignId
                 );
                 emailNotificationIds.add(testEmail.getId());
                 successCount++;
@@ -461,12 +486,14 @@ public class EmailServiceImpl implements EmailService {
                     candidateName
                 );
                 
-                EmailNotification notification = sendCustomEmail(
+                EmailNotification notification = sendEmailWithNotification(
                     candidateEmail,
                     request.getSubject(),
                     personalizedContent,
                     request.getIsHtml(),
-                    senderUser
+                    senderUser,
+                    "bulk-email",
+                    campaignId
                 );
                 
                 emailNotificationIds.add(notification.getId());
@@ -537,14 +564,25 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Transactional
     public EmailNotification sendCustomEmail(String to, String subject, String content, Boolean isHtml, User senderUser) throws MessagingException {
+        return sendEmailWithNotification(to, subject, content, isHtml, senderUser, "custom-email", null);
+    }
+    
+    /**
+     * Reusable utility method to send email and record notification with status tracking
+     * This method handles the common pattern of creating notification, sending email, and updating status
+     * Can be used for both individual emails and bulk emails with campaign tracking
+     */
+    private EmailNotification sendEmailWithNotification(String to, String subject, String content, Boolean isHtml, 
+                                                       User senderUser, String templateName, String campaignId) throws MessagingException {
         // Create email notification record
         EmailNotification notification = EmailNotification.builder()
             .recipientEmail(to)
             .subject(subject)
             .body(content)
             .status(EmailNotification.EmailStatus.PENDING)
-            .templateName("custom-email")
+            .templateName(templateName)
             .relatedUser(senderUser)
+            .bulkEmailCampaignId(campaignId)
             .build();
         
         notification = emailNotificationRepository.save(notification);

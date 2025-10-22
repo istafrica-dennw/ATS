@@ -120,7 +120,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**", "/error",
                     "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**",
-                    "/api/test/**", "/api/files/**").permitAll()
+                    "/api/test/**", "/api/files/**", "/api/geolocation/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs", "/api/jobs/*", "/api/jobs/*/custom-questions").permitAll()
                 .requestMatchers("/api/jobs/**").authenticated()
                 .anyRequest().authenticated()

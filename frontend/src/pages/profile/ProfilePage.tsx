@@ -17,6 +17,10 @@ import { format } from 'date-fns';
 import { getFullProfilePictureUrl } from '../../utils/imageUtils';
 import ChangePasswordModal from '../../components/profile/ChangePasswordModal';
 import RoleSwitcher from '../../components/RoleSwitcher';
+import RegionalAccessIndicator from '../../components/common/RegionalAccessIndicator';
+import RegionBadge from '../../components/common/RegionBadge';
+import { useEUAdminSetup } from '../../hooks/useEUAdminSetup';
+import { useGeolocation } from '../../hooks/useGeolocation';
 
 const ProfilePage: React.FC = () => {
   const { user, token } = useAuth();
@@ -24,6 +28,15 @@ const ProfilePage: React.FC = () => {
   const [userData, setUserData] = useState(user);
   const location = useLocation();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  
+  // EU Admin Setup hooks
+  const { 
+    status: euAdminStatus,
+    loading: setupLoading, 
+    becomeFirstEUAdmin 
+  } = useEUAdminSetup();
+  
+  const { region: detectedRegion, isEU: accessingFromEU, loading: geoLoading } = useGeolocation();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -59,6 +72,24 @@ const ProfilePage: React.FC = () => {
 
   const handleChangePasswordClick = () => {
     setShowPasswordModal(true);
+  };
+
+  const handleBecomeEUAdmin = async () => {
+    try {
+      await becomeFirstEUAdmin();
+      // Refresh user data after becoming EU admin
+      const response = await fetch(`/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data);
+      }
+    } catch (error) {
+      console.error('Failed to become EU admin:', error);
+    }
   };
 
   if (loading) {
@@ -193,6 +224,15 @@ const ProfilePage: React.FC = () => {
               <div className="px-4 py-4 sm:px-6 grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                   <MapPinIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" />
+                  Region
+                </dt>
+                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
+                  <RegionBadge region={userData.region || null} size="sm" />
+                </dd>
+              </div>
+              <div className="px-4 py-4 sm:px-6 grid grid-cols-1 sm:grid-cols-3 gap-1 sm:gap-4">
+                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
+                  <MapPinIcon className="h-5 w-5 mr-2 text-gray-400 dark:text-gray-500" />
                   Address
                 </dt>
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
@@ -250,6 +290,163 @@ const ProfilePage: React.FC = () => {
             </dl>
           </div>
         </div>
+
+        {/* Regional Access Information - Only for Admins */}
+        {userData.role === 'ADMIN' && (
+          <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
+                <ShieldCheckIcon className="h-5 w-5 mr-2 text-indigo-600 dark:text-indigo-400" />
+                Regional Access Information
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Your regional data access permissions and GDPR compliance status.
+              </p>
+            </div>
+            <div className="p-6">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Current Access Level:
+                  </span>
+                  <RegionalAccessIndicator />
+                </div>
+                
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+                    Regional Data Access
+                  </h4>
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                    <p>
+                      <strong>Your Region:</strong> {userData.region ? (
+                        <RegionBadge region={userData.region} size="sm" />
+                      ) : (
+                        <span className="text-gray-500 dark:text-gray-400">Not assigned</span>
+                      )}
+                    </p>
+                    <p>
+                      <strong>Access Scope:</strong> Your regional assignment determines which user data you can view and manage.
+                    </p>
+                    <p>
+                      <strong>GDPR Compliance:</strong> Regional data isolation ensures compliance with data protection regulations.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <p>
+                    This shows what regional data you can access and manage as an administrator.
+                    Your access level is determined by your assigned region and admin role.
+                  </p>
+                </div>
+
+                {/* EU Admin Self-Assignment Section */}
+                {!euAdminStatus?.hasEUAdmin && userData.role === 'ADMIN' && !userData.region && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <ShieldCheckIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="ml-3 flex-1">
+                        <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          Become First EU Administrator
+                        </h4>
+                        <div className="mt-2 text-sm text-blue-800 dark:text-blue-200">
+                          <p className="mb-3">
+                            You can become the first EU administrator if you're accessing from an EU country.
+                            This is a one-time setup for GDPR compliance.
+                          </p>
+                          
+                          <div className="space-y-2 text-xs">
+                            <div className="flex items-center">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                accessingFromEU 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                              }`}>
+                                {accessingFromEU ? '✓' : '✗'} EU Access Detected
+                              </span>
+                              <span className="ml-2 text-blue-700 dark:text-blue-300">
+                                {detectedRegion ? `Detected region: ${detectedRegion}` : 'Detecting...'}
+                              </span>
+                            </div>
+                            
+                            {/* Debug Information - IP and Region Details */}
+                            {/* <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-600 rounded text-xs">
+                              <div className="font-mono text-gray-600 dark:text-gray-300">
+                                <div><strong>Debug Info (Temporary):</strong></div>
+                                <div>IP: {euAdminStatus?.clientIP || 'Loading...'}</div>
+                                <div>Region: {detectedRegion || 'Detecting...'}</div>
+                                <div>EU Access: {accessingFromEU ? 'Yes' : 'No'}</div>
+                                <div>API EU Check: {euAdminStatus?.isEUAccess ? 'Yes' : 'No'}</div>
+                              </div>
+                            </div> */}
+                            
+                            <div className="flex items-center">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                !euAdminStatus?.hasEUAdmin 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                              }`}>
+                                {!euAdminStatus?.hasEUAdmin ? '✓' : '✗'} No EU Admin Exists
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                !userData.region 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                              }`}>
+                                {!userData.region ? '✓' : '✗'} No Region Assigned
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {euAdminStatus?.canBecomeFirstEUAdmin && accessingFromEU && (
+                            <div className="mt-4">
+                              <button
+                                onClick={handleBecomeEUAdmin}
+                                disabled={setupLoading || geoLoading}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {setupLoading || geoLoading ? (
+                                  <>
+                                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Processing...
+                                  </>
+                                ) : (
+                                  'Become First EU Admin'
+                                )}
+                              </button>
+                            </div>
+                          )}
+                          
+                          {!euAdminStatus?.canBecomeFirstEUAdmin && (
+                            <div className="mt-3 text-xs text-blue-700 dark:text-blue-300">
+                              {!accessingFromEU && (
+                                <p>❌ You must be accessing from an EU country to become the first EU admin.</p>
+                              )}
+                              {userData.region && (
+                                <p>❌ You already have a region assigned ({userData.region}).</p>
+                              )}
+                              {euAdminStatus?.hasEUAdmin && (
+                                <p>❌ An EU administrator already exists.</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <ChangePasswordModal

@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
+import com.ats.validation.ValidRegion;
 
 @Entity
 @Table(name = "users")
@@ -36,6 +37,10 @@ public class User extends BaseEntity {
     private Role role;
 
     private String department;
+
+    @Column(name = "region", length = 10)
+    @ValidRegion
+    private String region;
 
     @Column(name = "linkedin_id", unique = true)
     private String linkedinId;

@@ -67,6 +67,13 @@ public class UserDTO {
     private String department;
 
     @Schema(
+        description = "User's region for GDPR compliance - EU = Europe, RW = Rwanda, OTHER = other regions, NULL = default", 
+        example = "EU",
+        allowableValues = {"EU", "RW", "OTHER"}
+    )
+    private String region;
+
+    @Schema(
         description = "User's LinkedIn ID (for OAuth users) - Read-only, system-generated for OAuth logins", 
         example = "linkedin123",
         accessMode = Schema.AccessMode.READ_ONLY

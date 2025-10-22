@@ -5,9 +5,11 @@ import com.ats.exception.ResourceAlreadyExistsException;
 import com.ats.exception.ResourceNotFoundException;
 import com.ats.model.User;
 import com.ats.model.Role;
+import com.ats.model.Region;
 import com.ats.repository.UserRepository;
 import com.ats.service.EmailService;
 import com.ats.service.UserService;
+import com.ats.service.RegionalDataFilterService;
 import com.ats.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,13 +35,15 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final TotpService totpService;
+    private final RegionalDataFilterService regionalDataFilterService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, TotpService totpService) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, TotpService totpService, RegionalDataFilterService regionalDataFilterService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.totpService = totpService;
+        this.regionalDataFilterService = regionalDataFilterService;
     }
 
     @Override
@@ -63,6 +67,7 @@ public class UserServiceImpl implements UserService {
         user.setLastName(userDTO.getLastName());
         user.setRole(userDTO.getRole());
         user.setDepartment(userDTO.getDepartment());
+        user.setRegion(userDTO.getRegion());
         user.setLinkedinId(userDTO.getLinkedinId());
         user.setLinkedinProfileUrl(userDTO.getLinkedinProfileUrl());
         user.setProfilePictureUrl(userDTO.getProfilePictureUrl());
@@ -165,7 +170,43 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public List<UserDTO> getAllUsers() {
+        // Get current user for regional filtering
+        User currentUser = getCurrentUser();
+        
+        if (currentUser == null) {
+            logger.warn("No current user found for regional filtering");
+            return userRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        }
+        
+        // Apply regional filtering based on current user's access
+        String regionFilter = regionalDataFilterService.getRegionFilterCondition(currentUser);
+        
+        if (regionFilter == null) {
+            // No regional restrictions
+            return userRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        }
+        
+        // Apply regional filtering
         return userRepository.findAll().stream()
+            .filter(user -> {
+                String userRegion = user.getRegion();
+                
+                // EU admins can only see EU users
+                if (regionalDataFilterService.isEUAdmin(currentUser)) {
+                    return "EU".equals(userRegion);
+                }
+                
+                // Non-EU admins can only see non-EU users
+                if (regionalDataFilterService.isNonEUAdmin(currentUser)) {
+                    return !"EU".equals(userRegion);
+                }
+                
+                return true; // Fallback
+            })
             .map(this::convertToDTO)
             .collect(Collectors.toList());
     }
@@ -216,6 +257,40 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setRole(role);
+        User updatedUser = userRepository.save(user);
+        return convertToDTO(updatedUser);
+    }
+
+    @Override
+    @Transactional
+    public UserDTO assignRegion(Long id, String region) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // Get current user for permission checking
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            throw new IllegalArgumentException("Current user not found");
+        }
+        
+        // Validate region if provided
+        if (region != null && !region.trim().isEmpty()) {
+            if (!Region.isValid(region)) {
+                throw new IllegalArgumentException("Invalid region. Must be EU, RW, OTHER, or null.");
+            }
+            
+            // EU region assignment restriction: Only EU admins can assign EU region
+            if ("EU".equals(region)) {
+                if (!regionalDataFilterService.isEUAdmin(currentUser)) {
+                    throw new IllegalArgumentException("Only EU administrators can assign EU region to users.");
+                }
+            }
+            
+            user.setRegion(region);
+        } else {
+            user.setRegion(null);
+        }
+        
         User updatedUser = userRepository.save(user);
         return convertToDTO(updatedUser);
     }
@@ -367,6 +442,7 @@ public class UserServiceImpl implements UserService {
         dto.setLastName(user.getLastName());
         dto.setRole(user.getRole());
         dto.setDepartment(user.getDepartment());
+        dto.setRegion(user.getRegion());
         dto.setLinkedinId(user.getLinkedinId());
         dto.setLinkedinProfileUrl(user.getLinkedinProfileUrl());
         dto.setProfilePictureUrl(user.getProfilePictureUrl());
@@ -387,6 +463,24 @@ public class UserServiceImpl implements UserService {
         dto.setIsEmailVerified(user.getIsEmailVerified());
         dto.setMfaEnabled(user.getMfaEnabled());
         return dto;
+    }
+    
+    /**
+     * Get the current authenticated user
+     */
+    private User getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return null;
+            }
+            
+            String email = authentication.getName();
+            return userRepository.findByEmail(email).orElse(null);
+        } catch (Exception e) {
+            logger.error("Error getting current user", e);
+            return null;
+        }
     }
     
     /**

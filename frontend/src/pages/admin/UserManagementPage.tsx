@@ -4,7 +4,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { User, Role } from '../../types/user';
 import AddUserModal from '../../components/admin/AddUserModal';
 import UserDetailsModal from '../../components/admin/UserDetailsModal';
+import RegionAssignmentModal from '../../components/admin/RegionAssignmentModal';
 import ProfilePicture from '../../components/common/ProfilePicture';
+import RegionBadge from '../../components/common/RegionBadge';
+import RegionalAccessIndicator from '../../components/common/RegionalAccessIndicator';
 import { toast } from 'react-toastify';
 import { Listbox, Transition } from '@headlessui/react';
 import {
@@ -15,6 +18,7 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon,
   UserIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
 
@@ -40,6 +44,8 @@ const UserManagementPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [userToDelete, setUserToDelete] = useState<{ id: number; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isRegionModalOpen, setIsRegionModalOpen] = useState(false);
+  const [userForRegion, setUserForRegion] = useState<{ id: number; name: string; region: string | null } | null>(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -163,6 +169,19 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
+  const handleRegionAssignment = (user: User) => {
+    setUserForRegion({
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`,
+      region: user.region || null
+    });
+    setIsRegionModalOpen(true);
+  };
+
+  const handleRegionUpdated = () => {
+    fetchUsers(); // Refresh the user list
+  };
+
   if (loading) {
     return (
       <div className="space-y-8">
@@ -206,6 +225,9 @@ const UserManagementPage: React.FC = () => {
             <p className="mt-2 text-sm text-gray-700 dark:text-gray-400">
               A list of all users in your account including their name, email, role, and status.
             </p>
+            <div className="mt-3">
+              <RegionalAccessIndicator />
+            </div>
           </div>
           <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
             <button
@@ -319,7 +341,10 @@ const UserManagementPage: React.FC = () => {
                 <th scope="col" className="hidden md:table-cell px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[100px]">
                   Status
                 </th>
-                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 w-[120px]">
+                <th scope="col" className="hidden lg:table-cell px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[120px]">
+                  Region
+                </th>
+                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 w-[140px]">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -371,6 +396,9 @@ const UserManagementPage: React.FC = () => {
                       {user.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
+                  <td className="hidden lg:table-cell px-3 py-4 text-sm">
+                    <RegionBadge region={user.region || null} size="sm" />
+                  </td>
                   <td className="relative py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <div className="flex justify-end space-x-1 sm:space-x-2">
                       <button
@@ -396,6 +424,14 @@ const UserManagementPage: React.FC = () => {
                         title="Edit user"
                       >
                         <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 p-2 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200"
+                        onClick={() => handleRegionAssignment(user)}
+                        title="Manage region"
+                      >
+                        <GlobeAltIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                       </button>
                       <button
                         type="button"
@@ -514,6 +550,18 @@ const UserManagementPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Region Assignment Modal */}
+      {userForRegion && (
+        <RegionAssignmentModal
+          isOpen={isRegionModalOpen}
+          onClose={() => setIsRegionModalOpen(false)}
+          userId={userForRegion.id}
+          userName={userForRegion.name}
+          currentRegion={userForRegion.region}
+          onRegionUpdated={handleRegionUpdated}
+        />
       )}
     </div>
   );

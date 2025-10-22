@@ -5,6 +5,12 @@ export enum Role {
   HIRING_MANAGER = 'HIRING_MANAGER'
 }
 
+export enum Region {
+  EU = 'EU',
+  RW = 'RW',
+  OTHER = 'OTHER'
+}
+
 export interface User {
   id: number;
   email: string;
@@ -12,6 +18,7 @@ export interface User {
   lastName: string;
   role: Role;
   department?: string;
+  region?: string;
   linkedinProfileUrl?: string;
   profilePictureUrl?: string;
   birthDate?: string;

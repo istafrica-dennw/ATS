@@ -2,7 +2,9 @@ package com.ats.controller;
 
 import com.ats.dto.UserDTO;
 import com.ats.service.UserService;
+import com.ats.service.RegionalDataFilterService;
 import com.ats.model.Role;
+import com.ats.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/users")
@@ -26,10 +29,12 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final RegionalDataFilterService regionalDataFilterService;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, RegionalDataFilterService regionalDataFilterService) {
         this.userService = userService;
+        this.regionalDataFilterService = regionalDataFilterService;
     }
 
     @PostMapping
@@ -159,6 +164,40 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
+    @GetMapping("/regional-access")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Get regional access information",
+        description = "Returns information about the current user's regional data access permissions"
+    )
+    public ResponseEntity<Map<String, Object>> getRegionalAccess(Authentication authentication) {
+        try {
+            String userEmail = authentication.getName();
+            UserDTO userDTO = userService.getUserByEmail(userEmail);
+            // Convert UserDTO to User entity
+            User currentUser = new User();
+            currentUser.setId(userDTO.getId());
+            currentUser.setEmail(userDTO.getEmail());
+            currentUser.setFirstName(userDTO.getFirstName());
+            currentUser.setLastName(userDTO.getLastName());
+            currentUser.setRole(userDTO.getRole());
+            currentUser.setRegion(userDTO.getRegion());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("accessibleRegion", regionalDataFilterService.getAccessibleRegion(currentUser));
+            response.put("isEUAdmin", regionalDataFilterService.isEUAdmin(currentUser));
+            response.put("isNonEUAdmin", regionalDataFilterService.isNonEUAdmin(currentUser));
+            response.put("regionFilter", regionalDataFilterService.getRegionFilterCondition(currentUser));
+            response.put("userRegion", currentUser.getRegion());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", "Failed to get regional access information: " + e.getMessage());
+            return ResponseEntity.ok(response);
+        }
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
@@ -243,5 +282,38 @@ public class UserController {
             @Parameter(description = "New role", example = "ADMIN")
             @RequestParam Role role) {
         return ResponseEntity.ok(userService.updateUserRole(id, role));
+    }
+
+    @PutMapping("/{id}/region")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Assign region to user",
+        description = "Assigns a region to a user. Only admins can assign regions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Region assigned successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid region"),
+        @ApiResponse(responseCode = "404", description = "User not found"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public ResponseEntity<Map<String, Object>> assignRegion(
+            @Parameter(description = "User ID", example = "1")
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> requestBody) {
+        try {
+            String region = (String) requestBody.get("region");
+            UserDTO updatedUser = userService.assignRegion(id, region);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Region assigned successfully");
+            response.put("user", updatedUser);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Failed to assign region: " + e.getMessage());
+            return ResponseEntity.ok(response);
+        }
     }
 } 

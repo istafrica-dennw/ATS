@@ -18,6 +18,7 @@ public interface UserService {
     UserDTO updateUserStatus(Long id, boolean isActive);
     UserDTO updateUserStatus(Long id, boolean isActive, Authentication authentication);
     UserDTO updateUserRole(Long id, Role role);
+    UserDTO assignRegion(Long id, String region);
     UserDTO deactivateAccount(Long id, String reason);
     UserDTO deactivateAccount(Long id, String reason, Authentication authentication);
     

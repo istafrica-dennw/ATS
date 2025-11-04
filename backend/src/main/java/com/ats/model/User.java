@@ -116,6 +116,19 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<UserRole> userRoles = new HashSet<>();
     
+    // Subscription fields
+    @Column(name = "is_subscribed")
+    private Boolean isSubscribed = false;
+    
+    @Column(name = "subscribed_at")
+    private LocalDateTime subscribedAt;
+    
+    @Column(name = "unsubscribed_at")
+    private LocalDateTime unsubscribedAt;
+    
+    @Column(name = "subscription_preferences", columnDefinition = "TEXT")
+    private String subscriptionPreferences; // JSON string for preferences
+    
     // Helper methods for multiple roles
     /**
      * Get all available roles for this user

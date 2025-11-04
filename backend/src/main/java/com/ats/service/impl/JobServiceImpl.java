@@ -30,6 +30,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.ats.repository.UserRepository;
+import com.ats.service.SubscriptionService;
+import com.ats.service.EmailService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -50,6 +55,17 @@ public class JobServiceImpl implements JobService {
 
     @Autowired
     private ModelMapperUtil modelMapper;
+    
+    @Autowired
+    private SubscriptionService subscriptionService;
+    
+    @Autowired
+    private EmailService emailService;
+    
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+    
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     @Transactional
@@ -83,6 +99,11 @@ public class JobServiceImpl implements JobService {
                 questionDTO.setId(null); // Ensure ID is null for new questions
                 jobCustomQuestionService.createCustomQuestion(questionDTO);
             }
+        }
+        
+        // Notify subscribers if job is published or reopened
+        if (job.getJobStatus() == JobStatus.PUBLISHED || job.getJobStatus() == JobStatus.REOPENED) {
+            notifySubscribers(job);
         }
         
         // Return the complete job with custom questions
@@ -138,6 +159,12 @@ public class JobServiceImpl implements JobService {
             // Handle custom questions if provided
             if (jobDTO.getCustomQuestions() != null) {
                 handleCustomQuestionsUpdate(id, jobDTO.getCustomQuestions());
+            }
+            
+            // Notify subscribers if job status changed to published or reopened
+            if ((oldStatus != JobStatus.PUBLISHED && oldStatus != JobStatus.REOPENED) && 
+                (jobDTO.getJobStatus() == JobStatus.PUBLISHED || jobDTO.getJobStatus() == JobStatus.REOPENED)) {
+                notifySubscribers(savedJob);
             }
             
             // Return the updated job with custom questions
@@ -362,6 +389,13 @@ public class JobServiceImpl implements JobService {
             }
             
             Job savedJob = jobRepository.save(updatedJob);
+            
+            // Notify subscribers if job status changed to published or reopened
+            if ((oldStatus != JobStatus.PUBLISHED && oldStatus != JobStatus.REOPENED) && 
+                (jobStatus == JobStatus.PUBLISHED || jobStatus == JobStatus.REOPENED)) {
+                notifySubscribers(savedJob);
+            }
+            
             return modelMapper.map(savedJob, JobDTO.class);
         } else {
             throw new NotFoundException("Job not found with id: " + id);
@@ -384,5 +418,78 @@ public class JobServiceImpl implements JobService {
             logger.error("Error getting current user", e);
             return null;
         }
+    }
+    
+    /**
+     * Notify all subscribed users about a new job posting
+     */
+    private void notifySubscribers(Job job) {
+        try {
+            List<User> subscribedUsers = subscriptionService.getAllSubscribedUsers();
+            logger.info("Notifying {} subscribed users about job: {}", subscribedUsers.size(), job.getTitle());
+            
+            for (User user : subscribedUsers) {
+                // Check if user wants job notifications
+                try {
+                    Map<String, Boolean> preferences = subscriptionService.getSubscriptionPreferences(user.getId());
+                    if (!preferences.getOrDefault("jobNotifications", true)) {
+                        continue; // Skip if user has disabled job notifications
+                    }
+                } catch (Exception e) {
+                    logger.warn("Error reading preferences for user {}: {}", user.getId(), e.getMessage());
+                    // Continue with default behavior (send notification)
+                }
+                
+                try {
+                    // Create email content
+                    String subject = "New Job Posted: " + job.getTitle();
+                    String content = buildJobNotificationEmail(job, user);
+                    
+                    // Send email notification
+                    emailService.sendCustomEmail(
+                        user.getEmail(),
+                        subject,
+                        content,
+                        true,
+                        null // No sender user for automated notifications
+                    );
+                } catch (Exception e) {
+                    logger.error("Error sending job notification to user {}: {}", user.getEmail(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error notifying subscribers about job {}: {}", job.getId(), e.getMessage());
+        }
+    }
+    
+    /**
+     * Build HTML email content for job notification
+     */
+    private String buildJobNotificationEmail(Job job, User user) {
+        StringBuilder html = new StringBuilder();
+        html.append("<html><body style='font-family: Arial, sans-serif; padding: 20px;'>");
+        html.append("<h2 style='color: #4f46e5;'>New Job Opportunity</h2>");
+        html.append("<p>Hello ").append(user.getFirstName()).append(",</p>");
+        html.append("<p>We have a new job posting that might interest you:</p>");
+        html.append("<div style='background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;'>");
+        html.append("<h3 style='margin-top: 0;'>").append(job.getTitle()).append("</h3>");
+        if (job.getDepartment() != null) {
+            html.append("<p><strong>Department:</strong> ").append(job.getDepartment()).append("</p>");
+        }
+        if (job.getLocation() != null) {
+            html.append("<p><strong>Location:</strong> ").append(job.getLocation()).append("</p>");
+        }
+        if (job.getWorkSetting() != null) {
+            html.append("<p><strong>Work Setting:</strong> ").append(job.getWorkSetting()).append("</p>");
+        }
+        if (job.getDescription() != null && !job.getDescription().isEmpty()) {
+            html.append("<p><strong>Description:</strong></p>");
+            html.append("<p>").append(job.getDescription().substring(0, Math.min(200, job.getDescription().length()))).append("...</p>");
+        }
+        html.append("</div>");
+        html.append("<p><a href='").append(frontendUrl).append("/jobs/").append(job.getId()).append("' style='background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>View Job Details</a></p>");
+        html.append("<p style='color: #6b7280; font-size: 12px; margin-top: 30px;'>You're receiving this because you subscribed to job notifications. <a href='").append(frontendUrl).append("/unsubscribe'>Unsubscribe</a></p>");
+        html.append("</body></html>");
+        return html.toString();
     }
 }

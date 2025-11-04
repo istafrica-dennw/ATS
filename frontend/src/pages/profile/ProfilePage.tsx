@@ -11,6 +11,7 @@ import {
   LockClosedIcon,
   ShieldCheckIcon,
   PencilIcon,
+  BellIcon,
 } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -168,6 +169,13 @@ const ProfilePage: React.FC = () => {
                 >
                   <ShieldCheckIcon className="mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
                   Security
+                </Link>
+                <Link
+                  to="/profile/notifications"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-colors"
+                >
+                  <BellIcon className="mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  Notifications
                 </Link>
               </div>
             </div>

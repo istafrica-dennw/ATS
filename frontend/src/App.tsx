@@ -25,6 +25,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
 import SecuritySettingsPage from './pages/profile/SecuritySettingsPage';
+import NotificationsPage from './pages/profile/NotificationsPage';
 import CandidateDashboardPage from './pages/candidate/CandidateDashboardPage';
 import InterviewerDashboardPage from './pages/interviewer/InterviewerDashboardPage';
 import InterviewDetailPage from './pages/interviewer/InterviewDetailPage';
@@ -177,6 +178,7 @@ const App: React.FC = () => {
                   <Route index element={<ProfilePage />} />
                   <Route path="settings" element={<ProfileSettingsPage />} />
                   <Route path="security" element={<SecuritySettingsPage />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
                 </Route>
 
                 <Route path="/candidate" element={<CandidateDashboardPage />} />

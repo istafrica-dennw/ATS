@@ -33,6 +33,7 @@ import com.ats.dto.BulkEmailRequestDTO;
 import com.ats.dto.BulkEmailResponseDTO;
 import com.ats.model.ApplicationStatus;
 import com.ats.repository.ApplicationRepository;
+import com.ats.service.SubscriptionService;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,7 @@ public class EmailServiceImpl implements EmailService {
     private final TemplateEngine templateEngine;
     private final EmailNotificationRepository emailNotificationRepository;
     private final ApplicationRepository applicationRepository;
+    private final SubscriptionService subscriptionService;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -410,12 +412,81 @@ public class EmailServiceImpl implements EmailService {
         // Generate a unique campaign ID for this bulk email
         String campaignId = generateBulkEmailCampaignId(request, senderUser, startTime);
         
-        // Get the list of applications to send emails to
-        List<Application> applications = getApplicationsForBulkEmail(request);
-        
         List<Long> emailNotificationIds = new ArrayList<>();
         List<BulkEmailResponseDTO.FailedEmailDetail> failures = new ArrayList<>();
         int successCount = 0;
+        
+        // Check if sending to subscribed users
+        if (Boolean.TRUE.equals(request.getSendToSubscribedUsers())) {
+            // Send to subscribed users
+            List<User> subscribedUsers = subscriptionService.getAllSubscribedUsers();
+            
+            for (User user : subscribedUsers) {
+                // Check if user wants bulk emails
+                try {
+                    Map<String, Boolean> preferences = subscriptionService.getSubscriptionPreferences(user.getId());
+                    if (!preferences.getOrDefault("bulkEmails", true)) {
+                        continue; // Skip if user has disabled bulk emails
+                    }
+                } catch (Exception e) {
+                    // Continue with default behavior (send email)
+                }
+                
+                try {
+                    String personalizedContent = personalizeEmailContentForUser(
+                        request.getContent(),
+                        user
+                    );
+                    
+                    EmailNotification notification = sendEmailWithNotification(
+                        user.getEmail(),
+                        request.getSubject(),
+                        personalizedContent,
+                        request.getIsHtml(),
+                        senderUser,
+                        "bulk-email-subscribed",
+                        campaignId
+                    );
+                    
+                    emailNotificationIds.add(notification.getId());
+                    successCount++;
+                } catch (Exception e) {
+                    failures.add(BulkEmailResponseDTO.FailedEmailDetail.builder()
+                        .candidateEmail(user.getEmail())
+                        .candidateName(user.getFirstName() + " " + user.getLastName())
+                        .errorMessage("Failed to send email: " + e.getMessage())
+                        .build());
+                }
+            }
+            
+            // Calculate final stats
+            ZonedDateTime completedTime = ZonedDateTime.now();
+            int totalAttempted = subscribedUsers.size() + (request.getSendTest() ? 1 : 0);
+            int failureCount = failures.size();
+            
+            String status;
+            if (failureCount == 0) {
+                status = "SUCCESS";
+            } else if (successCount > 0) {
+                status = "PARTIAL_SUCCESS";
+            } else {
+                status = "FAILED";
+            }
+            
+            return BulkEmailResponseDTO.builder()
+                .totalAttempted(totalAttempted)
+                .successCount(successCount)
+                .failureCount(failureCount)
+                .emailNotificationIds(emailNotificationIds)
+                .failures(failures)
+                .startedAt(startTime)
+                .completedAt(completedTime)
+                .status(status)
+                .build();
+        }
+        
+        // Get the list of applications to send emails to (original behavior)
+        List<Application> applications = getApplicationsForBulkEmail(request);
         
         // Send test email first if requested
         if (request.getSendTest() && request.getTestEmailRecipient() != null) {
@@ -635,6 +706,22 @@ public class EmailServiceImpl implements EmailService {
             .replace("{{jobTitle}}", application.getJob().getTitle() != null ? application.getJob().getTitle() : "")
             .replace("{{jobDepartment}}", application.getJob().getDepartment() != null ? application.getJob().getDepartment() : "")
             .replace("{{applicationStatus}}", application.getStatus() != null ? application.getStatus().toString() : "");
+        
+        return personalizedContent;
+    }
+    
+    /**
+     * Personalize email content for a subscribed user
+     */
+    private String personalizeEmailContentForUser(String content, User user) {
+        if (content == null) return content;
+        
+        // Replace common placeholders with actual values
+        String personalizedContent = content
+            .replace("{{firstName}}", user.getFirstName() != null ? user.getFirstName() : "")
+            .replace("{{lastName}}", user.getLastName() != null ? user.getLastName() : "")
+            .replace("{{fullName}}", (user.getFirstName() != null ? user.getFirstName() : "") + " " + (user.getLastName() != null ? user.getLastName() : ""))
+            .replace("{{email}}", user.getEmail() != null ? user.getEmail() : "");
         
         return personalizedContent;
     }

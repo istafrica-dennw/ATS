@@ -62,4 +62,10 @@ public class BulkEmailRequestDTO {
      * Test email recipient (admin email)
      */
     private String testEmailRecipient;
+    
+    /**
+     * Whether to send to subscribed users instead of applicants
+     */
+    @Builder.Default
+    private Boolean sendToSubscribedUsers = false;
 }

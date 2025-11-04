@@ -52,6 +52,7 @@ interface BulkEmailRequest {
   isHtml: boolean;
   sendTest: boolean;
   testEmailRecipient: string;
+  sendToSubscribedUsers: boolean;
 }
 
 interface BulkEmailResponse {
@@ -84,7 +85,8 @@ const BulkEmailPage: React.FC = () => {
     content: '',
     isHtml: true,
     sendTest: false,
-    testEmailRecipient: user?.email || ''
+    testEmailRecipient: user?.email || '',
+    sendToSubscribedUsers: false
   });
 
   // Fetch jobs and statuses on component mount
@@ -224,6 +226,25 @@ const BulkEmailPage: React.FC = () => {
                 Email Filters & Content
               </h2>
 
+              <div className="mb-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.sendToSubscribedUsers}
+                    onChange={(e) => setFormData({ ...formData, sendToSubscribedUsers: e.target.checked })}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Send to Subscribed Users
+                    </span>
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                      When enabled, emails will be sent to all subscribed users instead of applicants. Job and Status filters will be ignored.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -231,7 +252,12 @@ const BulkEmailPage: React.FC = () => {
                   </label>
                   <Listbox value={formData.jobId} onChange={handleJobChange}>
                     <div className="relative">
-                      <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                      <Listbox.Button 
+                        disabled={formData.sendToSubscribedUsers}
+                        className={`relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600 ${
+                          formData.sendToSubscribedUsers ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
                         <span className="block truncate">{jobOptions.find(j => j.value === formData.jobId)?.name || 'All Jobs'}</span>
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                           <ChevronUpDownIcon
@@ -281,9 +307,18 @@ const BulkEmailPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Status (Optional)
                   </label>
-                  <Listbox value={formData.status} onChange={handleStatusChange}>
+                  <Listbox 
+                    value={formData.status} 
+                    onChange={handleStatusChange}
+                    disabled={formData.sendToSubscribedUsers}
+                  >
                     <div className="relative">
-                      <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600">
+                      <Listbox.Button 
+                        disabled={formData.sendToSubscribedUsers}
+                        className={`relative w-full cursor-default rounded-lg bg-white dark:bg-gray-700 py-2.5 pl-3 pr-10 text-left shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 sm:text-sm transition-all duration-200 border border-gray-300 dark:border-gray-600 ${
+                          formData.sendToSubscribedUsers ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
                         <span className="block truncate">{statusOptions.find(s => s.value === formData.status)?.name || 'All Statuses'}</span>
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                           <ChevronUpDownIcon
@@ -330,16 +365,18 @@ const BulkEmailPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mb-6">
-                <button
-                  onClick={fetchEmailPreview}
-                  disabled={loading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <EyeIcon className="h-4 w-4 mr-2" />
-                  {loading ? 'Loading...' : 'Preview Recipients'}
-                </button>
-              </div>
+              {!formData.sendToSubscribedUsers && (
+                <div className="mb-6">
+                  <button
+                    onClick={fetchEmailPreview}
+                    disabled={loading}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <EyeIcon className="h-4 w-4 mr-2" />
+                    {loading ? 'Loading...' : 'Preview Recipients'}
+                  </button>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div>
@@ -379,7 +416,11 @@ const BulkEmailPage: React.FC = () => {
                     />
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Available placeholders: {"{candidateName}"}, {"{firstName}"}, {"{lastName}"}, {"{jobTitle}"}, {"{jobDepartment}"}, {"{applicationStatus}"}
+                    {formData.sendToSubscribedUsers ? (
+                      <>Available placeholders: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{firstName}}"}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{lastName}}"}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{fullName}}"}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{email}}"}</code></>
+                    ) : (
+                      <>Available placeholders: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{candidateName}}"}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{firstName}}"}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{lastName}}"}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{jobTitle}}"}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{jobDepartment}}"}</code>, <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{"{{applicationStatus}}"}</code></>
+                    )}
                   </p>
                 </div>
 

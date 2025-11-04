@@ -4,6 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 import ThemeToggleButton from '../components/common/ThemeToggleButton';
 import ATSAnimationShowcase from '../components/ATSAnimationShowcase';
 import ScrollToTopButton from '../components/common/ScrollToTopButton';
+import FooterSubscription from '../components/subscription/FooterSubscription';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
@@ -483,13 +484,16 @@ const LandingPage: React.FC = () => {
 
             <div className="text-center md:text-right">
               <div className="flex flex-col sm:flex-row sm:justify-center md:justify-end items-center space-y-4 sm:space-y-0 sm:space-x-6">
-                <div className="flex space-x-4 text-sm">
-                  <Link to="/privacy-policy" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300">
-                    Privacy Policy
-                  </Link>
-                  <Link to="/terms-of-service" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300">
-                    Terms of Service
-                  </Link>
+                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                  <FooterSubscription />
+                  <div className="flex space-x-4 text-sm">
+                    <Link to="/privacy-policy" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300">
+                      Privacy Policy
+                    </Link>
+                    <Link to="/terms-of-service" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300">
+                      Terms of Service
+                    </Link>
+                  </div>
                 </div>
                 
                 <div className="flex space-x-3">

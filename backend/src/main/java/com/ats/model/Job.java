@@ -53,4 +53,7 @@ public class Job extends BaseEntity {
     @Column(name = "skills", columnDefinition = "TEXT[]")
     private List <String>  skills;
     
+    @Column(name = "region", length = 10)
+    private String region;
+    
 }

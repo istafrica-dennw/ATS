@@ -128,6 +128,13 @@ public class JobDTO {
         accessMode = Schema.AccessMode.READ_ONLY
     )
     private List<JobCustomQuestionDTO> customQuestions;
+    
+    @Schema(
+        description = "Job's region for GDPR compliance - EU = Europe, RW = Rwanda, OTHER = other regions, NULL = default", 
+        example = "EU",
+        allowableValues = {"EU", "RW", "OTHER"}
+    )
+    private String region;
 
     // Getters and Setters (or use Lombok @Data if preferred)
     

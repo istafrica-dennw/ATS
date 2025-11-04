@@ -10,7 +10,9 @@ import com.ats.dto.JobCustomQuestionDTO;
 import com.ats.dto.JobDTO;
 import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.Job;
+import com.ats.model.User;
 import com.ats.service.JobCustomQuestionService;
+import com.ats.service.RegionalDataFilterService;
 import com.ats.model.JobStatus;
 import com.ats.model.WorkSetting;
 import com.ats.repository.JobRepository;
@@ -25,6 +27,9 @@ import java.util.HashSet;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.ats.repository.UserRepository;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -36,6 +41,12 @@ public class JobServiceImpl implements JobService {
     
     @Autowired
     private JobCustomQuestionService jobCustomQuestionService;
+    
+    @Autowired
+    private RegionalDataFilterService regionalDataFilterService;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private ModelMapperUtil modelMapper;
@@ -46,6 +57,12 @@ public class JobServiceImpl implements JobService {
         Job job = modelMapper.map(jobDTO, Job.class);
         if (job.getJobStatus() == null){
             job.setJobStatus(JobStatus.DRAFT);
+        }
+        
+        // Set the region based on the current user
+        User currentUser = getCurrentUser();
+        if (currentUser != null && currentUser.getRegion() != null) {
+            job.setRegion(currentUser.getRegion());
         }
         
         // Set posted date if the job is being published
@@ -187,8 +204,25 @@ public class JobServiceImpl implements JobService {
         List<WorkSetting> workSettings, 
         String description
     ) {
+        // Get current user for regional filtering
+        User currentUser = getCurrentUser();
+        
         // Create dynamic query using Specifications
         Specification<Job> spec = Specification.where(null);
+
+        // Add regional filtering based on current user
+        if (currentUser != null) {
+            if (regionalDataFilterService.isEUAdmin(currentUser)) {
+                // EU admins can only see EU jobs
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("region"), "EU"));
+            } else if (regionalDataFilterService.isNonEUAdmin(currentUser)) {
+                // Non-EU admins can only see non-EU jobs
+                spec = spec.and((root, query, cb) -> cb.or(
+                    cb.isNull(root.get("region")),
+                    cb.notEqual(root.get("region"), "EU")
+                ));
+            }
+        }
 
         // Add filters only if parameters are provided
         if (jobStatuses != null && !jobStatuses.isEmpty()) {
@@ -197,11 +231,6 @@ public class JobServiceImpl implements JobService {
 
         if (workSettings != null && !workSettings.isEmpty()) {
             spec = spec.and((root, query, cb) -> root.get("workSetting").in(workSettings));
-        }
-
-        if (description != null && !description.isEmpty()) {
-            spec = spec.and((root, query, cb) -> 
-                cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
         }
 
         if (description != null && !description.isEmpty()) {
@@ -219,24 +248,99 @@ public class JobServiceImpl implements JobService {
     }
     @Override
     public List<JobDTO> getActiveJobs() {
-        return jobRepository.findByJobStatusIn(List.of(JobStatus.PUBLISHED, JobStatus.REOPENED))
-                .stream()
+        // Get current user for regional filtering
+        User currentUser = getCurrentUser();
+        
+        List<Job> jobs = jobRepository.findByJobStatusIn(List.of(JobStatus.PUBLISHED, JobStatus.REOPENED));
+        
+        // Apply regional filtering
+        if (currentUser != null) {
+            jobs = jobs.stream()
+                .filter(job -> {
+                    String jobRegion = job.getRegion();
+                    
+                    // EU admins can only see EU jobs
+                    if (regionalDataFilterService.isEUAdmin(currentUser)) {
+                        return "EU".equals(jobRegion);
+                    }
+                    
+                    // Non-EU admins can only see non-EU jobs
+                    if (regionalDataFilterService.isNonEUAdmin(currentUser)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    return true; // Fallback
+                })
+                .collect(Collectors.toList());
+        }
+        
+        return jobs.stream()
                 .map(job -> modelMapper.map(job, JobDTO.class))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<JobDTO> getPastJobs() {
-        return jobRepository.findByJobStatusIn(List.of(JobStatus.EXPIRED, JobStatus.CLOSED))
-                .stream()
+        // Get current user for regional filtering
+        User currentUser = getCurrentUser();
+        
+        List<Job> jobs = jobRepository.findByJobStatusIn(List.of(JobStatus.EXPIRED, JobStatus.CLOSED));
+        
+        // Apply regional filtering
+        if (currentUser != null) {
+            jobs = jobs.stream()
+                .filter(job -> {
+                    String jobRegion = job.getRegion();
+                    
+                    // EU admins can only see EU jobs
+                    if (regionalDataFilterService.isEUAdmin(currentUser)) {
+                        return "EU".equals(jobRegion);
+                    }
+                    
+                    // Non-EU admins can only see non-EU jobs
+                    if (regionalDataFilterService.isNonEUAdmin(currentUser)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    return true; // Fallback
+                })
+                .collect(Collectors.toList());
+        }
+        
+        return jobs.stream()
                 .map(job -> modelMapper.map(job, JobDTO.class))
                 .collect(Collectors.toList());
     }
     @Override
     public List<JobDTO> searchJobs(String keyword, String filter) {
-        return jobRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            keyword, keyword)
-                .stream()
+        // Get current user for regional filtering
+        User currentUser = getCurrentUser();
+        
+        List<Job> jobs = jobRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+            keyword, keyword);
+        
+        // Apply regional filtering
+        if (currentUser != null) {
+            jobs = jobs.stream()
+                .filter(job -> {
+                    String jobRegion = job.getRegion();
+                    
+                    // EU admins can only see EU jobs
+                    if (regionalDataFilterService.isEUAdmin(currentUser)) {
+                        return "EU".equals(jobRegion);
+                    }
+                    
+                    // Non-EU admins can only see non-EU jobs
+                    if (regionalDataFilterService.isNonEUAdmin(currentUser)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    return true; // Fallback
+                })
+                .collect(Collectors.toList());
+        }
+        
+        return jobs.stream()
                 .map(job -> modelMapper.map(job, JobDTO.class))
                 .collect(Collectors.toList());
     }
@@ -261,6 +365,24 @@ public class JobServiceImpl implements JobService {
             return modelMapper.map(savedJob, JobDTO.class);
         } else {
             throw new NotFoundException("Job not found with id: " + id);
+        }
+    }
+    
+    /**
+     * Get the current authenticated user
+     */
+    private User getCurrentUser() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return null;
+            }
+            
+            String email = authentication.getName();
+            return userRepository.findByEmail(email).orElse(null);
+        } catch (Exception e) {
+            logger.error("Error getting current user", e);
+            return null;
         }
     }
 }

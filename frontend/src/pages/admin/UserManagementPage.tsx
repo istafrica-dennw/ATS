@@ -13,7 +13,6 @@ import { Listbox, Transition } from '@headlessui/react';
 import {
   PencilIcon,
   TrashIcon,
-  EyeIcon,
   PlusIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -408,14 +407,6 @@ const UserManagementPage: React.FC = () => {
                         title="View full profile"
                       >
                         <UserIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 p-2 rounded-md hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200"
-                        onClick={() => handleViewUser(user.id)}
-                        title="Quick view"
-                      >
-                        <EyeIcon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
                       </button>
                       <button
                         type="button"

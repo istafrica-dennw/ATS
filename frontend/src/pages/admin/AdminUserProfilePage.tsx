@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -13,15 +13,11 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
-  CameraIcon,
-  UserIcon,
-  BriefcaseIcon,
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { getFullProfilePictureUrl } from '../../utils/imageUtils';
-import { User, UserFormData } from '../../types/user';
-import RoleManager from '../../components/RoleManager';
-import { toast } from 'react-toastify';
+import { User } from '../../types/user';
+import UserDetailsContent from '../../components/admin/UserDetailsContent';
 
 interface Application {
   id: number;
@@ -53,12 +49,6 @@ const AdminUserProfilePage: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [activeTab, setActiveTab] = useState<'profile' | 'applications' | 'details'>('profile');
   const [error, setError] = useState<string | null>(null);
-  
-  // User details editing state
-  const [editingUser, setEditingUser] = useState<UserFormData | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchUserProfile = useCallback(async () => {
     try {
@@ -127,162 +117,6 @@ const AdminUserProfilePage: React.FC = () => {
       fetchUserApplications();
     }
   }, [activeTab, applications.length, fetchUserApplications]);
-
-  // Initialize editing user data when userData changes
-  useEffect(() => {
-    if (userData) {
-      setEditingUser({
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        email: userData.email || '',
-        department: userData.department || '',
-        phoneNumber: userData.phoneNumber || '',
-        profilePictureUrl: userData.profilePictureUrl || '',
-        isActive: userData.isActive || false,
-        isEmailVerified: userData.isEmailVerified || false,
-        role: userData.role
-      });
-    }
-  }, [userData]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    if (!editingUser) return;
-    
-    const { name, value } = e.target;
-    setEditingUser({
-      ...editingUser,
-      [name]: value
-    });
-  };
-  
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!editingUser) return;
-    
-    const { name, checked } = e.target;
-    setEditingUser({
-      ...editingUser,
-      [name]: checked
-    });
-  };
-
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0 || !editingUser) return;
-    
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    setUploadingImage(true);
-    
-    try {
-      const response = await fetch('/api/files/upload/profile-picture', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Update the editing user data with the new profile picture URL
-        setEditingUser({
-          ...editingUser,
-          profilePictureUrl: data.url,
-        });
-        
-        toast.success('Profile picture uploaded successfully');
-      } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to upload profile picture');
-      }
-    } catch (error) {
-      console.error('Error uploading profile picture:', error);
-      toast.error('Network error when uploading profile picture');
-    } finally {
-      setUploadingImage(false);
-      // Clear the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingUser || !userId) return;
-    
-    setSaving(true);
-
-    try {
-      const response = await fetch(`/api/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(editingUser)
-      });
-
-      if (response.ok) {
-        toast.success('User updated successfully');
-        // Refresh user data
-        await fetchUserProfile();
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to update user');
-      }
-    } catch (error) {
-      console.error('Error updating user:', error);
-      toast.error('Network error. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleUserStatus = async () => {
-    if (!editingUser || !userId) return;
-    
-    // Check if current user is trying to deactivate themselves
-    if (currentUser && userId && currentUser.id === parseInt(userId) && currentUser.role === 'ADMIN' && editingUser.isActive) {
-      toast.error('Cannot deactivate your own admin account. Please ask another admin to do this.');
-      return;
-    }
-    
-    setSaving(true);
-    try {
-      const response = await fetch(`/api/users/${userId}/status?isActive=${!editingUser.isActive}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        toast.success(`User ${editingUser.isActive ? 'deactivated' : 'activated'} successfully`);
-        // Update local state
-        setEditingUser({
-          ...editingUser,
-          isActive: !editingUser.isActive
-        });
-        // Refresh user data
-        await fetchUserProfile();
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || `Failed to ${editingUser.isActive ? 'deactivate' : 'activate'} user`);
-      }
-    } catch (error) {
-      console.error('Error toggling user status:', error);
-      toast.error('Network error. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
@@ -623,232 +457,12 @@ const AdminUserProfilePage: React.FC = () => {
         )}
 
         {/* User Details Tab */}
-        {activeTab === 'details' && editingUser && (
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Edit User Details</h2>
-              </div>
-              <div className="px-6 py-4">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Profile Picture */}
-                  <div className="flex justify-center">
-                    <div className="relative">
-                      {editingUser.profilePictureUrl ? (
-                        <img
-                          src={editingUser.profilePictureUrl}
-                          alt={`${editingUser.firstName} ${editingUser.lastName}`}
-                          className="h-24 w-24 rounded-full object-cover border-3 border-white dark:border-gray-600 shadow-lg"
-                        />
-                      ) : (
-                        <div className="h-24 w-24 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 dark:from-indigo-600 dark:to-indigo-700 flex items-center justify-center text-white text-xl font-semibold border-3 border-white dark:border-gray-600 shadow-lg">
-                          {editingUser.firstName?.[0]}{editingUser.lastName?.[0]}
-                        </div>
-                      )}
-                      <div
-                        className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-500 dark:to-indigo-600 flex items-center justify-center cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                        onClick={handleImageClick}
-                      >
-                        {uploadingImage ? (
-                          <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></div>
-                        ) : (
-                          <CameraIcon className="h-4 w-4 text-white" />
-                        )}
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageUpload}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        First name
-                      </label>
-                      <input
-                        type="text"
-                        name="firstName"
-                        id="firstName"
-                        value={editingUser.firstName || ''}
-                        onChange={handleChange}
-                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Last name
-                      </label>
-                      <input
-                        type="text"
-                        name="lastName"
-                        id="lastName"
-                        value={editingUser.lastName || ''}
-                        onChange={handleChange}
-                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        id="email"
-                        value={editingUser.email || ''}
-                        disabled
-                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 focus:outline-none shadow-sm cursor-not-allowed"
-                      />
-                      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Roles
-                      </label>
-                      {userId && (
-                        <RoleManager 
-                          userId={parseInt(userId)}
-                          onUserUpdated={() => {
-                            // Refresh user data after role changes
-                            fetchUserProfile();
-                          }}
-                          className="mb-4"
-                        />
-                      )}
-                    </div>
-
-                    <div>
-                      <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Department
-                      </label>
-                      <input
-                        type="text"
-                        name="department"
-                        id="department"
-                        value={editingUser.department || ''}
-                        onChange={handleChange}
-                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="text"
-                        name="phoneNumber"
-                        id="phoneNumber"
-                        value={editingUser.phoneNumber || ''}
-                        onChange={handleChange}
-                        className="block w-full py-2.5 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Status Information */}
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-4 border border-gray-200/50 dark:border-gray-600/50">
-                    <h4 className="text-base font-medium text-gray-900 dark:text-gray-100">Account Status</h4>
-
-                    <div className="space-y-3">
-                      <div className="flex items-start">
-                        <div className="flex items-center h-6">
-                          <input
-                            id="isActive"
-                            name="isActive"
-                            type="checkbox"
-                            checked={editingUser.isActive || false}
-                            onChange={handleCheckboxChange}
-                            className="h-5 w-5 text-indigo-600 dark:text-indigo-500 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 focus:ring-2 focus:ring-offset-0 transition-colors duration-200"
-                          />
-                        </div>
-                        <div className="ml-3">
-                          <label htmlFor="isActive" className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            Active Account
-                          </label>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {editingUser.isActive
-                              ? 'User can log in and access the system'
-                              : 'User is deactivated and cannot log in'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start">
-                        <div className="flex items-center">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Verification:</span>
-                          <span className={`ml-3 px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            editingUser.isEmailVerified 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
-                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                          }`}>
-                            {editingUser.isEmailVerified ? 'Verified' : 'Not Verified'}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {editingUser.isEmailVerified
-                          ? 'User has verified their email address'
-                          : 'User has not yet verified their email address'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <div>
-                      {(() => {
-                        const isCurrentUserAdmin = currentUser && userId && currentUser.id === parseInt(userId) && currentUser.role === 'ADMIN';
-                        const isDeactivatingSelf = Boolean(isCurrentUserAdmin && editingUser.isActive);
-                        
-                        return (
-                          <button
-                            type="button"
-                            onClick={toggleUserStatus}
-                            disabled={saving || isDeactivatingSelf}
-                            className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
-                              editingUser.isActive 
-                                ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 focus:ring-red-500 dark:focus:ring-red-400' 
-                                : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:ring-green-500 dark:focus:ring-green-400'
-                            }`}
-                            title={isDeactivatingSelf ? 'Cannot deactivate your own admin account' : ''}
-                          >
-                            {editingUser.isActive ? 'Deactivate User' : 'Activate User'}
-                          </button>
-                        );
-                      })()}
-                    </div>
-                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('profile')}
-                        className="inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={saving}
-                        className="inline-flex justify-center rounded-lg border border-transparent bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                      >
-                        {saving ? 'Saving...' : 'Save Changes'}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
+        {activeTab === 'details' && (
+          <UserDetailsContent 
+            userId={userId || null}
+            token={token!}
+            onUserUpdated={fetchUserProfile}
+          />
         )}
       </div>
     </div>

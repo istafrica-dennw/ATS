@@ -253,7 +253,21 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
       
     } catch (err: any) {
       console.error('Error submitting application:', err);
-      setError(err.response?.data?.error || 'Failed to submit application');
+      
+      // Handle 413 Payload Too Large error
+      if (err.response?.status === 413) {
+        const errorMessage = err.response?.data?.message || err.response?.data?.error;
+        if (errorMessage) {
+          setError(errorMessage);
+        } else {
+          // Generic 413 error message
+          setError('File size too large. Please ensure your resume is under 500KB and cover letter is under 100KB. Compress or reduce the file size and try again.');
+        }
+      } else {
+        // Handle other errors
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Failed to submit application';
+        setError(errorMessage);
+      }
     } finally {
       setSubmitLoading(false);
     }
@@ -478,11 +492,15 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
                   label="Resume"
                   onFileSelect={handleResumeSelect}
                   required
+                  maxSize={500 * 1024} // 500KB
+                  maxSizeDisplay="500KB"
                 />
 
                 <StyledFileUploader
                   label="Cover Letter (Optional)"
                   onFileSelect={handleCoverLetterSelect}
+                  maxSize={100 * 1024} // 100KB
+                  maxSizeDisplay="100KB"
                 />
                 </div>
               </div>

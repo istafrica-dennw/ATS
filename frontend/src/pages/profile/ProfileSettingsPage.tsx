@@ -77,6 +77,18 @@ const ProfileSettingsPage: React.FC = () => {
     if (!e.target.files || e.target.files.length === 0) return;
     
     const file = e.target.files[0];
+    
+    // Validate file size (500KB limit)
+    const maxSize = 500 * 1024; // 500KB
+    if (file.size > maxSize) {
+      const fileSizeKB = (file.size / 1024).toFixed(2);
+      toast.error(`Profile picture is too large. Maximum size is 500KB, but your file is ${fileSizeKB}KB. Please compress or reduce the file size and try again.`);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('file', file);
     
@@ -139,13 +151,26 @@ const ProfileSettingsPage: React.FC = () => {
           toast.warning('Profile picture uploaded but not saved to profile');
         }
       } else {
-        const error = await response.json();
-        console.error('Failed to upload profile picture:', error);
-        toast.error(error.message || 'Failed to upload profile picture');
+        // Handle 413 Payload Too Large error
+        if (response.status === 413) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.message || 'Profile picture is too large. Maximum size is 500KB. Please compress or reduce the file size and try again.';
+          toast.error(errorMessage);
+        } else {
+          const error = await response.json();
+          console.error('Failed to upload profile picture:', error);
+          toast.error(error.message || 'Failed to upload profile picture');
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading profile picture:', error);
-      toast.error('Network error when uploading profile picture');
+      // Handle 413 errors from network level
+      if (error.response?.status === 413) {
+        const errorMessage = error.response?.data?.message || 'Profile picture is too large. Maximum size is 500KB. Please compress or reduce the file size and try again.';
+        toast.error(errorMessage);
+      } else {
+        toast.error('Network error when uploading profile picture');
+      }
     } finally {
       setUploadingImage(false);
       // Clear the file input

@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +31,15 @@ public class FileStorageServiceImpl implements FileStorageService {
 
 	@Value("${app.frontend.url}")
 	private String frontendUrl;
+
+	@Value("${file.upload.limit.profile-picture:500KB}")
+	private String profilePictureLimit;
+
+	@Value("${file.upload.limit.resume:500KB}")
+	private String resumeLimit;
+
+	@Value("${file.upload.limit.cover-letter:100KB}")
+	private String coverLetterLimit;
 
 	public FileStorageServiceImpl(@Value("${file.upload-dir:uploads}") String uploadDir) {
 		this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
@@ -219,6 +227,9 @@ public class FileStorageServiceImpl implements FileStorageService {
 			throw new FileStorageException("Only image files (JPEG, PNG, GIF) are allowed for profile pictures");
 		}
 
+		// Validate file size (500KB limit)
+		validateFileSize(file, profilePictureLimit, "Profile picture");
+
 		try {
 			// Copy file to the target location
 			Path targetLocation = profilePicturesDir.resolve(uniqueFileName);
@@ -264,6 +275,60 @@ public class FileStorageServiceImpl implements FileStorageService {
 				|| contentType.equals("text/plain"));
 	}
 
+	/**
+	 * Convert size string (e.g., "2MB", "100KB") to bytes
+	 */
+	private long parseSizeToBytes(String sizeStr) {
+		if (sizeStr == null || sizeStr.isEmpty()) {
+			return 0;
+		}
+		sizeStr = sizeStr.trim().toUpperCase();
+		try {
+			if (sizeStr.endsWith("KB")) {
+				return Long.parseLong(sizeStr.substring(0, sizeStr.length() - 2)) * 1024;
+			} else if (sizeStr.endsWith("MB")) {
+				return Long.parseLong(sizeStr.substring(0, sizeStr.length() - 2)) * 1024 * 1024;
+			} else if (sizeStr.endsWith("GB")) {
+				return Long.parseLong(sizeStr.substring(0, sizeStr.length() - 2)) * 1024 * 1024 * 1024;
+			} else {
+				return Long.parseLong(sizeStr);
+			}
+		} catch (NumberFormatException e) {
+			logger.error("Invalid size format: {}", sizeStr);
+			return 0;
+		}
+	}
+
+	/**
+	 * Validate file size against the specified limit
+	 */
+	private void validateFileSize(MultipartFile file, String limitStr, String fileType) {
+		long maxSize = parseSizeToBytes(limitStr);
+		long fileSize = file.getSize();
+		
+		if (fileSize > maxSize) {
+			String limitDisplay = limitStr;
+			String fileSizeDisplay = formatBytes(fileSize);
+			throw new FileStorageException(
+				String.format("%s file is too large. Maximum size is %s, but your file is %s. Please compress or reduce the file size and try again.", 
+					fileType, limitDisplay, fileSizeDisplay)
+			);
+		}
+	}
+
+	/**
+	 * Format bytes to human-readable string
+	 */
+	private String formatBytes(long bytes) {
+		if (bytes < 1024) {
+			return bytes + " B";
+		} else if (bytes < 1024 * 1024) {
+			return String.format("%.1f KB", bytes / 1024.0);
+		} else {
+			return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
+		}
+	}
+
 	@Override
 	public String storeResume(MultipartFile file) {
 		// Check if directories exist, recreate if needed
@@ -288,6 +353,9 @@ public class FileStorageServiceImpl implements FileStorageService {
 		if (!isDocumentFile(file)) {
 			throw new FileStorageException("Only document files (PDF, DOC, DOCX, TXT) are allowed for resumes");
 		}
+
+		// Validate file size (500KB limit)
+		validateFileSize(file, resumeLimit, "Resume");
 
 		try {
 			// Copy file to the target location
@@ -344,6 +412,9 @@ public class FileStorageServiceImpl implements FileStorageService {
 		if (!isDocumentFile(file)) {
 			throw new FileStorageException("Only document files (PDF, DOC, DOCX, TXT) are allowed for cover letters");
 		}
+
+		// Validate file size (100KB limit)
+		validateFileSize(file, coverLetterLimit, "Cover letter");
 
 		try {
 			// Copy file to the target location

@@ -6,14 +6,40 @@ interface StyledFileUploaderProps {
   onFileSelect: (file: File | null) => void;
   label: string;
   required?: boolean;
+  maxSize?: number; // in bytes
+  maxSizeDisplay?: string; // e.g., "2MB", "100KB"
 }
 
-const StyledFileUploader: React.FC<StyledFileUploaderProps> = ({ onFileSelect, label, required }) => {
+const StyledFileUploader: React.FC<StyledFileUploaderProps> = ({ 
+  onFileSelect, 
+  label, 
+  required,
+  maxSize = 500 * 1024, // Default 500KB
+  maxSizeDisplay = "500KB"
+}) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fileError, setFileError] = useState<string>('');
 
   const handleFileChange = (file: File | null) => {
+    setFileError('');
+    if (file) {
+      // Validate file size
+      if (file.size > maxSize) {
+        // Format file size appropriately (KB for small files, MB for larger)
+        const fileSizeDisplay = file.size < 1024 * 1024 
+          ? `${(file.size / 1024).toFixed(2)}KB`
+          : `${(file.size / (1024 * 1024)).toFixed(2)}MB`;
+        setFileError(`${label} file is too large. Maximum size is ${maxSizeDisplay}, but your file is ${fileSizeDisplay}. Please compress or reduce the file size and try again.`);
+        setSelectedFile(null);
+        onFileSelect(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+    }
     setSelectedFile(file);
     onFileSelect(file);
   };
@@ -88,6 +114,9 @@ const StyledFileUploader: React.FC<StyledFileUploaderProps> = ({ onFileSelect, l
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Drag & drop a file here, or click the button below
           </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+            Maximum file size: {maxSizeDisplay} (PDF, DOC, DOCX, TXT)
+          </Typography>
           <Button variant="contained" onClick={handleButtonClick}>
             Select File
           </Button>
@@ -104,6 +133,14 @@ const StyledFileUploader: React.FC<StyledFileUploaderProps> = ({ onFileSelect, l
                     Remove
                 </Button>
             </Box>
+        </Box>
+      )}
+      
+      {fileError && (
+        <Box sx={{ mt: 2, p: 1.5, bgcolor: 'error.light', borderRadius: 1 }}>
+          <Typography variant="body2" color="error.dark">
+            {fileError}
+          </Typography>
         </Box>
       )}
     </Paper>

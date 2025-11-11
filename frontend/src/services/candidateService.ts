@@ -39,5 +39,10 @@ export const candidateService = {
   }> => {
     const response = await axiosInstance.get('/applications/my-statistics');
     return response.data;
+  },
+
+  // Withdraw an application
+  withdrawApplication: async (applicationId: number): Promise<void> => {
+    await axiosInstance.patch(`/applications/${applicationId}/withdraw`);
   }
 };

@@ -56,4 +56,7 @@ public class Job extends BaseEntity {
     @Column(name = "region", length = 10)
     private String region;
     
+    @Column(name = "expiration_date")
+    private LocalDate expirationDate;
+    
 }

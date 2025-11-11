@@ -17,6 +17,8 @@ import { Interview } from '../../types/interview';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import JobOfferResponse from '../../components/JobOfferResponse';
+import { toast } from 'react-toastify';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ApplicationStats {
   totalApplications: number;
@@ -178,6 +180,36 @@ const CandidateDashboardPage: React.FC = () => {
       offers: prevStats.offers - 1,
       ...(newStatus === 'OFFER_ACCEPTED' ? { acceptedOffers: (prevStats.acceptedOffers || 0) + 1 } : {})
     }));
+  };
+
+  const handleWithdraw = async (applicationId: number) => {
+    if (!window.confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await candidateService.withdrawApplication(applicationId);
+      toast.success('Application withdrawn successfully');
+      
+      // Update the application status in the local state
+      setApplications(prev => 
+        prev.map(app => 
+          app.id === applicationId 
+            ? { ...app, status: 'WITHDRAWN' } 
+            : app
+        )
+      );
+      
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        totalApplications: prev.totalApplications > 0 ? prev.totalApplications - 1 : 0
+      }));
+    } catch (err: any) {
+      console.error('Error withdrawing application:', err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Failed to withdraw application';
+      toast.error(errorMessage);
+    }
   };
 
   return (
@@ -369,6 +401,9 @@ const CandidateDashboardPage: React.FC = () => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Applied On
                       </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -392,6 +427,20 @@ const CandidateDashboardPage: React.FC = () => {
                           {app.appliedDate && !isNaN(new Date(app.appliedDate).getTime()) 
                             ? new Date(app.appliedDate).toLocaleDateString() 
                             : new Date().toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {app.status !== 'WITHDRAWN' && 
+                           app.status !== 'OFFER_ACCEPTED' && 
+                           app.status !== 'ACCEPTED' && (
+                            <button
+                              onClick={() => handleWithdraw(app.id)}
+                              className="inline-flex items-center px-3 py-1.5 border border-red-300 dark:border-red-600 shadow-sm text-sm font-medium rounded-md text-red-700 dark:text-red-300 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transition-colors"
+                              title="Withdraw application"
+                            >
+                              <XMarkIcon className="h-4 w-4 mr-1" />
+                              Withdraw
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

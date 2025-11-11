@@ -68,6 +68,7 @@ interface Job {
   workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
   jobStatus: 'DRAFT' | 'PUBLISHED' | 'EXPIRED' | 'CLOSED' | 'REOPENED';
   salaryRange: string;
+  expirationDate?: string;
   customQuestions?: CustomQuestion[];
 }
 
@@ -89,6 +90,7 @@ interface JobFormData {
   workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
   jobStatus?: 'DRAFT' | 'PUBLISHED' | 'EXPIRED' | 'CLOSED' | 'REOPENED';
   salaryRange: string;
+  expirationDate?: string;
   customQuestions: CustomQuestion[];
 }
 
@@ -102,6 +104,7 @@ const initialFormData: JobFormData = {
   workSetting: 'ONSITE',
   jobStatus: 'DRAFT',
   salaryRange: '',
+  expirationDate: '',
   customQuestions: []
 };
 
@@ -461,6 +464,7 @@ const JobManagementPage: React.FC = () => {
         workSetting: fullJobData.workSetting || 'ONSITE',
         jobStatus: fullJobData.jobStatus || 'DRAFT',
         salaryRange: fullJobData.salaryRange || '',
+        expirationDate: fullJobData.expirationDate || '',
         customQuestions: convertedCustomQuestions
       };
       
@@ -1039,6 +1043,24 @@ const JobManagementPage: React.FC = () => {
                               onChange={handleInputChange}
                               className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm hover:shadow-md transition-shadow duration-200"
                             />
+                          </div>
+
+                          <div>
+                            <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Expiration Date (Optional)
+                            </label>
+                            <input
+                              type="date"
+                              name="expirationDate"
+                              id="expirationDate"
+                              value={formData.expirationDate || ''}
+                              onChange={handleInputChange}
+                              min={new Date().toISOString().split('T')[0]}
+                              className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-indigo-500 dark:focus:border-indigo-400 sm:text-sm hover:shadow-md transition-shadow duration-200"
+                            />
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                              If set, the job will automatically expire on this date
+                            </p>
                           </div>
 
                           <div>

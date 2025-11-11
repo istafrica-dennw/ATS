@@ -86,6 +86,11 @@ public class JobServiceImpl implements JobService {
             job.setPostedDate(LocalDate.now());
         }
         
+        // Set expiration date if provided
+        if (jobDTO.getExpirationDate() != null) {
+            job.setExpirationDate(jobDTO.getExpirationDate());
+        }
+        
         // Save the job first
         job = jobRepository.save(job);
         
@@ -146,6 +151,7 @@ public class JobServiceImpl implements JobService {
             updatedJob.setSkills(jobDTO.getSkills());
             updatedJob.setWorkSetting(jobDTO.getWorkSetting());
             updatedJob.setJobStatus(jobDTO.getJobStatus());
+            updatedJob.setExpirationDate(jobDTO.getExpirationDate());
             
             // Set posted date if job is being published for the first time or reopened
             if ((oldStatus != JobStatus.PUBLISHED && oldStatus != JobStatus.REOPENED) && 

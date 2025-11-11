@@ -443,6 +443,61 @@ public class ApplicationController {
 		}
 	}
 
+	@Operation(summary = "Withdraw application", description = "Withdraw an application (candidate only - can only set status to WITHDRAWN)")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Application withdrawn successfully"),
+			@ApiResponse(responseCode = "404", description = "Application not found"),
+			@ApiResponse(responseCode = "400", description = "Invalid request - application may already be withdrawn or in a final state"),
+			@ApiResponse(responseCode = "403", description = "Forbidden - not authorized"),
+			@ApiResponse(responseCode = "500", description = "Internal server error") })
+	@PatchMapping("/{id}/withdraw")
+	public ResponseEntity<?> withdrawApplication(@PathVariable("id") Long applicationId,
+			@AuthenticationPrincipal UserDetails userDetails) {
+
+		try {
+			// Extract user ID from UserDetails
+			Long userId = extractUserIdFromUserDetails(userDetails);
+
+			// Get the application
+			ApplicationDTO application = applicationService.getApplicationById(applicationId);
+
+			// Verify the user is the candidate
+			if (!application.getCandidateId().equals(userId)) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN)
+						.body(Map.of("error", "You are not authorized to withdraw this application"));
+			}
+
+			// Check if application is already withdrawn
+			if (application.getStatus() == ApplicationStatus.WITHDRAWN) {
+				return ResponseEntity.badRequest()
+						.body(Map.of("error", "Application is already withdrawn"));
+			}
+
+			// Check if application is in a final state that cannot be withdrawn
+			if (application.getStatus() == ApplicationStatus.OFFER_ACCEPTED
+					|| application.getStatus() == ApplicationStatus.ACCEPTED) {
+				return ResponseEntity.badRequest()
+						.body(Map.of("error", "Cannot withdraw an application that has been accepted"));
+			}
+
+			// Update application status to WITHDRAWN
+			ApplicationDTO updatedApplication = applicationService.updateApplicationStatus(applicationId,
+					ApplicationStatus.WITHDRAWN);
+
+			log.info("Application {} withdrawn by candidate {}", applicationId, userId);
+
+			return ResponseEntity.ok(Map.of("message", "Application withdrawn successfully", "application",
+					updatedApplication));
+
+		} catch (NotFoundException e) {
+			log.warn("Application not found: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+		} catch (Exception e) {
+			log.error("Error withdrawing application", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Map.of("error", "An error occurred while withdrawing the application"));
+		}
+	}
+
 	/**
 	 * Extract user ID from the UserDetails object
 	 * 

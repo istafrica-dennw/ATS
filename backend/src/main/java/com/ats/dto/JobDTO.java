@@ -136,6 +136,12 @@ public class JobDTO {
     )
     private String region;
 
+    @Schema(
+        description = "Optional expiration date for the job. If set, the job will automatically expire on this date.",
+        example = "2024-12-31"
+    )
+    private LocalDate expirationDate;
+
     // Getters and Setters (or use Lombok @Data if preferred)
     
     // Optional: Constructors, toString, equals, etc.

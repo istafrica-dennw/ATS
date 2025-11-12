@@ -379,8 +379,8 @@ const ProfilePage: React.FC = () => {
                               </span>
                             </div>
                             
-                            {/* Debug Information - IP and Region Details */}
-                            {/* <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-600 rounded text-xs">
+                            Debug Information - IP and Region Details
+                            { <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-600 rounded text-xs">
                               <div className="font-mono text-gray-600 dark:text-gray-300">
                                 <div><strong>Debug Info (Temporary):</strong></div>
                                 <div>IP: {euAdminStatus?.clientIP || 'Loading...'}</div>
@@ -388,7 +388,7 @@ const ProfilePage: React.FC = () => {
                                 <div>EU Access: {accessingFromEU ? 'Yes' : 'No'}</div>
                                 <div>API EU Check: {euAdminStatus?.isEUAccess ? 'Yes' : 'No'}</div>
                               </div>
-                            </div> */}
+                            </div> }
                             
                             <div className="flex items-center">
                               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${

@@ -5,6 +5,7 @@ import UserProfileDropdown from '../components/common/UserProfileDropdown';
 import ChatWidget from '../components/chat/ChatWidget';
 import ScrollToTopButton from '../components/common/ScrollToTopButton';
 import ThemeToggleButton from '../components/common/ThemeToggleButton';
+import Logo from '../components/common/Logo';
 import { Role } from '../types/user';
 import { Bars3Icon, XMarkIcon, HomeIcon, UserCircleIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 import { getFullProfilePictureUrl } from '../utils/imageUtils';
@@ -44,8 +45,8 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 </button>
               </div>
               <div className="flex-shrink-0 flex items-center">
-                <Link to="/" className="text-lg sm:text-xl font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
-                  ATS System
+                <Link to="/" className="flex items-center">
+                  <Logo height="h-8 sm:h-10" alt="IST Logo" />
                 </Link>
               </div>
               <div className="hidden lg:ml-6 lg:flex lg:space-x-8">
@@ -88,8 +89,8 @@ const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         }`}>
         <div className="flex flex-col h-full shadow-2xl bg-gray-50 dark:bg-gray-800">
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                  ATS
+              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center">
+                  <Logo height="h-8" alt="IST Logo" />
               </Link>
               <button
                 onClick={() => setMobileMenuOpen(false)}

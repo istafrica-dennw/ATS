@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import Logo from '../common/Logo';
 import UserProfileDropdown from '../common/UserProfileDropdown';
 import ThemeToggleButton from '../common/ThemeToggleButton';
 import AdminChatNotifications from './AdminChatNotifications';
@@ -82,8 +83,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className={`flex-shrink-0 flex items-center justify-center ${
               isCollapsed ? 'w-12 h-12' : 'w-12 h-12 mr-3'
             }`}>
-              <img src="/IST-Africa-logo-dark.png" alt="IST Logo" className="h-10 dark:hidden" />
-              <img src="/IST-Africa-logo-light.png" alt="IST Logo" className="h-10 hidden dark:block" />
+              <Logo height="h-10" alt="IST Logo" />
             </div>
             {!isCollapsed && (
               <div>

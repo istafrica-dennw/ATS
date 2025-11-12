@@ -5,6 +5,7 @@ import ThemeToggleButton from '../components/common/ThemeToggleButton';
 import ATSAnimationShowcase from '../components/ATSAnimationShowcase';
 import ScrollToTopButton from '../components/common/ScrollToTopButton';
 import FooterSubscription from '../components/subscription/FooterSubscription';
+import Logo from '../components/common/Logo';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
@@ -73,8 +74,8 @@ const LandingPage: React.FC = () => {
             <div className="flex justify-between h-16">
               <div className="flex">
                 <div className="flex-shrink-0 flex items-center">
-                  <Link to="/" className="text-xl font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors">
-                    ATS System
+                  <Link to="/" className="flex items-center">
+                    <Logo height="h-8 sm:h-10" alt="IST Logo" />
                   </Link>
                 </div>
                 <div className="hidden md:ml-6 md:flex md:space-x-8">
@@ -150,10 +151,7 @@ const LandingPage: React.FC = () => {
           }`}>
             <div className="flex items-center justify-between px-6 py-6 bg-gray-50 dark:bg-gray-800/50">
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-indigo-700 dark:from-indigo-500 dark:to-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-white font-bold text-sm">ATS</span>
-                </div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">ATS System</h2>
+                <Logo height="h-8" alt="IST Logo" />
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}

@@ -7,13 +7,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Implementation of IP geolocation service using ipapi.co (free tier)
+ * Implementation of IP geolocation service with multiple fallback providers
+ * Uses ipapi.co as primary, with fallbacks to ip-api.com and ipgeolocation.io
  */
 @Service
 public class GeolocationServiceImpl implements GeolocationService {
@@ -46,28 +48,109 @@ public class GeolocationServiceImpl implements GeolocationService {
             return null;
         }
         
+        // Try multiple geolocation services with fallback
+        Region region = tryIpApiCo(ipAddress);
+        if (region != null) {
+            logger.info("Primary service (ipapi.co) detected region: {} for IP {}", region, ipAddress);
+            return region;
+        }
+        
+        logger.info("Primary service (ipapi.co) failed, trying fallback service (ip-api.com) for IP {}", ipAddress);
+        region = tryIpApiCom(ipAddress);
+        if (region != null) {
+            logger.info("Fallback service (ip-api.com) detected region: {} for IP {}", region, ipAddress);
+            return region;
+        }
+        
+        logger.warn("All geolocation services failed for IP {}", ipAddress);
+        return null;
+    }
+    
+    /**
+     * Try ipapi.co service (primary)
+     */
+    private Region tryIpApiCo(String ipAddress) {
         try {
             String url = "https://ipapi.co/" + ipAddress + "/json/";
-            logger.info("Fetching geolocation data from: {}", url);
+            logger.info("Fetching geolocation data from ipapi.co: {}", url);
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
             
-            logger.info("Geolocation API response for IP {}: {}", ipAddress, response);
-            
-            if (response != null && response.containsKey("country_code")) {
-                String countryCode = (String) response.get("country_code");
-                logger.info("Country code detected: {}", countryCode);
-                Region region = determineRegionFromCountryCode(countryCode);
-                logger.info("Region determined: {}", region);
-                return region;
-            } else {
-                logger.warn("No country_code found in response for IP {}: {}", ipAddress, response);
+            if (response == null) {
+                logger.warn("ipapi.co returned null response for IP {}", ipAddress);
+                return null;
             }
             
+            // Check for error response
+            if (response.containsKey("error")) {
+                Object errorObj = response.get("error");
+                logger.warn("ipapi.co returned error for IP {}: {}", ipAddress, errorObj);
+                return null;
+            }
+            
+            // Extract country code
+            Object countryCodeObj = response.get("country_code");
+            if (countryCodeObj == null) {
+                countryCodeObj = response.get("country");
+            }
+            
+            if (countryCodeObj != null) {
+                String countryCode = countryCodeObj.toString().toUpperCase();
+                logger.info("ipapi.co detected country code: {} for IP {}", countryCode, ipAddress);
+                return determineRegionFromCountryCode(countryCode);
+            }
+            
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() != null && e.getStatusCode().value() == 429) {
+                logger.warn("ipapi.co rate limit exceeded for IP {}, will try fallback service", ipAddress);
+            } else {
+                logger.warn("ipapi.co HTTP error for IP {}: Status {}", ipAddress, e.getStatusCode());
+            }
         } catch (RestClientException e) {
-            logger.error("Error fetching geolocation data for IP {}: {}", ipAddress, e.getMessage());
+            logger.warn("ipapi.co request failed for IP {}: {}", ipAddress, e.getMessage());
         } catch (Exception e) {
-            logger.error("Unexpected error during geolocation detection for IP {}: {}", ipAddress, e.getMessage());
+            logger.warn("Unexpected error with ipapi.co for IP {}: {}", ipAddress, e.getMessage());
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Try ip-api.com service (fallback)
+     */
+    private Region tryIpApiCom(String ipAddress) {
+        try {
+            String url = "http://ip-api.com/json/" + ipAddress + "?fields=status,countryCode";
+            logger.info("Fetching geolocation data from ip-api.com: {}", url);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            
+            if (response == null) {
+                logger.warn("ip-api.com returned null response for IP {}", ipAddress);
+                return null;
+            }
+            
+            // Check status field
+            Object statusObj = response.get("status");
+            if (statusObj != null && "fail".equals(statusObj.toString().toLowerCase())) {
+                logger.warn("ip-api.com returned fail status for IP {}", ipAddress);
+                return null;
+            }
+            
+            // Extract country code
+            Object countryCodeObj = response.get("countryCode");
+            if (countryCodeObj != null) {
+                String countryCode = countryCodeObj.toString().toUpperCase();
+                logger.info("ip-api.com detected country code: {} for IP {}", countryCode, ipAddress);
+                return determineRegionFromCountryCode(countryCode);
+            }
+            
+        } catch (HttpClientErrorException e) {
+            logger.warn("ip-api.com HTTP error for IP {}: Status {}", ipAddress, e.getStatusCode());
+        } catch (RestClientException e) {
+            logger.warn("ip-api.com request failed for IP {}: {}", ipAddress, e.getMessage());
+        } catch (Exception e) {
+            logger.warn("Unexpected error with ip-api.com for IP {}: {}", ipAddress, e.getMessage());
         }
         
         return null;

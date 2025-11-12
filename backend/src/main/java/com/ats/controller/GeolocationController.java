@@ -86,6 +86,14 @@ public class GeolocationController {
     public ResponseEntity<Map<String, Object>> checkEUAccess(HttpServletRequest request) {
         try {
             String clientIP = IPUtils.getClientIPAddress(request);
+            
+            if (clientIP == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Unable to determine IP address");
+                return ResponseEntity.ok(response);
+            }
+            
             boolean isEU = geolocationService.isEUAccess(clientIP);
             
             Map<String, Object> response = new HashMap<>();

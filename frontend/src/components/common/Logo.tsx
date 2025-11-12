@@ -22,20 +22,12 @@ const Logo: React.FC<LogoProps> = ({
   // For EU access: use the new IST logos
   // For other regions: use the current IST-Africa logos
   
+  // Wait until region is detected before showing any logo
   if (loading) {
-    // Show default logo while detecting region
+    // Show loading placeholder or nothing while detecting region
     return (
       <div className={`flex items-center justify-center ${className}`}>
-        <img 
-          src="/IST-Africa-logo-dark.png" 
-          alt={alt} 
-          className={`${height} dark:hidden`} 
-        />
-        <img 
-          src="/IST-Africa-logo-light.png" 
-          alt={alt} 
-          className={`${height} hidden dark:block`} 
-        />
+        <div className={`${height} w-auto bg-gray-200 dark:bg-gray-700 rounded animate-pulse`}></div>
       </div>
     );
   }
@@ -47,12 +39,12 @@ const Logo: React.FC<LogoProps> = ({
     return (
       <div className={`flex items-center justify-center ${className}`}>
         <img 
-          src="/IST-logo-dark.png" 
+          src="/ist-logo-dark.png" 
           alt={alt} 
           className={`${height} dark:hidden`} 
         />
         <img 
-          src="/IST-logo-light.png" 
+          src="/ist-logo-dark.png" 
           alt={alt} 
           className={`${height} hidden dark:block`} 
         />

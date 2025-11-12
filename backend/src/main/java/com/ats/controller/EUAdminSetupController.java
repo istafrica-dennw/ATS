@@ -7,8 +7,9 @@ import com.ats.service.GeolocationService;
 import com.ats.service.UserService;
 import com.ats.util.IPUtils;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +27,7 @@ import java.util.Map;
 @Tag(name = "EU Admin Setup", description = "APIs for EU admin setup and management")
 public class EUAdminSetupController {
     
+    private static final Logger logger = LoggerFactory.getLogger(EUAdminSetupController.class);
     private final EUAdminSetupService euAdminSetupService;
     private final GeolocationService geolocationService;
     private final UserService userService;
@@ -49,6 +51,13 @@ public class EUAdminSetupController {
             User currentUser = getUserByEmail(userEmail);
             
             String clientIP = IPUtils.getClientIPAddress();
+            
+            if (clientIP == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("error", "Unable to determine IP address");
+                return ResponseEntity.ok(response);
+            }
+            
             boolean isEUAccess = geolocationService.isEUAccess(clientIP);
             boolean hasEUAdmin = euAdminSetupService.hasEUAdmin();
             boolean canBecomeFirstEUAdmin = euAdminSetupService.canBecomeFirstEUAdmin(currentUser, isEUAccess);
@@ -83,6 +92,14 @@ public class EUAdminSetupController {
             User currentUser = getUserByEmail(userEmail);
             
             String clientIP = IPUtils.getClientIPAddress();
+            
+            if (clientIP == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Unable to determine IP address");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
             boolean isEUAccess = geolocationService.isEUAccess(clientIP);
             
             if (!isEUAccess) {

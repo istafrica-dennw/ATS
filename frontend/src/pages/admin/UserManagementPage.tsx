@@ -45,6 +45,7 @@ const UserManagementPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isRegionModalOpen, setIsRegionModalOpen] = useState(false);
   const [userForRegion, setUserForRegion] = useState<{ id: number; name: string; region: string | null } | null>(null);
+  const [totalSubscribers, setTotalSubscribers] = useState<number>(0);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -65,9 +66,29 @@ const UserManagementPage: React.FC = () => {
     }
   }, [token]);
 
+  const fetchSubscribersCount = useCallback(async () => {
+    try {
+      const response = await fetch('/api/subscriptions/subscribed-users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTotalSubscribers(data.count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching subscribers count:', error);
+    }
+  }, [token]);
+
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  useEffect(() => {
+    fetchSubscribersCount();
+  }, [fetchSubscribersCount]);
 
   // Check if we should open the Add User modal from dashboard navigation
   useEffect(() => {
@@ -220,7 +241,13 @@ const UserManagementPage: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] p-6 border border-gray-200/50 dark:border-gray-700/50">
         <div className="sm:flex sm:items-center">
           <div className="sm:flex-auto">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">User Management</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">User Management</h1>
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg">
+                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">Total Subscribers:</span>
+                <span className="text-sm font-bold text-indigo-900 dark:text-indigo-100">{totalSubscribers}</span>
+              </div>
+            </div>
             <p className="mt-2 text-sm text-gray-700 dark:text-gray-400">
               A list of all users in your account including their name, email, role, and status.
             </p>
@@ -358,6 +385,7 @@ const UserManagementPage: React.FC = () => {
                         lastName={user.lastName}
                         profilePictureUrl={user.profilePictureUrl}
                         size="medium"
+                        isSubscribed={user.isSubscribed || false}
                       />
                       <div className="ml-4 min-w-0 flex-1">
                         <div className="font-medium text-gray-900 dark:text-gray-100 truncate">

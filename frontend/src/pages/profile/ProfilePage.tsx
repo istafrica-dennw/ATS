@@ -12,6 +12,8 @@ import {
   ShieldCheckIcon,
   PencilIcon,
   BellIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -29,6 +31,7 @@ const ProfilePage: React.FC = () => {
   const [userData, setUserData] = useState(user);
   const location = useLocation();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // EU Admin Setup hooks
   const { 
@@ -379,16 +382,31 @@ const ProfilePage: React.FC = () => {
                               </span>
                             </div>
                             
-                            Debug Information - IP and Region Details
-                            { <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-600 rounded text-xs">
-                              <div className="font-mono text-gray-600 dark:text-gray-300">
-                                <div><strong>Debug Info (Temporary):</strong></div>
-                                <div>IP: {euAdminStatus?.clientIP || 'Loading...'}</div>
-                                <div>Region: {detectedRegion || 'Detecting...'}</div>
-                                <div>EU Access: {accessingFromEU ? 'Yes' : 'No'}</div>
-                                <div>API EU Check: {euAdminStatus?.isEUAccess ? 'Yes' : 'No'}</div>
-                              </div>
-                            </div> }
+                            {/* Collapsible Debug Information */}
+                            <div className="mt-2">
+                              <button
+                                onClick={() => setShowDebugInfo(!showDebugInfo)}
+                                className="flex items-center justify-between w-full text-left text-xs font-medium text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-200 transition-colors"
+                              >
+                                <span>Debug Information - IP and Region Details</span>
+                                {showDebugInfo ? (
+                                  <ChevronUpIcon className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDownIcon className="h-4 w-4" />
+                                )}
+                              </button>
+                              {showDebugInfo && (
+                                <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-600 rounded text-xs">
+                                  <div className="font-mono text-gray-600 dark:text-gray-300">
+                                    <div><strong>Debug Info (Temporary):</strong></div>
+                                    <div>IP: {euAdminStatus?.clientIP || 'Loading...'}</div>
+                                    <div>Region: {detectedRegion || 'Detecting...'}</div>
+                                    <div>EU Access: {accessingFromEU ? 'Yes' : 'No'}</div>
+                                    <div>API EU Check: {euAdminStatus?.isEUAccess ? 'Yes' : 'No'}</div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                             
                             <div className="flex items-center">
                               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${

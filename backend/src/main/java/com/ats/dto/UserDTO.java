@@ -196,4 +196,11 @@ public class UserDTO {
 
     @Schema(description = "Whether 2FA is enabled for this user", example = "true")
     private Boolean mfaEnabled;
+    
+    @Schema(
+        description = "Whether the user is subscribed to job notifications", 
+        example = "true",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private Boolean isSubscribed;
 } 

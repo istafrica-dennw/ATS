@@ -462,6 +462,7 @@ public class UserServiceImpl implements UserService {
         dto.setIsActive(user.getIsActive());
         dto.setIsEmailVerified(user.getIsEmailVerified());
         dto.setMfaEnabled(user.getMfaEnabled());
+        dto.setIsSubscribed(user.getIsSubscribed());
         return dto;
     }
     

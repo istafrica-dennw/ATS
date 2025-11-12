@@ -38,6 +38,7 @@ export interface User {
   isActive?: boolean;
   isEmailVerified?: boolean;
   mfaEnabled?: boolean;
+  isSubscribed?: boolean;
 }
 
 export interface UserFormData extends Omit<User, 'id' | 'lastLogin'> {

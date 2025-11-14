@@ -37,16 +37,22 @@ const Logo: React.FC<LogoProps> = ({
     // Light mode: use dark version of IST logo
     // Dark mode: use light version of IST logo
     return (
-      <div className={`flex items-center justify-center ${className}`}>
+      <div className={`flex items-center justify-center min-w-0 ${className}`}>
         <img 
-          src="/ist-logo-dark.png" 
+          src="/ist-logo-light.jpeg" 
           alt={alt} 
-          className={`${height} dark:hidden`} 
+          className={`${height} w-auto min-w-0 object-contain dark:hidden`}
+          onError={(e) => {
+            console.error('Failed to load EU logo (dark):', e);
+          }}
         />
         <img 
-          src="/ist-logo-dark.png" 
+          src="/ist-logo-light.jpeg" 
           alt={alt} 
-          className={`${height} hidden dark:block`} 
+          className={`${height} w-auto min-w-0 object-contain hidden dark:block`}
+          onError={(e) => {
+            console.error('Failed to load EU logo (light):', e);
+          }}
         />
       </div>
     );
@@ -58,12 +64,12 @@ const Logo: React.FC<LogoProps> = ({
       <img 
         src="/IST-Africa-logo-dark.png" 
         alt={alt} 
-        className={`${height} dark:hidden`} 
+        className={`${height} w-auto object-contain dark:hidden`} 
       />
       <img 
         src="/IST-Africa-logo-light.png" 
         alt={alt} 
-        className={`${height} hidden dark:block`} 
+        className={`${height} w-auto object-contain hidden dark:block`} 
       />
     </div>
   );

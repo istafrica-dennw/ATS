@@ -14,7 +14,7 @@ interface AuthContextType {
   setupMfa: (currentPassword: string) => Promise<any>;
   verifyAndEnableMfa: (code: string, secret: string) => Promise<any>;
   disableMfa: (currentPassword: string) => Promise<any>;
-  signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+  signup: (email: string, password: string, firstName: string, lastName: string, privacyPolicyAccepted: boolean) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   setToken: (token: string | null) => void;
@@ -393,9 +393,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (email: string, password: string, firstName: string, lastName: string) => {
+  const signup = async (email: string, password: string, firstName: string, lastName: string, privacyPolicyAccepted: boolean) => {
     try {
-      const response = await axiosInstance.post('/auth/signup', { email, password, firstName, lastName });
+      const response = await axiosInstance.post('/auth/signup', { 
+        email, 
+        password, 
+        firstName, 
+        lastName,
+        privacyPolicyAccepted
+      });
       toast.success(response.data.message || 'Registration successful. Please check your email for verification.');
       return response.data;
     } catch (error: any) {

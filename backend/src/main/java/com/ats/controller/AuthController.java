@@ -16,6 +16,7 @@ import com.ats.model.Role;
 import com.ats.repository.UserRepository;
 import com.ats.security.JwtTokenProvider;
 import com.ats.exception.ResourceAlreadyExistsException;
+import com.ats.exception.AtsCustomExceptions.BadRequestException;
 import com.ats.service.EmailService;
 import com.ats.service.PasswordResetService;
 import com.ats.service.UserService;
@@ -92,6 +93,11 @@ public class AuthController {
             throw new ResourceAlreadyExistsException("Email is already in use");
         }
 
+        // Validate Privacy Policy acceptance (required for all users)
+        if (authRequest.getPrivacyPolicyAccepted() == null || !authRequest.getPrivacyPolicyAccepted()) {
+            throw new BadRequestException("You must accept the Privacy Policy to create an account");
+        }
+        
         User user = new User();
         user.setEmail(authRequest.getEmail());
         user.setPasswordHash(passwordEncoder.encode(authRequest.getPassword()));
@@ -100,6 +106,10 @@ public class AuthController {
         user.setRole(Role.CANDIDATE);
         user.setIsActive(true);
         user.setIsEmailPasswordEnabled(true);
+        
+        // Set privacy policy acceptance
+        user.setPrivacyPolicyAccepted(authRequest.getPrivacyPolicyAccepted());
+        user.setPrivacyPolicyAcceptedAt(LocalDateTime.now());
         
         // Generate verification token using TokenUtil
         String verificationToken = TokenUtil.generateVerificationToken(user);
@@ -114,13 +124,6 @@ public class AuthController {
         } catch (MessagingException e) {
             // Log the error but return success since user was created
             e.printStackTrace();
-            return ResponseEntity.ok(new HashMap<String, String>() {{
-                put("message", "Registration successful. However, we couldn't send the verification email. Please contact support.");
-                put("verificationToken", verificationToken); // Include token in response for testing
-            }});
-        }
-
-        finally {
             return ResponseEntity.ok(new HashMap<String, String>() {{
                 put("message", "Registration successful. However, we couldn't send the verification email. Please contact support.");
                 put("verificationToken", verificationToken); // Include token in response for testing
@@ -167,6 +170,11 @@ public class AuthController {
         
         if (user.getIsActive() == null || !user.getIsActive()) {
             throw new RuntimeException("This account has been deactivated. Please contact an administrator.");
+        }
+
+        // Check if user has accepted Privacy Policy (required for all users)
+        if (user.getPrivacyPolicyAccepted() == null || !user.getPrivacyPolicyAccepted()) {
+            throw new BadRequestException("You must accept the Privacy Policy to access your account. Please contact support.");
         }
 
         // Authenticate with password
@@ -792,6 +800,11 @@ public class AuthController {
     public ResponseEntity<?> loginWithMfa(@Valid @RequestBody MfaLoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Check if user has accepted Privacy Policy (required for all users)
+        if (user.getPrivacyPolicyAccepted() == null || !user.getPrivacyPolicyAccepted()) {
+            throw new BadRequestException("You must accept the Privacy Policy to access your account. Please contact support.");
+        }
                 
         boolean isValid = false;
         

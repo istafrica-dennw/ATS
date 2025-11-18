@@ -129,6 +129,13 @@ public class User extends BaseEntity {
     @Column(name = "subscription_preferences", columnDefinition = "TEXT")
     private String subscriptionPreferences; // JSON string for preferences
     
+    // Privacy Policy acceptance
+    @Column(name = "privacy_policy_accepted", nullable = false)
+    private Boolean privacyPolicyAccepted = false;
+    
+    @Column(name = "privacy_policy_accepted_at")
+    private LocalDateTime privacyPolicyAcceptedAt;
+    
     // Helper methods for multiple roles
     /**
      * Get all available roles for this user

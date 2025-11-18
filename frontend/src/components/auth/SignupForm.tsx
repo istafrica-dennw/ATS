@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { useGeolocation } from '../../hooks/useGeolocation';
 import { Card } from '../ui/card';
 import LinkedInLoginButton from './LinkedInLoginButton';
 import { EyeIcon, EyeSlashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
@@ -18,8 +17,8 @@ const SignupForm: React.FC = () => {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { signup } = useAuth();
-  const { isEU } = useGeolocation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -78,8 +77,14 @@ const SignupForm: React.FC = () => {
       return;
     }
 
+    if (!agreedToTerms) {
+      setError('You must agree to the Privacy Policy to create an account');
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      await signup(email, password, firstName, lastName);
+      await signup(email, password, firstName, lastName, agreedToTerms);
       console.log('Signup successful - after signup')
       navigate('/login');
     } catch (err: any) {
@@ -250,10 +255,33 @@ const SignupForm: React.FC = () => {
               )}
             </div>
 
+            <div className="pt-2">
+              <div className="flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    id="agree-terms"
+                    name="agree-terms"
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="h-4 w-4 text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label htmlFor="agree-terms" className="text-gray-700 dark:text-gray-300">
+                    I agree to the{' '}
+                    <Link to="/privacy-policy" target="_blank" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 underline">
+                      Privacy Policy
+                    </Link>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div className="pt-4">
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !agreedToTerms}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
               >
                 <span className="absolute left-0 inset-y-0 flex items-center pl-3">
@@ -300,22 +328,6 @@ const SignupForm: React.FC = () => {
           </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            By signing up, you agree to our{' '}
-            {!isEU && (
-              <>
-                <Link to="/terms-of-service" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200">
-                  Terms of Service
-                </Link>
-                {' '}and{' '}
-              </>
-            )}
-            <Link to="/privacy-policy" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200">
-              Privacy Policy
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );

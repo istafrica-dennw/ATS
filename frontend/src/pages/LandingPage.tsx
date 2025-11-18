@@ -6,6 +6,7 @@ import ATSAnimationShowcase from '../components/ATSAnimationShowcase';
 import ScrollToTopButton from '../components/common/ScrollToTopButton';
 import FooterSubscription from '../components/subscription/FooterSubscription';
 import Logo from '../components/common/Logo';
+import { useGeolocation } from '../hooks/useGeolocation';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
@@ -35,6 +36,7 @@ interface Job {
 
 const LandingPage: React.FC = () => {
   const { user } = useAuth();
+  const { isEU } = useGeolocation();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -488,9 +490,11 @@ const LandingPage: React.FC = () => {
                     <Link to="/privacy-policy" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300">
                       Privacy Policy
                     </Link>
-                    <Link to="/terms-of-service" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300">
-                      Terms of Service
-                    </Link>
+                    {!isEU && (
+                      <Link to="/terms-of-service" className="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300">
+                        Terms of Service
+                      </Link>
+                    )}
                   </div>
                 </div>
                 

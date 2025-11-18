@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { useGeolocation } from '../../hooks/useGeolocation';
 import { Card } from '../ui/card';
 import LinkedInLoginButton from './LinkedInLoginButton';
 import { EyeIcon, EyeSlashIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
@@ -18,6 +19,7 @@ const SignupForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signup } = useAuth();
+  const { isEU } = useGeolocation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -301,11 +303,15 @@ const SignupForm: React.FC = () => {
         <div className="text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             By signing up, you agree to our{' '}
-            <Link to="#" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200">
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link to="#" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200">
+            {!isEU && (
+              <>
+                <Link to="/terms-of-service" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200">
+                  Terms of Service
+                </Link>
+                {' '}and{' '}
+              </>
+            )}
+            <Link to="/privacy-policy" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors duration-200">
               Privacy Policy
             </Link>
           </p>

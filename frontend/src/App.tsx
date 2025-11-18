@@ -37,6 +37,7 @@ import JobApplicationPage from './pages/candidate/JobApplicationPage';
 import ChatTestPage from './pages/ChatTestPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import PrivacyPolicyRouter from './components/common/PrivacyPolicyRouter';
 import AboutPage from './pages/AboutPage';
 import CareersPage from './pages/CareersPage';
 import ContactPage from './pages/ContactPage';
@@ -249,7 +250,7 @@ const App: React.FC = () => {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/careers" element={<CareersPage />} />
               <Route path="/contact" element={<ContactPage />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyRouter />} />
               <Route path="/terms-of-service" element={<TermsOfServicePage />} />
               
               <Route path="*" element={<Navigate to="/" />} />

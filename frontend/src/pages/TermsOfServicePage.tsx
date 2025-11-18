@@ -1,9 +1,28 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { DocumentTextIcon, ExclamationTriangleIcon, UserIcon } from '@heroicons/react/24/outline';
 import ScrollToTopButton from '../components/common/ScrollToTopButton';
+import { useGeolocation } from '../hooks/useGeolocation';
 
 const TermsOfServicePage: React.FC = () => {
+  const { isEU, loading } = useGeolocation();
+
+  // Redirect EU users to privacy policy (Terms of Service not available for EU)
+  if (loading) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isEU) {
+    return <Navigate to="/privacy-policy" replace />;
+  }
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}

@@ -8,21 +8,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
-import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.stereotype.Component;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Collections;
 
 @Component
 public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -167,7 +164,10 @@ public class CustomOAuth2AuthenticationSuccessHandler extends SimpleUrlAuthentic
                     newUser.setLastName(oidcUser.getFamilyName() != null ? oidcUser.getFamilyName() : "User");
                     newUser.setRole(Role.CANDIDATE); // IMPORTANT: ONLY for new users, existing users keep their roles
                     newUser.setIsActive(true);
-                    newUser.setIsEmailVerified(true); // LinkedIn users are already verified
+                    newUser.setIsEmailVerified(true); // LinkedIn users are already verified                    
+                    // Privacy Policy acceptance - by clicking LinkedIn button, user implicitly accepts
+                    newUser.setPrivacyPolicyAccepted(true);
+                    newUser.setPrivacyPolicyAcceptedAt(LocalDateTime.now());
                     
                     // LinkedIn specific fields
                     if ("linkedin".equals(provider)) {

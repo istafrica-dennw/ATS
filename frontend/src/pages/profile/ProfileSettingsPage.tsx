@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { UserFormData, DeactivationRequest } from '../../types/user';
-import { useNavigate } from 'react-router-dom';
-import { CameraIcon } from '@heroicons/react/24/outline';
+import { useNavigate, Link } from 'react-router-dom';
+import { CameraIcon, ShieldCheckIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 const ProfileSettingsPage: React.FC = () => {
   const { user, token, logout, setUser } = useAuth();
@@ -17,6 +17,7 @@ const ProfileSettingsPage: React.FC = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [acceptingPrivacyPolicy, setAcceptingPrivacyPolicy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -216,6 +217,43 @@ const ProfileSettingsPage: React.FC = () => {
       toast.error('Network error. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAcceptPrivacyPolicy = async () => {
+    setAcceptingPrivacyPolicy(true);
+    try {
+      const response = await fetch(`/api/auth/accept-privacy-policy`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const updatedUserData = await response.json();
+        console.log('Privacy Policy accepted, updated user data:', updatedUserData);
+        
+        // Update the user in the auth context
+        if (setUser) {
+          setUser(updatedUserData);
+        }
+        
+        // Update local profile data
+        setProfileData(updatedUserData);
+        
+        toast.success('Privacy Policy accepted successfully!');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to accept Privacy Policy:', errorData);
+        toast.error(errorData.message || 'Failed to accept Privacy Policy.');
+      }
+    } catch (error) {
+      console.error('Error accepting Privacy Policy:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setAcceptingPrivacyPolicy(false);
     }
   };
 
@@ -575,6 +613,63 @@ const ProfileSettingsPage: React.FC = () => {
                   onChange={handleChange}
                   className="block w-full py-3 px-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent shadow-sm transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Privacy Policy Section */}
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100 mb-4">Privacy Policy</h3>
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  {profileData.privacyPolicyAccepted ? (
+                    <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <ShieldCheckIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  )}
+                </div>
+                <div className="ml-3 flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Privacy Policy Acceptance
+                  </h4>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    {profileData.privacyPolicyAccepted ? (
+                      <>
+                        You have accepted the Privacy Policy. This is required to submit job applications.
+                        {profileData.privacyPolicyAcceptedAt && (
+                          <span className="block mt-1 text-xs text-gray-500 dark:text-gray-500">
+                            Accepted on: {new Date(profileData.privacyPolicyAcceptedAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        You must accept the Privacy Policy to submit job applications. Please read and accept our{' '}
+                        <Link 
+                          to="/privacy-policy" 
+                          target="_blank"
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 underline"
+                        >
+                          Privacy Policy
+                        </Link>
+                        {' '}to continue.
+                      </>
+                    )}
+                  </p>
+                  {!profileData.privacyPolicyAccepted && (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={handleAcceptPrivacyPolicy}
+                        disabled={acceptingPrivacyPolicy}
+                        className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all"
+                      >
+                        {acceptingPrivacyPolicy ? 'Accepting...' : 'Accept Privacy Policy'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

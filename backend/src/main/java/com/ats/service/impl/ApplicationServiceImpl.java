@@ -99,6 +99,11 @@ public class ApplicationServiceImpl implements ApplicationService {
 			throw new BadRequestException("Profile picture is required to apply for jobs. Please add a profile picture to your profile.");
 		}
 
+		// Validate candidate has accepted Privacy Policy
+		if (candidate.getPrivacyPolicyAccepted() == null || !candidate.getPrivacyPolicyAccepted()) {
+			throw new BadRequestException("You must accept the Privacy Policy to apply for jobs. Please accept the Privacy Policy in your profile.");
+		}
+
 		// Validate required custom questions are answered
 		validateCustomQuestions(applicationDTO, job.getId());
 

@@ -203,4 +203,11 @@ public class UserDTO {
         accessMode = Schema.AccessMode.READ_ONLY
     )
     private Boolean isSubscribed;
+    
+    @Schema(
+        description = "Whether the user has accepted the Privacy Policy", 
+        example = "true",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private Boolean privacyPolicyAccepted;
 } 

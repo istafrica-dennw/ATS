@@ -41,6 +41,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import com.ats.annotation.RequiresAuthentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -53,6 +55,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -170,11 +174,6 @@ public class AuthController {
         
         if (user.getIsActive() == null || !user.getIsActive()) {
             throw new RuntimeException("This account has been deactivated. Please contact an administrator.");
-        }
-
-        // Check if user has accepted Privacy Policy (required for all users)
-        if (user.getPrivacyPolicyAccepted() == null || !user.getPrivacyPolicyAccepted()) {
-            throw new BadRequestException("You must accept the Privacy Policy to access your account. Please contact support.");
         }
 
         // Authenticate with password
@@ -424,6 +423,38 @@ public class AuthController {
         UserDTO updatedUserDTO = convertToDTO(user);
         System.out.println("Returning updated user data: " + updatedUserDTO);
         return ResponseEntity.ok(updatedUserDTO);
+    }
+    
+    @PostMapping("/accept-privacy-policy")
+    @Operation(
+        summary = "Accept Privacy Policy",
+        description = "Marks the current user as having accepted the Privacy Policy. Required for submitting job applications."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Privacy Policy accepted successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = UserDTO.class)
+            )
+        ),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @RequiresAuthentication
+    public ResponseEntity<?> acceptPrivacyPolicy(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Set Privacy Policy acceptance
+        user.setPrivacyPolicyAccepted(true);
+        user.setPrivacyPolicyAcceptedAt(LocalDateTime.now());
+        userRepository.save(user);
+        
+        logger.info("User {} accepted Privacy Policy", email);
+        return ResponseEntity.ok(convertToDTO(user));
     }
     
     @PostMapping("/deactivate")
@@ -800,11 +831,6 @@ public class AuthController {
     public ResponseEntity<?> loginWithMfa(@Valid @RequestBody MfaLoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        // Check if user has accepted Privacy Policy (required for all users)
-        if (user.getPrivacyPolicyAccepted() == null || !user.getPrivacyPolicyAccepted()) {
-            throw new BadRequestException("You must accept the Privacy Policy to access your account. Please contact support.");
-        }
                 
         boolean isValid = false;
         
@@ -903,6 +929,9 @@ public class AuthController {
         userDTO.setBio(user.getBio());
         userDTO.setDeactivationReason(user.getDeactivationReason());
         userDTO.setDeactivationDate(user.getDeactivationDate());
+        userDTO.setMfaEnabled(user.getMfaEnabled());
+        userDTO.setIsSubscribed(user.getIsSubscribed());
+        userDTO.setPrivacyPolicyAccepted(user.getPrivacyPolicyAccepted());
         
         return userDTO;
     }

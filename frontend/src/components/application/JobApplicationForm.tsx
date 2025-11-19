@@ -25,7 +25,7 @@ interface JobApplicationFormProps {
 
 const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle, department }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   
   // Form state
   const [activeStep, setActiveStep] = useState<number>(0);
@@ -52,6 +52,42 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   
   // Profile picture validation
   const hasProfilePicture = user?.profilePictureUrl && user.profilePictureUrl.trim() !== '';
+  
+  // Privacy Policy acceptance validation
+  // Check if privacyPolicyAccepted is explicitly true (not null, undefined, or false)
+  const hasAcceptedPrivacyPolicy = user?.privacyPolicyAccepted === true;
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('JobApplicationForm - User data:', {
+      hasPhoneNumber,
+      hasProfilePicture,
+      privacyPolicyAccepted: user?.privacyPolicyAccepted,
+      hasAcceptedPrivacyPolicy
+    });
+  }, [user, hasPhoneNumber, hasProfilePicture, hasAcceptedPrivacyPolicy]);
+
+  // Refresh user data to ensure we have the latest privacyPolicyAccepted field
+  useEffect(() => {
+    const refreshUserData = async () => {
+      try {
+        const response = await axiosInstance.get('/auth/me');
+        const updatedUser = response.data;
+        // Update the user in AuthContext
+        if (updatedUser) {
+          setUser(updatedUser);
+          console.log('JobApplicationForm - Refreshed user data with privacyPolicyAccepted:', updatedUser.privacyPolicyAccepted);
+        }
+      } catch (error) {
+        console.error('JobApplicationForm - Error refreshing user data:', error);
+      }
+    };
+    
+    // Only refresh if user exists but privacyPolicyAccepted is undefined
+    if (user && user.privacyPolicyAccepted === undefined) {
+      refreshUserData();
+    }
+  }, [user, setUser]);
 
   // Fetch job custom questions and check if user already applied
   useEffect(() => {
@@ -311,16 +347,41 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   }
 
   // Check if user has required profile information
-  if (!hasPhoneNumber || !hasProfilePicture) {
+  if (!hasPhoneNumber || !hasProfilePicture || !hasAcceptedPrivacyPolicy) {
     const missingItems = [];
     if (!hasPhoneNumber) missingItems.push('phone number');
     if (!hasProfilePicture) missingItems.push('profile picture');
+    if (!hasAcceptedPrivacyPolicy) missingItems.push('Privacy Policy acceptance');
+    
+    // Debug logging
+    console.log('JobApplicationForm - Missing items check:', {
+      missingItems,
+      hasPhoneNumber,
+      hasProfilePicture,
+      hasAcceptedPrivacyPolicy,
+      userPrivacyPolicyAccepted: user?.privacyPolicyAccepted
+    });
     
     const missingItemsText = missingItems.length === 1 
       ? missingItems[0] 
       : missingItems.length === 2 
         ? `${missingItems[0]} and ${missingItems[1]}`
-        : missingItems.join(', ');
+        : missingItems.length === 3
+          ? `${missingItems[0]}, ${missingItems[1]}, and ${missingItems[2]}`
+          : missingItems.join(', ');
+
+    // Determine heading based on what's missing
+    const isOnlyPrivacyPolicy = missingItems.length === 1 && missingItems[0] === 'Privacy Policy acceptance';
+    const heading = isOnlyPrivacyPolicy 
+      ? 'Privacy Policy Acceptance Required' 
+      : 'Profile Information Required';
+    
+    console.log('JobApplicationForm - Heading determination:', {
+      isOnlyPrivacyPolicy,
+      heading,
+      missingItemsLength: missingItems.length,
+      firstMissingItem: missingItems[0]
+    });
 
     return (
       <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 sm:p-6">
@@ -330,11 +391,13 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-              Profile Information Required
+              {heading}
             </h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
-              You need to add a {missingItemsText} to your profile before you can apply for jobs. 
-              This helps us better understand and contact you regarding your application.
+              {isOnlyPrivacyPolicy 
+                ? 'You must accept the Privacy Policy before you can apply for jobs. Please accept the Privacy Policy in your profile to continue.'
+                : `You need to complete the following before you can apply for jobs: ${missingItemsText}. Please update your profile to continue.`
+              }
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button

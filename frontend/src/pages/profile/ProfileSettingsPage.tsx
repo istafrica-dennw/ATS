@@ -642,6 +642,9 @@ const ProfileSettingsPage: React.FC = () => {
                             Accepted on: {new Date(profileData.privacyPolicyAcceptedAt).toLocaleDateString()}
                           </span>
                         )}
+                        <span className="block mt-2 text-xs text-gray-500 dark:text-gray-500">
+                          If you need to withdraw your acceptance, please contact support through the chat feature.
+                        </span>
                       </>
                     ) : (
                       <>
@@ -675,26 +678,36 @@ const ProfileSettingsPage: React.FC = () => {
           </div>
 
           {/* Account Actions */}
-          <div className="pt-6 flex justify-between">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-            
-            {user?.role !== 'ADMIN' ? (
-              <button
-                type="button"
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all"
-                onClick={() => setShowDeactivateModal(true)}
-              >
-                Deactivate Account
-              </button>
+          <div className="pt-6">
+            {user?.role === 'ADMIN' ? (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="text-sm text-gray-500 dark:text-gray-400 italic flex-shrink-0">
+                  Admin accounts cannot be self-deactivated. Please ask another admin to deactivate your account if needed.
+                </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all w-full sm:w-auto"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
             ) : (
-              <div className="text-sm text-gray-500 dark:text-gray-400 italic">
-                Admin accounts cannot be self-deactivated. Please ask another admin to deactivate your account if needed.
+              <div className="flex flex-col sm:flex-row justify-between gap-4">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all w-full sm:w-auto"
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-red-400 transform hover:scale-[1.02] transition-all w-full sm:w-auto"
+                  onClick={() => setShowDeactivateModal(true)}
+                >
+                  Deactivate Account
+                </button>
               </div>
             )}
           </div>

@@ -10,6 +10,11 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.validation.FieldError;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.lang.NonNull;
 
 import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.exception.FileStorageException;
@@ -18,6 +23,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -131,5 +138,47 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         }
         
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            @NonNull MethodArgumentNotValidException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request) {
+        
+        logger.warn("Validation error: {}", ex.getMessage());
+        
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status.value());
+        body.put("error", "Validation Failed");
+        body.put("type", "about:blank");
+        body.put("title", "Bad Request");
+        body.put("detail", "Invalid request content.");
+        body.put("instance", request.getDescription(false).replace("uri=", ""));
+        
+        // Collect validation errors
+        List<String> errors = ex.getBindingResult()
+                .getAllErrors()
+                .stream()
+                .map(error -> {
+                    if (error instanceof FieldError) {
+                        FieldError fieldError = (FieldError) error;
+                        return fieldError.getField() + ": " + error.getDefaultMessage();
+                    } else {
+                        return error.getObjectName() + ": " + error.getDefaultMessage();
+                    }
+                })
+                .collect(Collectors.toList());
+        
+        body.put("validationErrors", errors);
+        
+        // Also add a more detailed message
+        if (!errors.isEmpty()) {
+            body.put("message", errors.get(0));
+        }
+        
+        return new ResponseEntity<>(body, headers, status);
     }
 } 

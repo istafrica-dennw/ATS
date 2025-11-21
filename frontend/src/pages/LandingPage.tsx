@@ -452,7 +452,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <div className="ml-3 text-left">
                   <p className="text-sm font-medium text-indigo-200 dark:text-indigo-300">Denis Niwemugisha</p>
-                  <p className="text-xs text-indigo-300 dark:text-indigo-400">Head of People & Talent</p>
+                  <p className="text-xs text-indigo-300 dark:text-indigo-400">Head of People & Talent, IST Africa.</p>
                 </div>
               </div>
             </div>
@@ -529,7 +529,7 @@ const LandingPage: React.FC = () => {
                   </span>
 
                   <a 
-                    href="https://www.linkedin.com/company/ist-africa/" 
+                    href={isEU ? "https://www.linkedin.com/company/ist-sverige-ab" : "https://www.linkedin.com/company/ist-africa/"} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="text-gray-400 dark:text-gray-500 hover:text-gray-300 dark:hover:text-gray-400"

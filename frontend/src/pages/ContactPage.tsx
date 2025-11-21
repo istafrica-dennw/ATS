@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ScrollToTopButton from '../components/common/ScrollToTopButton';
+import { useGeolocation } from '../hooks/useGeolocation';
 import {
   EnvelopeIcon,
   PhoneIcon,
@@ -11,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ContactPage: React.FC = () => {
+  const { isEU } = useGeolocation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -281,7 +283,7 @@ const ContactPage: React.FC = () => {
                   <p className="font-medium text-gray-900 dark:text-gray-100">Follow Us</p>
                   <div className="mt-2 flex space-x-4">
                     <a 
-                      href="https://www.linkedin.com/company/ist-africa/" 
+                      href={isEU ? "https://www.linkedin.com/company/ist-sverige-ab" : "https://www.linkedin.com/company/ist-africa/"} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"

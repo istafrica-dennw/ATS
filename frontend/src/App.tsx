@@ -246,10 +246,10 @@ const App: React.FC = () => {
               <Route path="/jobs" element={<JobsPage />} />
               <Route path="/jobs/:id" element={<JobDetailsPage />} />
               <Route path="/apply/:id" element={<JobApplicationPage />} />
-              <Route path="/chat-test" element={<ChatTestPage />} />
-              <Route path="/about" element={<AboutPage />} />
+              {/* <Route path="/chat-test" element={<ChatTestPage />} /> */}
+              {/* <Route path="/about" element={<AboutPage />} /> */}
               <Route path="/careers" element={<CareersPage />} />
-              <Route path="/contact" element={<ContactPage />} />
+              {/* <Route path="/contact" element={<ContactPage />} /> */}
               <Route path="/privacy-policy" element={<PrivacyPolicyRouter />} />
               <Route path="/terms-of-service" element={<TermsOfServicePage />} />
               

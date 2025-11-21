@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -195,6 +196,92 @@ public class UserController {
             Map<String, Object> response = new HashMap<>();
             response.put("error", "Failed to get regional access information: " + e.getMessage());
             return ResponseEntity.ok(response);
+        }
+    }
+
+    @PostMapping("/toggle-region-view")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Toggle region view mode for EU admins",
+        description = "Allows EU admins to switch between viewing EU data and non-EU data. Non-EU admins cannot use this feature."
+    )
+    public ResponseEntity<Map<String, Object>> toggleRegionView(
+            @RequestParam(required = false, defaultValue = "false") Boolean viewingAsNonEU,
+            Authentication authentication,
+            HttpServletRequest request) {
+        try {
+            String userEmail = authentication.getName();
+            UserDTO userDTO = userService.getUserByEmail(userEmail);
+            
+            // Convert UserDTO to User entity
+            User currentUser = new User();
+            currentUser.setId(userDTO.getId());
+            currentUser.setEmail(userDTO.getEmail());
+            currentUser.setRole(userDTO.getRole());
+            currentUser.setRegion(userDTO.getRegion());
+            
+            // Only EU admins can toggle view mode
+            if (!regionalDataFilterService.isEUAdmin(currentUser)) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "Only EU admins can toggle region view mode");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Store view mode in session
+            request.getSession().setAttribute("viewingAsNonEU_" + currentUser.getId(), viewingAsNonEU);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("viewingAsNonEU", viewingAsNonEU);
+            response.put("message", viewingAsNonEU ? "Now viewing non-EU data" : "Now viewing EU data");
+            response.put("effectiveFilter", regionalDataFilterService.getEffectiveRegionFilter(currentUser, viewingAsNonEU));
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Failed to toggle region view: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @GetMapping("/region-view-mode")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+        summary = "Get current region view mode",
+        description = "Returns the current region view mode for the authenticated admin"
+    )
+    public ResponseEntity<Map<String, Object>> getRegionViewMode(
+            Authentication authentication,
+            HttpServletRequest request) {
+        try {
+            String userEmail = authentication.getName();
+            UserDTO userDTO = userService.getUserByEmail(userEmail);
+            
+            // Convert UserDTO to User entity
+            User currentUser = new User();
+            currentUser.setId(userDTO.getId());
+            currentUser.setRole(userDTO.getRole());
+            currentUser.setRegion(userDTO.getRegion());
+            
+            // Get view mode from session
+            Boolean viewingAsNonEU = (Boolean) request.getSession().getAttribute("viewingAsNonEU_" + currentUser.getId());
+            if (viewingAsNonEU == null) {
+                viewingAsNonEU = false; // Default to EU view
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("isEUAdmin", regionalDataFilterService.isEUAdmin(currentUser));
+            response.put("viewingAsNonEU", viewingAsNonEU);
+            response.put("canToggle", regionalDataFilterService.isEUAdmin(currentUser));
+            response.put("effectiveFilter", regionalDataFilterService.getEffectiveRegionFilter(currentUser, viewingAsNonEU));
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("error", "Failed to get region view mode: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 

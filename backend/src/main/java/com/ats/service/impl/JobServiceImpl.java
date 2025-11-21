@@ -251,15 +251,21 @@ public class JobServiceImpl implements JobService {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("region"), "EU"));
             logger.info("✅ Applied EU region filter for ist.com subdomain");
         } else if (currentUser != null) {
-            if (regionalDataFilterService.isEUAdmin(currentUser)) {
-                // EU admins can only see EU jobs
-                spec = spec.and((root, query, cb) -> cb.equal(root.get("region"), "EU"));
-            } else if (regionalDataFilterService.isNonEUAdmin(currentUser)) {
-                // Non-EU admins can only see non-EU jobs
-                spec = spec.and((root, query, cb) -> cb.or(
-                    cb.isNull(root.get("region")),
-                    cb.notEqual(root.get("region"), "EU")
-                ));
+            // Get view mode from session (for EU admins who can switch)
+            Boolean viewingAsNonEU = regionalDataFilterService.getViewModeFromSession(currentUser);
+            String effectiveFilter = regionalDataFilterService.getEffectiveRegionFilter(currentUser, viewingAsNonEU);
+            
+            if (effectiveFilter != null) {
+                if (effectiveFilter.equals("region = 'EU'")) {
+                    spec = spec.and((root, query, cb) -> cb.equal(root.get("region"), "EU"));
+                } else if (effectiveFilter.equals("(region IS NULL OR region != 'EU')")) {
+                    spec = spec.and((root, query, cb) -> cb.or(
+                        cb.isNull(root.get("region")),
+                        cb.notEqual(root.get("region"), "EU")
+                    ));
+                }
+                logger.info("✅ Applied region filter: {} for user {} (viewingAsNonEU: {})", 
+                    effectiveFilter, currentUser.getEmail(), viewingAsNonEU);
             }
         }
 
@@ -306,11 +312,19 @@ public class JobServiceImpl implements JobService {
                 .collect(Collectors.toList());
             logger.info("✅ Applied EU region filter for ist.com subdomain in getActiveJobs");
         } else if (currentUser != null) {
+            // Get view mode from session (for EU admins who can switch)
+            Boolean viewingAsNonEU = regionalDataFilterService.getViewModeFromSession(currentUser);
+            
             jobs = jobs.stream()
                 .filter(job -> {
                     String jobRegion = job.getRegion();
                     
-                    // EU admins can only see EU jobs
+                    // EU admin viewing as non-EU: show non-EU jobs
+                    if (regionalDataFilterService.isEUAdmin(currentUser) && Boolean.TRUE.equals(viewingAsNonEU)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    // EU admin in default mode: show only EU jobs
                     if (regionalDataFilterService.isEUAdmin(currentUser)) {
                         return "EU".equals(jobRegion);
                     }
@@ -347,11 +361,19 @@ public class JobServiceImpl implements JobService {
                 .filter(job -> "EU".equals(job.getRegion()))
                 .collect(Collectors.toList());
         } else if (currentUser != null) {
+            // Get view mode from session (for EU admins who can switch)
+            Boolean viewingAsNonEU = regionalDataFilterService.getViewModeFromSession(currentUser);
+            
             jobs = jobs.stream()
                 .filter(job -> {
                     String jobRegion = job.getRegion();
                     
-                    // EU admins can only see EU jobs
+                    // EU admin viewing as non-EU: show non-EU jobs
+                    if (regionalDataFilterService.isEUAdmin(currentUser) && Boolean.TRUE.equals(viewingAsNonEU)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    // EU admin in default mode: show only EU jobs
                     if (regionalDataFilterService.isEUAdmin(currentUser)) {
                         return "EU".equals(jobRegion);
                     }
@@ -388,11 +410,19 @@ public class JobServiceImpl implements JobService {
                 .filter(job -> "EU".equals(job.getRegion()))
                 .collect(Collectors.toList());
         } else if (currentUser != null) {
+            // Get view mode from session (for EU admins who can switch)
+            Boolean viewingAsNonEU = regionalDataFilterService.getViewModeFromSession(currentUser);
+            
             jobs = jobs.stream()
                 .filter(job -> {
                     String jobRegion = job.getRegion();
                     
-                    // EU admins can only see EU jobs
+                    // EU admin viewing as non-EU: show non-EU jobs
+                    if (regionalDataFilterService.isEUAdmin(currentUser) && Boolean.TRUE.equals(viewingAsNonEU)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    // EU admin in default mode: show only EU jobs
                     if (regionalDataFilterService.isEUAdmin(currentUser)) {
                         return "EU".equals(jobRegion);
                     }

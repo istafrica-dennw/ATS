@@ -180,10 +180,11 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
         }
         
-        // Apply regional filtering based on current user's access
-        String regionFilter = regionalDataFilterService.getRegionFilterCondition(currentUser);
+        // Get view mode from session (for EU admins who can switch)
+        Boolean viewingAsNonEU = regionalDataFilterService.getViewModeFromSession(currentUser);
+        String effectiveFilter = regionalDataFilterService.getEffectiveRegionFilter(currentUser, viewingAsNonEU);
         
-        if (regionFilter == null) {
+        if (effectiveFilter == null) {
             // No regional restrictions
             return userRepository.findAll().stream()
                 .map(this::convertToDTO)
@@ -195,7 +196,12 @@ public class UserServiceImpl implements UserService {
             .filter(user -> {
                 String userRegion = user.getRegion();
                 
-                // EU admins can only see EU users
+                // EU admin viewing as non-EU: show non-EU users
+                if (regionalDataFilterService.isEUAdmin(currentUser) && Boolean.TRUE.equals(viewingAsNonEU)) {
+                    return !"EU".equals(userRegion);
+                }
+                
+                // EU admin in default mode: show only EU users
                 if (regionalDataFilterService.isEUAdmin(currentUser)) {
                     return "EU".equals(userRegion);
                 }

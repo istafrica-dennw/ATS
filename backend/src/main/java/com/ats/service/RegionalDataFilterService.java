@@ -45,4 +45,27 @@ public interface RegionalDataFilterService {
      * @return true if user is non-EU admin
      */
     boolean isNonEUAdmin(User user);
+    
+    /**
+     * Check if EU admin is currently viewing as non-EU (switched view mode)
+     * @param user the user to check
+     * @param viewingAsNonEU whether the user is viewing as non-EU
+     * @return true if user can view non-EU data
+     */
+    boolean canViewNonEUData(User user, Boolean viewingAsNonEU);
+    
+    /**
+     * Get the effective region filter for a user considering view mode
+     * @param user the user to check
+     * @param viewingAsNonEU whether the user is viewing as non-EU
+     * @return the region filter string for WHERE clause, or null for no filter
+     */
+    String getEffectiveRegionFilter(User user, Boolean viewingAsNonEU);
+    
+    /**
+     * Get the current view mode from session for a user
+     * @param user the user to check
+     * @return true if viewing as non-EU, false otherwise
+     */
+    Boolean getViewModeFromSession(User user);
 }

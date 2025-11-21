@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { getFullProfilePictureUrl } from '../../utils/imageUtils';
 import ChangePasswordModal from '../../components/profile/ChangePasswordModal';
 import RoleSwitcher from '../../components/RoleSwitcher';
+import RegionViewSwitcher from '../../components/RegionViewSwitcher';
 import RegionalAccessIndicator from '../../components/common/RegionalAccessIndicator';
 import RegionBadge from '../../components/common/RegionBadge';
 import { useEUAdminSetup } from '../../hooks/useEUAdminSetup';
@@ -147,8 +148,9 @@ const ProfilePage: React.FC = () => {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {userData.firstName} {userData.lastName}
                 </h1>
-                <div className="mt-1">
+                <div className="mt-1 flex items-center gap-3">
                   <RoleSwitcher />
+                  <RegionViewSwitcher />
                 </div>
               </div>
               <div className="flex flex-col lg:flex-row space-y-3 lg:space-y-0 lg:space-x-3 mt-4 md:mt-0 w-full lg:w-auto shrink-0">

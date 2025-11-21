@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { useGeolocation } from '../hooks/useGeolocation';
 import {
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon,
@@ -32,6 +33,7 @@ interface Job {
   responsibilities: string[];
   benefits: string[];
   jobStatus: string;
+  region?: string;
 }
 
 const WORK_SETTINGS = [
@@ -42,6 +44,7 @@ const WORK_SETTINGS = [
 ];
 
 const JobsPage: React.FC = () => {
+  const { isEU } = useGeolocation();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,8 +74,15 @@ const JobsPage: React.FC = () => {
     fetchJobs();
   }, []);
 
-  // Filter jobs based on search and filter criteria
+  // Filter jobs based on search, filter criteria, and region
   const filteredJobs = jobs.filter(job => {
+    // Region filter - if isEU (from subdomain or IP), only show EU jobs
+    if (isEU) {
+      if (job.region !== 'EU') {
+        return false;
+      }
+    }
+    
     // Search term filter
     const matchesSearch = searchTerm === '' || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

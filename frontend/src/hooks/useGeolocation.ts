@@ -21,8 +21,30 @@ export const useGeolocation = () => {
     error: null
   });
 
+  // Check if subdomain contains "ist.com"
+  const checkSubdomain = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname.toLowerCase();
+    return hostname.includes('ist.com');
+  };
+
   const detectRegion = async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
+    
+    // First check subdomain - if it contains "ist.com", treat as EU
+    const isISTSubdomain = checkSubdomain();
+    if (isISTSubdomain) {
+      console.log('🌍 [GEOLOCATION] Subdomain contains "ist.com" - treating as EU access');
+      setState({
+        region: Region.EU,
+        isEU: true,
+        isRwanda: false,
+        ip: null,
+        loading: false,
+        error: null
+      });
+      return;
+    }
     
     try {
       const response = await geolocationService.detectRegion();

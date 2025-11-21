@@ -1,6 +1,5 @@
 package com.ats.service.impl;
 
-import org.hibernate.annotations.NotFoundAction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -18,6 +17,7 @@ import com.ats.model.WorkSetting;
 import com.ats.repository.JobRepository;
 import com.ats.service.JobService;
 import com.ats.util.ModelMapperUtil;
+import com.ats.util.IPUtils;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +32,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.ats.repository.UserRepository;
 import com.ats.service.SubscriptionService;
 import com.ats.service.EmailService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Value;
 
 @Service
@@ -64,8 +62,6 @@ public class JobServiceImpl implements JobService {
     
     @Value("${app.frontend.url}")
     private String frontendUrl;
-    
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     @Transactional
@@ -237,14 +233,24 @@ public class JobServiceImpl implements JobService {
         List<WorkSetting> workSettings, 
         String description
     ) {
+        // Check if request is from ist.com subdomain
+        boolean isISTSubdomain = IPUtils.isISTSubdomain();
+        if (isISTSubdomain) {
+            logger.info("🌍 Request from ist.com subdomain detected - filtering to show only EU jobs");
+        }
+        
         // Get current user for regional filtering
         User currentUser = getCurrentUser();
         
         // Create dynamic query using Specifications
         Specification<Job> spec = Specification.where(null);
 
-        // Add regional filtering based on current user
-        if (currentUser != null) {
+        // Add regional filtering based on subdomain or current user
+        if (isISTSubdomain) {
+            // If accessed from ist.com subdomain, only show EU jobs
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("region"), "EU"));
+            logger.info("✅ Applied EU region filter for ist.com subdomain");
+        } else if (currentUser != null) {
             if (regionalDataFilterService.isEUAdmin(currentUser)) {
                 // EU admins can only see EU jobs
                 spec = spec.and((root, query, cb) -> cb.equal(root.get("region"), "EU"));
@@ -281,13 +287,25 @@ public class JobServiceImpl implements JobService {
     }
     @Override
     public List<JobDTO> getActiveJobs() {
+        // Check if request is from ist.com subdomain
+        boolean isISTSubdomain = IPUtils.isISTSubdomain();
+        if (isISTSubdomain) {
+            logger.info("🌍 Request from ist.com subdomain detected in getActiveJobs - filtering to show only EU jobs");
+        }
+        
         // Get current user for regional filtering
         User currentUser = getCurrentUser();
         
         List<Job> jobs = jobRepository.findByJobStatusIn(List.of(JobStatus.PUBLISHED, JobStatus.REOPENED));
         
         // Apply regional filtering
-        if (currentUser != null) {
+        if (isISTSubdomain) {
+            // If accessed from ist.com subdomain, only show EU jobs
+            jobs = jobs.stream()
+                .filter(job -> "EU".equals(job.getRegion()))
+                .collect(Collectors.toList());
+            logger.info("✅ Applied EU region filter for ist.com subdomain in getActiveJobs");
+        } else if (currentUser != null) {
             jobs = jobs.stream()
                 .filter(job -> {
                     String jobRegion = job.getRegion();
@@ -314,13 +332,21 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public List<JobDTO> getPastJobs() {
+        // Check if request is from ist.com subdomain
+        boolean isISTSubdomain = IPUtils.isISTSubdomain();
+        
         // Get current user for regional filtering
         User currentUser = getCurrentUser();
         
         List<Job> jobs = jobRepository.findByJobStatusIn(List.of(JobStatus.EXPIRED, JobStatus.CLOSED));
         
         // Apply regional filtering
-        if (currentUser != null) {
+        if (isISTSubdomain) {
+            // If accessed from ist.com subdomain, only show EU jobs
+            jobs = jobs.stream()
+                .filter(job -> "EU".equals(job.getRegion()))
+                .collect(Collectors.toList());
+        } else if (currentUser != null) {
             jobs = jobs.stream()
                 .filter(job -> {
                     String jobRegion = job.getRegion();
@@ -346,6 +372,9 @@ public class JobServiceImpl implements JobService {
     }
     @Override
     public List<JobDTO> searchJobs(String keyword, String filter) {
+        // Check if request is from ist.com subdomain
+        boolean isISTSubdomain = IPUtils.isISTSubdomain();
+        
         // Get current user for regional filtering
         User currentUser = getCurrentUser();
         
@@ -353,7 +382,12 @@ public class JobServiceImpl implements JobService {
             keyword, keyword);
         
         // Apply regional filtering
-        if (currentUser != null) {
+        if (isISTSubdomain) {
+            // If accessed from ist.com subdomain, only show EU jobs
+            jobs = jobs.stream()
+                .filter(job -> "EU".equals(job.getRegion()))
+                .collect(Collectors.toList());
+        } else if (currentUser != null) {
             jobs = jobs.stream()
                 .filter(job -> {
                     String jobRegion = job.getRegion();

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ScrollToTopButton from '../components/common/ScrollToTopButton';
+import { useGeolocation } from '../hooks/useGeolocation';
 import {
   BriefcaseIcon,
   MapPinIcon,
@@ -23,9 +24,11 @@ interface Job {
   salaryRange: string;
   workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
   description?: string;
+  region?: string;
 }
 
 const CareersPage: React.FC = () => {
+  const { isEU } = useGeolocation();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,9 +36,16 @@ const CareersPage: React.FC = () => {
     const fetchJobs = async () => {
       try {
         const response = await axios.get('/api/jobs');
-        const publishedJobs = response.data.filter((job: Job & { jobStatus: string }) => {
+        const publishedJobs = response.data.filter((job: Job & { jobStatus: string; region?: string }) => {
           const status = job.jobStatus?.toUpperCase();
-          return status === 'PUBLISHED' || status === 'REOPENED';
+          const isPublished = status === 'PUBLISHED' || status === 'REOPENED';
+          
+          // If isEU (from subdomain or IP), only show EU jobs
+          if (isEU && job.region !== 'EU') {
+            return false;
+          }
+          
+          return isPublished;
         });
         setJobs(publishedJobs);
       } catch (error) {

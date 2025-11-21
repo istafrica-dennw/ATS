@@ -32,6 +32,7 @@ interface Job {
   postedDate: string;
   salaryRange: string;
   workSetting: 'REMOTE' | 'ONSITE' | 'HYBRID';
+  region?: string;
 }
 
 const LandingPage: React.FC = () => {
@@ -46,10 +47,17 @@ const LandingPage: React.FC = () => {
       try {
         const response = await axios.get('/api/jobs');
         // Sort jobs by posted date (most recent first) and take only published jobs
-        const publishedJobs = response.data.filter((job: Job & { jobStatus: string }) => {
+        const publishedJobs = response.data.filter((job: Job & { jobStatus: string; region?: string }) => {
           // Include both PUBLISHED and REOPENED jobs
           const status = job.jobStatus?.toUpperCase();
-          return status === 'PUBLISHED' || status === 'REOPENED';
+          const isPublished = status === 'PUBLISHED' || status === 'REOPENED';
+          
+          // If isEU (from subdomain or IP), only show EU jobs
+          if (isEU && job.region !== 'EU') {
+            return false;
+          }
+          
+          return isPublished;
         });
         
         const sortedJobs = publishedJobs

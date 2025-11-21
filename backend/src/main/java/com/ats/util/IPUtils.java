@@ -92,6 +92,42 @@ public class IPUtils {
     }
     
     /**
+     * Check if the request is from a subdomain containing "ist.com"
+     * @param request the HTTP request
+     * @return true if hostname contains "ist.com"
+     */
+    public static boolean isISTSubdomain(HttpServletRequest request) {
+        if (request == null) {
+            return false;
+        }
+        String hostname = request.getHeader("Host");
+        if (hostname == null) {
+            hostname = request.getServerName();
+        }
+        if (hostname == null) {
+            return false;
+        }
+        return hostname.toLowerCase().contains("ist.com");
+    }
+    
+    /**
+     * Check if the current request is from a subdomain containing "ist.com"
+     * @return true if hostname contains "ist.com"
+     */
+    public static boolean isISTSubdomain() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return false;
+            }
+            HttpServletRequest request = attributes.getRequest();
+            return isISTSubdomain(request);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
      * Check if the IP address is private
      */
     private static boolean isPrivateIP(String ip) {

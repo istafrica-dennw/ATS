@@ -3,10 +3,20 @@ import { useGeolocation } from '../../hooks/useGeolocation';
 import PrivacyPolicyPage from '../../pages/PrivacyPolicyPage';
 import EUPrivacyPolicyPage from '../../pages/EUPrivacyPolicyPage';
 
+/**
+ * Privacy Policy Router Component
+ * 
+ * Routes to the appropriate Privacy Policy based on:
+ * 1. Subdomain detection: If hostname contains "ist.com" → EU Privacy Policy
+ * 2. IP geolocation: If IP is from EU region → EU Privacy Policy
+ * 3. Otherwise → Regular Privacy Policy
+ * 
+ * Uses useGeolocation hook which checks subdomain first, then falls back to IP detection
+ */
 const PrivacyPolicyRouter: React.FC = () => {
   const { isEU, loading } = useGeolocation();
 
-  // Show loading state while detecting region
+  // Show loading state while detecting region (subdomain or IP)
   if (loading) {
     return (
       <div className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
@@ -18,7 +28,10 @@ const PrivacyPolicyRouter: React.FC = () => {
     );
   }
 
-  // Show EU Privacy Policy for EU users, regular Privacy Policy for others
+  // Show EU Privacy Policy if:
+  // - Subdomain contains "ist.com" OR
+  // - IP geolocation detects EU region
+  // Otherwise show regular Privacy Policy
   return isEU ? <EUPrivacyPolicyPage /> : <PrivacyPolicyPage />;
 };
 

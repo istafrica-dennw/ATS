@@ -15,8 +15,12 @@
 12. [Analytics and Dashboard](#analytics-and-dashboard)
 13. [API Documentation](#api-documentation)
 14. [Authentication & Security](#authentication--security)
-15. [Password Management](#password-management)
-16. [Deployment](#deployment)
+15. [Regional Data Filtering System (GDPR Compliance)](#regional-data-filtering-system-gdpr-compliance)
+16. [Geolocation Service](#geolocation-service)
+17. [Job Offer Management](#job-offer-management)
+18. [Bulk Email System](#bulk-email-system)
+19. [Password Management](#password-management)
+20. [Deployment](#deployment)
 
 ## System Overview
 
@@ -48,6 +52,8 @@ The Applicant Tracking System (ATS) is a comprehensive solution designed to stre
 - User profile deactivation/reactivation
 - Password reset and recovery
 - Email verification
+- **Regional Assignment**: Region-based user assignment (EU, RW, OTHER) for GDPR compliance
+- **EU Admin Setup**: Special configuration for EU administrators
 
 ### 2. Job Management
 - Create and manage job postings
@@ -522,6 +528,16 @@ CREATE TABLE applications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+```
+
+### Users Table (Regional Support)
+```sql
+-- Regional field added to users table for GDPR compliance
+ALTER TABLE users ADD COLUMN region VARCHAR(50); -- EU, RW, OTHER, or NULL
+
+-- Index for regional filtering
+CREATE INDEX idx_users_region ON users(region);
+```
 
 -- Enhanced indexes
 CREATE INDEX idx_applications_job_id ON applications(job_id);
@@ -872,6 +888,221 @@ The email system uses an event-driven architecture for reliable and scalable ema
 - Automatic retry mechanisms
 - Email delivery analytics and reporting
 
+## Bulk Email System
+
+### Overview
+The ATS includes a comprehensive bulk email system that allows administrators to send mass emails to applicants based on various filters, supporting both HTML and plain text formats.
+
+### Core Features
+
+#### 1. Bulk Email Targeting
+- **Job-based Filtering**: Send emails to applicants of specific jobs
+- **Status-based Filtering**: Target applicants by application status (APPLIED, REVIEWED, SHORTLISTED, etc.)
+- **Application ID Targeting**: Send to specific applications by ID
+- **Subscribed Users**: Option to send to subscribed users instead of applicants
+- **Preview Functionality**: Preview recipients before sending
+
+#### 2. Email Content Management
+- **HTML Support**: Rich HTML email content with formatting
+- **Plain Text Support**: Plain text email option
+- **Custom Subject Lines**: Personalized subject per email
+- **Dynamic Content**: Variable substitution for personalized emails
+- **Test Email**: Send test email to admin before bulk sending
+
+#### 3. Bulk Email Workflow
+- **Recipient Preview**: View all recipients before sending
+- **Campaign Tracking**: Unique campaign IDs for bulk email campaigns
+- **Success/Failure Tracking**: Detailed success and failure counts
+- **Error Reporting**: Detailed error messages for failed emails
+- **Subscription Preferences**: Respect user bulk email preferences
+
+#### 4. API Endpoints
+- `GET /api/admin/bulk-email/preview` - Preview recipients
+- `POST /api/admin/bulk-email/send` - Send bulk email
+- `GET /api/admin/bulk-email/jobs` - Get available jobs
+- `GET /api/admin/bulk-email/statuses` - Get application statuses
+
+#### 5. Bulk Email Request Format
+```json
+{
+  "jobId": 123,
+  "status": "SHORTLISTED",
+  "applicationIds": [1, 2, 3],
+  "subject": "Update on Your Application",
+  "content": "<html>Email content here</html>",
+  "isHtml": true,
+  "sendTest": false,
+  "testEmailRecipient": "admin@example.com",
+  "sendToSubscribedUsers": false
+}
+```
+
+#### 6. Bulk Email Response Format
+```json
+{
+  "totalAttempted": 50,
+  "successCount": 48,
+  "failureCount": 2,
+  "status": "PARTIAL_SUCCESS",
+  "campaignId": "bulk-email-2024-01-15-123456",
+  "failures": [
+    {
+      "applicationId": 5,
+      "candidateEmail": "candidate@example.com",
+      "candidateName": "John Doe",
+      "errorMessage": "Invalid email address"
+    }
+  ]
+}
+```
+
+## Regional Data Filtering System (GDPR Compliance)
+
+### Overview
+The ATS includes a comprehensive regional data filtering system designed to ensure GDPR compliance by restricting data access based on user regions (EU vs Non-EU).
+
+### Core Features
+
+#### 1. Regional Access Control
+- **EU Admin Restrictions**: EU admins can only access EU-region data
+- **Non-EU Admin Restrictions**: Non-EU admins can only access non-EU data
+- **Non-Admin Access**: Non-admin users (recruiters, interviewers, candidates) have no regional restrictions
+- **Region Assignment**: Users can be assigned to specific regions (EU, RW, OTHER)
+
+#### 2. View Mode Toggling
+- **EU Admin View Toggle**: EU admins can switch between viewing EU data and non-EU data
+- **Session-based Storage**: View mode preference stored in user session
+- **Default View**: EU admins default to EU data view
+- **Effective Filter**: Dynamic region filter based on current view mode
+
+#### 3. Regional Data Filtering
+- **Database Query Filtering**: Automatic WHERE clause generation for regional filtering
+- **Region Filter Conditions**: 
+  - EU admins: `region = 'EU'`
+  - Non-EU admins: `(region IS NULL OR region != 'EU')`
+  - EU admins viewing as non-EU: `(region IS NULL OR region != 'EU')`
+- **Transparent Integration**: Filters applied automatically to relevant queries
+
+#### 4. Regional Access APIs
+- `GET /api/users/regional-access` - Get user's regional access information
+- `POST /api/users/toggle-region-view` - Toggle region view mode (EU admins only)
+- `GET /api/users/region-view-mode` - Get current region view mode
+- `PUT /api/users/{id}/region` - Assign region to user (Admin only)
+
+#### 5. Regional Access Response Format
+```json
+{
+  "accessibleRegion": "EU",
+  "isEUAdmin": true,
+  "isNonEUAdmin": false,
+  "regionFilter": "region = 'EU'",
+  "userRegion": "EU",
+  "viewingAsNonEU": false,
+  "canToggle": true,
+  "effectiveFilter": "region = 'EU'"
+}
+```
+
+#### 6. Region Model
+- **EU**: European Union region
+- **RW**: Rwanda region
+- **OTHER**: Other regions (non-EU, non-Rwanda)
+- **NULL**: Default/unassigned (treated as non-EU)
+
+#### 7. Implementation Details
+- **Service Layer**: `RegionalDataFilterService` interface and implementation
+- **Automatic Filtering**: Filters applied at service layer for data access
+- **Session Management**: View mode stored in HTTP session
+- **Security**: Only admins have regional restrictions; other roles see all data
+
+## Geolocation Service
+
+### Overview
+The ATS includes an IP-based geolocation service that automatically detects user regions for GDPR compliance and regional access control.
+
+### Core Features
+
+#### 1. IP-Based Region Detection
+- **Primary Provider**: ipapi.co service
+- **Fallback Providers**: ip-api.com, ipgeolocation.io
+- **Automatic Fallback**: Seamless switching between providers on failure
+- **EU Country Detection**: Automatic detection of all 27 EU member countries
+- **Rwanda Detection**: Specific detection for Rwanda region
+
+#### 2. Region Detection Logic
+- **EU Countries**: AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE
+- **Rwanda Detection**: Specific detection for RW country code
+- **Private IP Handling**: Graceful handling of localhost and private IPs
+- **Subdomain Detection**: ist.com subdomain automatically treated as EU access
+
+#### 3. Geolocation APIs
+- `GET /api/geolocation/detect` - Detect region from IP address
+- `GET /api/geolocation/check-eu` - Check if IP is from EU region
+- `GET /api/geolocation/check-rwanda` - Check if IP is from Rwanda
+
+#### 4. Geolocation Response Format
+```json
+{
+  "success": true,
+  "ip": "192.168.1.1",
+  "region": "EU",
+  "isEU": true,
+  "isRwanda": false,
+  "countryCode": "FR",
+  "countryName": "France"
+}
+```
+
+#### 5. Frontend Integration
+- **React Hook**: `useGeolocation` hook for region detection
+- **Automatic Detection**: Region detected on page load
+- **UI Indicators**: Visual indicators showing detected region
+- **Subdomain Check**: Automatic EU detection for ist.com subdomains
+
+#### 6. Error Handling
+- **Service Failures**: Graceful fallback to alternative providers
+- **Network Errors**: Clear error messages for network issues
+- **Invalid IPs**: Proper handling of invalid or private IP addresses
+- **Timeout Handling**: Configurable timeouts for geolocation requests
+
+## Job Offer Management
+
+### Overview
+The ATS includes a job offer management system that allows administrators to send job offers to candidates and track offer status.
+
+### Core Features
+
+#### 1. Job Offer Email System
+- **Offer Email Templates**: Professional job offer email templates
+- **Custom Offer Content**: Customizable offer email subject and body
+- **Offer Status Tracking**: Integration with application status (OFFERED)
+- **Offer Acceptance/Rejection**: Track offer acceptance and rejection
+
+#### 2. Offer Workflow
+- **Application Status**: Application status changes to OFFERED when offer is sent
+- **Offer Email**: Automated email sent to candidate with offer details
+- **Offer Response**: Candidate can accept or reject offer
+- **Status Updates**: Application status updates to ACCEPTED or REJECTED based on response
+
+#### 3. Job Offer Email Request Format
+```json
+{
+  "subject": "Job Offer - Software Engineer Position",
+  "body": "We are pleased to offer you the position of Software Engineer..."
+}
+```
+
+#### 4. Integration with Application Status
+- **OFFERED**: Application status when offer is extended
+- **OFFER_ACCEPTED**: Status when candidate accepts offer
+- **OFFER_REJECTED**: Status when candidate rejects offer
+- **ACCEPTED**: Final status when offer is accepted and candidate joins
+
+#### 5. Email Templates
+- **job-offer.html**: Professional job offer email template
+- **Dynamic Variables**: Job details, candidate name, offer terms
+- **Mobile Responsive**: Optimized for all devices
+
 ## Enhanced Admin UI
 
 ### Modern Glassmorphism Design
@@ -1148,6 +1379,49 @@ The admin dashboard provides real-time insights into system usage and recruitmen
 2. **Get Application Trends**: `GET /api/applications/trends`
    - Returns: Time-series application data
 
+### Regional Data Filtering APIs:
+
+1. **Get Regional Access**: `GET /api/users/regional-access`
+   - Returns: User's regional access information and permissions
+
+2. **Toggle Region View**: `POST /api/users/toggle-region-view`
+   - Body: `{"viewingAsNonEU": true}`
+   - EU admins only - Switch between EU and non-EU data view
+
+3. **Get Region View Mode**: `GET /api/users/region-view-mode`
+   - Returns: Current region view mode for authenticated admin
+
+4. **Assign Region to User**: `PUT /api/users/{id}/region`
+   - Body: `{"region": "EU"}`
+   - Admin only - Assign region to user
+
+### Geolocation APIs:
+
+1. **Detect Region**: `GET /api/geolocation/detect`
+   - Returns: Detected region based on IP address
+
+2. **Check EU Access**: `GET /api/geolocation/check-eu`
+   - Returns: Whether IP is from EU region
+
+3. **Check Rwanda Access**: `GET /api/geolocation/check-rwanda`
+   - Returns: Whether IP is from Rwanda
+
+### Bulk Email APIs:
+
+1. **Get Email Preview**: `GET /api/admin/bulk-email/preview`
+   - Query Parameters: `jobId`, `status`
+   - Returns: List of recipients that would receive the email
+
+2. **Send Bulk Email**: `POST /api/admin/bulk-email/send`
+   - Body: `BulkEmailRequestDTO`
+   - Returns: `BulkEmailResponseDTO` with success/failure details
+
+3. **Get Available Jobs**: `GET /api/admin/bulk-email/jobs`
+   - Returns: List of all jobs for filtering
+
+4. **Get Application Statuses**: `GET /api/admin/bulk-email/statuses`
+   - Returns: List of all application statuses for filtering
+
 ### Email Notification APIs:
 
 1. **Get All Email Notifications**: `GET /api/admin/emails`
@@ -1204,6 +1478,9 @@ spring.security.oauth2.client.registration.linkedin.redirect-uri=${BACKEND_URL}/
 - **AI Service Security**: API key protection, request validation
 - **WebSocket Security**: Connection authentication, room-based access control
 - **Data Privacy**: Resume text handling, GDPR compliance considerations
+- **Regional Data Access Control**: GDPR-compliant regional data filtering
+- **IP-based Geolocation**: Automatic region detection for access control
+- **Session-based View Modes**: Secure view mode toggling for EU admins
 
 ## Password Management
 

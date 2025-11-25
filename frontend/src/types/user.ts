@@ -41,6 +41,10 @@ export interface User {
   isSubscribed?: boolean;
   privacyPolicyAccepted?: boolean;
   privacyPolicyAcceptedAt?: string;
+  applicationConsentGiven?: boolean;
+  applicationConsentGivenAt?: string;
+  connectConsentGiven?: boolean;
+  connectConsentGivenAt?: string;
 }
 
 export interface UserFormData extends Omit<User, 'id' | 'lastLogin'> {

@@ -136,6 +136,40 @@ public class User extends BaseEntity {
     @Column(name = "privacy_policy_accepted_at")
     private LocalDateTime privacyPolicyAcceptedAt;
     
+    // Privacy Permissions
+    @Column(name = "application_consent_given")
+    private Boolean applicationConsentGiven = false;
+    
+    @Column(name = "application_consent_given_at")
+    private LocalDateTime applicationConsentGivenAt;
+    
+    @Column(name = "future_jobs_consent_given")
+    private Boolean futureJobsConsentGiven = false;
+    
+    @Column(name = "future_jobs_consent_given_at")
+    private LocalDateTime futureJobsConsentGivenAt;
+    
+    @Column(name = "connect_consent_given")
+    private Boolean connectConsentGiven = false;
+    
+    @Column(name = "connect_consent_given_at")
+    private LocalDateTime connectConsentGivenAt;
+    
+    @Column(name = "connect_consent_token")
+    private String connectConsentToken;
+    
+    @Column(name = "connect_consent_token_expiry")
+    private LocalDateTime connectConsentTokenExpiry;
+    
+    @Column(name = "data_deletion_requested")
+    private Boolean dataDeletionRequested = false;
+    
+    @Column(name = "data_deletion_requested_at")
+    private LocalDateTime dataDeletionRequestedAt;
+    
+    @Column(name = "data_deletion_scheduled_at")
+    private LocalDateTime dataDeletionScheduledAt;
+    
     // Helper methods for multiple roles
     /**
      * Get all available roles for this user

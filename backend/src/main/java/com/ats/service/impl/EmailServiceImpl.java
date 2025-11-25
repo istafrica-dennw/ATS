@@ -175,7 +175,19 @@ public class EmailServiceImpl implements EmailService {
             "userName", user.getFirstName()
         );
         
-        return sendTemplateEmail(user.getEmail(), "Your account has been created", "new-user-email", templateVars, user);
+        return sendTemplateEmail(user.getEmail(), "Verify your email address - IST", "new-user-email", templateVars, user);
+    }
+
+    @Override
+    @Transactional
+    public EmailNotification sendAdminCreatedUserInvitation(User user, String verificationToken, String connectConsentToken) throws MessagingException {
+        Map<String, Object> templateVars = new HashMap<>();
+        // Single link with both tokens - user will accept consent first, then verify email
+        templateVars.put("setupLink", frontendUrl + "/accept-connect-consent?token=" + connectConsentToken + "&verificationToken=" + verificationToken);
+        templateVars.put("userName", user.getFirstName());
+        templateVars.put("privacyPolicyUrl", frontendUrl + "/privacy-policy");
+        
+        return sendTemplateEmail(user.getEmail(), "Welcome to IST - Complete Your Account Setup", "admin-created-user-invitation", templateVars, user);
     }
 
     @Override

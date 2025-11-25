@@ -104,6 +104,11 @@ public class ApplicationServiceImpl implements ApplicationService {
 			throw new BadRequestException("You must accept the Privacy Policy to apply for jobs. Please accept the Privacy Policy in your profile.");
 		}
 
+		// Validate candidate has given Application Consent
+		if (candidate.getApplicationConsentGiven() == null || !candidate.getApplicationConsentGiven()) {
+			throw new BadRequestException("You must accept the application consent terms to apply for jobs. Please accept the application consent in your profile settings.");
+		}
+
 		// Validate required custom questions are answered
 		validateCustomQuestions(applicationDTO, job.getId());
 

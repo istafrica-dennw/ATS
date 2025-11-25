@@ -21,6 +21,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import { Role } from './types/user';
 import EmailVerificationPage from './pages/EmailVerificationPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AcceptConnectConsentPage from './pages/AcceptConnectConsentPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
@@ -46,7 +47,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { isJWTToken, logTokenInfo } from './utils/tokenUtils';
 
 // List of paths that should always be accessible, even when authenticated
-const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email', '/dashboard'];
+const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email', '/dashboard', '/accept-connect-consent'];
 
 // URL Token Handler - This component processes authentication tokens in the URL
 // Separate from PublicRoute to ensure it runs on every route
@@ -163,6 +164,11 @@ const App: React.FC = () => {
               <Route path="/reset-password" element={
                 <PublicRoute>
                   <ResetPasswordPage />
+                </PublicRoute>
+              } />
+              <Route path="/accept-connect-consent" element={
+                <PublicRoute>
+                  <AcceptConnectConsentPage />
                 </PublicRoute>
               } />
               

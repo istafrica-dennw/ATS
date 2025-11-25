@@ -47,6 +47,10 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   const [alreadyApplied, setAlreadyApplied] = useState<boolean>(false);
   const [checkingApplication, setCheckingApplication] = useState<boolean>(true);
   
+  // Privacy consent state
+  const [applicationConsentAccepted, setApplicationConsentAccepted] = useState<boolean>(false);
+  const [futureJobsConsentAccepted, setFutureJobsConsentAccepted] = useState<boolean>(false);
+  
   // Phone number validation
   const hasPhoneNumber = user?.phoneNumber && user.phoneNumber.trim() !== '';
   
@@ -57,15 +61,20 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   // Check if privacyPolicyAccepted is explicitly true (not null, undefined, or false)
   const hasAcceptedPrivacyPolicy = user?.privacyPolicyAccepted === true;
   
+  // Application Consent validation
+  const hasApplicationConsent = user?.applicationConsentGiven === true;
+  
   // Debug logging
   useEffect(() => {
     console.log('JobApplicationForm - User data:', {
       hasPhoneNumber,
       hasProfilePicture,
       privacyPolicyAccepted: user?.privacyPolicyAccepted,
-      hasAcceptedPrivacyPolicy
+      hasAcceptedPrivacyPolicy,
+      applicationConsentGiven: user?.applicationConsentGiven,
+      hasApplicationConsent
     });
-  }, [user, hasPhoneNumber, hasProfilePicture, hasAcceptedPrivacyPolicy]);
+  }, [user, hasPhoneNumber, hasProfilePicture, hasAcceptedPrivacyPolicy, hasApplicationConsent]);
 
   // Refresh user data to ensure we have the latest privacyPolicyAccepted field
   useEffect(() => {
@@ -347,11 +356,12 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
   }
 
   // Check if user has required profile information
-  if (!hasPhoneNumber || !hasProfilePicture || !hasAcceptedPrivacyPolicy) {
+  if (!hasPhoneNumber || !hasProfilePicture || !hasAcceptedPrivacyPolicy || !hasApplicationConsent) {
     const missingItems = [];
     if (!hasPhoneNumber) missingItems.push('phone number');
     if (!hasProfilePicture) missingItems.push('profile picture');
     if (!hasAcceptedPrivacyPolicy) missingItems.push('Privacy Policy acceptance');
+    if (!hasApplicationConsent) missingItems.push('application consent');
     
     // Debug logging
     console.log('JobApplicationForm - Missing items check:', {
@@ -359,7 +369,9 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
       hasPhoneNumber,
       hasProfilePicture,
       hasAcceptedPrivacyPolicy,
-      userPrivacyPolicyAccepted: user?.privacyPolicyAccepted
+      hasApplicationConsent,
+      userPrivacyPolicyAccepted: user?.privacyPolicyAccepted,
+      userApplicationConsent: user?.applicationConsentGiven
     });
     
     const missingItemsText = missingItems.length === 1 
@@ -368,16 +380,22 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
         ? `${missingItems[0]} and ${missingItems[1]}`
         : missingItems.length === 3
           ? `${missingItems[0]}, ${missingItems[1]}, and ${missingItems[2]}`
-          : missingItems.join(', ');
+          : missingItems.length === 4
+            ? `${missingItems[0]}, ${missingItems[1]}, ${missingItems[2]}, and ${missingItems[3]}`
+            : missingItems.join(', ');
 
     // Determine heading based on what's missing
-    const isOnlyPrivacyPolicy = missingItems.length === 1 && missingItems[0] === 'Privacy Policy acceptance';
-    const heading = isOnlyPrivacyPolicy 
-      ? 'Privacy Policy Acceptance Required' 
-      : 'Profile Information Required';
+    const isOnlyConsent = missingItems.length === 1 && (missingItems[0] === 'Privacy Policy acceptance' || missingItems[0] === 'application consent');
+    const isOnlyApplicationConsent = missingItems.length === 1 && missingItems[0] === 'application consent';
+    const heading = isOnlyApplicationConsent
+      ? 'Application Consent Required'
+      : isOnlyConsent
+        ? 'Consent Required'
+        : 'Profile Information Required';
     
     console.log('JobApplicationForm - Heading determination:', {
-      isOnlyPrivacyPolicy,
+      isOnlyConsent,
+      isOnlyApplicationConsent,
       heading,
       missingItemsLength: missingItems.length,
       firstMissingItem: missingItems[0]
@@ -394,18 +412,20 @@ const JobApplicationForm: React.FC<JobApplicationFormProps> = ({ jobId, jobTitle
               {heading}
             </h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
-              {isOnlyPrivacyPolicy 
-                ? 'You must accept the Privacy Policy before you can apply for jobs. Please accept the Privacy Policy in your profile to continue.'
-                : `You need to complete the following before you can apply for jobs: ${missingItemsText}. Please update your profile to continue.`
+              {isOnlyApplicationConsent
+                ? 'You must accept the application consent terms before you can apply for jobs. Please accept the application consent in your profile settings to continue.'
+                : isOnlyConsent
+                  ? 'You must accept the required consents before you can apply for jobs. Please accept them in your profile settings to continue.'
+                  : `You need to complete the following before you can apply for jobs: ${missingItemsText}. Please update your profile to continue.`
               }
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate('/profile/settings')}
                 className="inline-flex items-center px-4 py-2 border border-yellow-300 dark:border-yellow-600 text-sm font-medium rounded-lg text-yellow-700 dark:text-yellow-300 bg-white dark:bg-yellow-900/20 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-colors duration-200"
               >
                 <PhoneIcon className="h-4 w-4 mr-2" />
-                Complete Profile
+                {isOnlyApplicationConsent || isOnlyConsent ? 'Go to Profile Settings' : 'Complete Profile'}
               </button>
               <button
                 onClick={() => navigate('/dashboard')}

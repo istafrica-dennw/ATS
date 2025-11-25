@@ -55,6 +55,16 @@ public interface EmailService {
      * @return The created EmailNotification entity
      */
     EmailNotification sendNewUserVerificationEmail(User user, String token) throws MessagingException;
+    
+    /**
+     * Sends an invitation email to admin-created users with Connect consent link
+     * @param user The user to send the email to
+     * @param verificationToken The email verification token
+     * @param connectConsentToken The Connect consent token
+     * @return The created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    EmailNotification sendAdminCreatedUserInvitation(User user, String verificationToken, String connectConsentToken) throws MessagingException;
 
     /**
      * Sends an email based on an existing EmailNotification record

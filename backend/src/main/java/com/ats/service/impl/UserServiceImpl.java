@@ -74,6 +74,20 @@ public class UserServiceImpl implements UserService {
         user.setIsEmailPasswordEnabled(userDTO.getIsEmailPasswordEnabled() != null ? userDTO.getIsEmailPasswordEnabled() : true);
         user.setIsActive(userDTO.getIsActive() != null ? userDTO.getIsActive() : true);
         
+        // For admin-created CANDIDATE users, set up Connect consent flow
+        // Note: This method is called when admin creates users, NOT for self-signup
+        boolean isAdminCreatedCandidate = userDTO.getRole() == Role.CANDIDATE;
+        if (isAdminCreatedCandidate) {
+            // Admin-created candidates need to accept privacy policy and Connect consent
+            user.setPrivacyPolicyAccepted(false);
+            user.setConnectConsentGiven(false);
+            // Generate Connect consent token
+            TokenUtil.generateConnectConsentToken(user);
+        } else {
+            // For other roles created by admin, privacy policy is handled differently
+            user.setPrivacyPolicyAccepted(userDTO.getPrivacyPolicyAccepted() != null ? userDTO.getPrivacyPolicyAccepted() : false);
+        }
+        
         // Handle email verification based on request
         boolean shouldSendVerificationEmail = userDTO.getSendVerificationEmail() != null ? userDTO.getSendVerificationEmail() : false;
         if (shouldSendVerificationEmail) {
@@ -86,13 +100,25 @@ public class UserServiceImpl implements UserService {
         
         User savedUser = userRepository.save(user);
         
-        // Send verification email if requested
+        // Send appropriate email based on user type
         if (shouldSendVerificationEmail && savedUser.getEmailVerificationToken() != null) {
-            try {
-                emailService.sendNewUserVerificationEmail(savedUser, savedUser.getEmailVerificationToken());
-            } catch (Exception e) {
-                // Log the error but continue since the user was created successfully
-                logger.error("Failed to send verification email to " + savedUser.getEmail(), e);
+            if (isAdminCreatedCandidate && savedUser.getConnectConsentToken() != null) {
+                // Admin-created CANDIDATE: Use invitation email with Connect consent link
+                try {
+                    emailService.sendAdminCreatedUserInvitation(savedUser, savedUser.getEmailVerificationToken(), savedUser.getConnectConsentToken());
+                    logger.info("Sent admin-created user invitation email to: {}", savedUser.getEmail());
+                } catch (Exception e) {
+                    logger.error("Failed to send invitation email to " + savedUser.getEmail(), e);
+                }
+            } else {
+                // Admin-created non-CANDIDATE roles: Use regular verification email
+                // (This should rarely happen, but covers cases like admin creating INTERVIEWER, etc.)
+                try {
+                    emailService.sendNewUserVerificationEmail(savedUser, savedUser.getEmailVerificationToken());
+                    logger.info("Sent verification email to admin-created user: {}", savedUser.getEmail());
+                } catch (Exception e) {
+                    logger.error("Failed to send verification email to " + savedUser.getEmail(), e);
+                }
             }
         }
         

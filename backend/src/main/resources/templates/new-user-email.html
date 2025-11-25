@@ -2,15 +2,15 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Your Account has been Created</title>
+    <title>Verify Your Email Address</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2563eb;">Welcome to ATS System</h2>
+        <h2 style="color: #2563eb;">Welcome to IST</h2>
         
         <p>Hello <span th:text="${userName}">User</span>,</p>
         
-        <p>An administrator has created an account for you in our Applicant Tracking System. Please click the button below to verify your email address and access your account:</p>
+        <p>Thank you for creating an account with us! To complete your registration, please verify your email address by clicking the button below:</p>
         
         <div style="text-align: center; margin: 30px 0;">
             <a th:href="${verificationLink}" 
@@ -19,10 +19,10 @@
             </a>
         </div>
         
-        <p>If you did not expect this email, please contact our support team.</p>
+        <p>If you did not create an account, please ignore this email or contact our support team.</p>
         
         <p style="margin-top: 30px; font-size: 0.9em; color: #666;">
-            This link will expire in 24 hours.
+            This verification link will expire in 24 hours.
         </p>
     </div>
 </body>

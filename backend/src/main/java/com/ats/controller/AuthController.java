@@ -236,9 +236,30 @@ public class AuthController {
             throw new RuntimeException("Verification token has expired");
         }
 
+        // For admin-created CANDIDATE users, Connect consent must be accepted before email verification
+        // Check if this is an admin-created candidate (has connectConsentToken) and consent not given
+        if (user.getRole() == Role.CANDIDATE) {
+            // If user has a connectConsentToken, they were created by admin and MUST accept Connect consent
+            if (user.getConnectConsentToken() != null && !user.getConnectConsentToken().isEmpty()) {
+                // This is an admin-created candidate - Connect consent is mandatory
+                if (user.getConnectConsentGiven() == null || !Boolean.TRUE.equals(user.getConnectConsentGiven())) {
+                    logger.warn("Email verification blocked for admin-created candidate {} - Connect consent not accepted", user.getEmail());
+                    throw new BadRequestException("You must accept Connect consent before verifying your email. Please check your email for the Connect consent link and accept it first.");
+                }
+            }
+        }
+
         user.setIsEmailVerified(true);
         user.setEmailVerificationToken(null);
         user.setEmailVerificationTokenExpiry(null);
+        
+        // Clear Connect consent token if it exists (admin-created candidates)
+        if (user.getConnectConsentToken() != null) {
+            user.setConnectConsentToken(null);
+            user.setConnectConsentTokenExpiry(null);
+            logger.info("Cleared Connect consent token for admin-created candidate {} after email verification", user.getEmail());
+        }
+        
         userRepository.save(user);
 
         return ResponseEntity.ok().body(new HashMap<String, String>() {{
@@ -454,6 +475,92 @@ public class AuthController {
         userRepository.save(user);
         
         logger.info("User {} accepted Privacy Policy", email);
+        return ResponseEntity.ok(convertToDTO(user));
+    }
+    
+    @PostMapping("/accept-application-consent")
+    @Operation(
+        summary = "Accept Application Consent",
+        description = "Marks the current user as having accepted the application consent terms. Required for submitting job applications."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Application consent accepted successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = UserDTO.class)
+            )
+        ),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    @RequiresAuthentication
+    public ResponseEntity<?> acceptApplicationConsent(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Set Application Consent acceptance
+        user.setApplicationConsentGiven(true);
+        user.setApplicationConsentGivenAt(LocalDateTime.now());
+        userRepository.save(user);
+        
+        logger.info("User {} accepted Application Consent", email);
+        return ResponseEntity.ok(convertToDTO(user));
+    }
+    
+    @PostMapping("/accept-connect-consent")
+    @Operation(
+        summary = "Accept Connect Consent via Token",
+        description = "Accepts Connect consent using a token (for admin-created users). Also supports authenticated users accepting Connect consent."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Connect consent accepted successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = UserDTO.class)
+            )
+        ),
+        @ApiResponse(responseCode = "400", description = "Invalid or expired token"),
+        @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<?> acceptConnectConsent(
+            @RequestParam(required = false) String token,
+            Authentication authentication) {
+        
+        User user;
+        
+        // If token is provided, use token-based flow (for admin-created users)
+        if (token != null && !token.isEmpty()) {
+            user = userRepository.findByConnectConsentToken(token)
+                .orElseThrow(() -> new BadRequestException("Invalid or expired Connect consent token"));
+            
+            // Validate token expiry
+            if (user.getConnectConsentTokenExpiry() == null || 
+                user.getConnectConsentTokenExpiry().isBefore(LocalDateTime.now())) {
+                throw new BadRequestException("Connect consent token has expired");
+            }
+        } else if (authentication != null && authentication.isAuthenticated()) {
+            // Authenticated user flow (for profile settings)
+            String email = authentication.getName();
+            user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        } else {
+            throw new BadRequestException("Either a valid token or authentication is required");
+        }
+        
+        // Set Connect Consent acceptance
+        user.setConnectConsentGiven(true);
+        user.setConnectConsentGivenAt(LocalDateTime.now());
+        
+        // NOTE: We do NOT clear connectConsentToken here - it will be cleared during email verification
+        // This allows the verify-email endpoint to know this was an admin-created candidate
+        userRepository.save(user);
+        
+        logger.info("User {} accepted Connect Consent. Email verification still required.", user.getEmail());
         return ResponseEntity.ok(convertToDTO(user));
     }
     
@@ -932,6 +1039,10 @@ public class AuthController {
         userDTO.setMfaEnabled(user.getMfaEnabled());
         userDTO.setIsSubscribed(user.getIsSubscribed());
         userDTO.setPrivacyPolicyAccepted(user.getPrivacyPolicyAccepted());
+        userDTO.setApplicationConsentGiven(user.getApplicationConsentGiven());
+        userDTO.setApplicationConsentGivenAt(user.getApplicationConsentGivenAt());
+        userDTO.setConnectConsentGiven(user.getConnectConsentGiven());
+        userDTO.setConnectConsentGivenAt(user.getConnectConsentGivenAt());
         
         return userDTO;
     }

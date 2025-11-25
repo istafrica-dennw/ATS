@@ -210,4 +210,32 @@ public class UserDTO {
         accessMode = Schema.AccessMode.READ_ONLY
     )
     private Boolean privacyPolicyAccepted;
+    
+    @Schema(
+        description = "Whether the user has given application consent", 
+        example = "true",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private Boolean applicationConsentGiven;
+    
+    @Schema(
+        description = "When the user gave application consent", 
+        example = "2024-01-15T10:30:00",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private LocalDateTime applicationConsentGivenAt;
+    
+    @Schema(
+        description = "Whether the user has given Connect consent", 
+        example = "true",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private Boolean connectConsentGiven;
+    
+    @Schema(
+        description = "When the user gave Connect consent", 
+        example = "2024-01-15T10:30:00",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private LocalDateTime connectConsentGivenAt;
 } 

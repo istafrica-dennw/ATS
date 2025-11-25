@@ -18,6 +18,8 @@ const ProfileSettingsPage: React.FC = () => {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [acceptingPrivacyPolicy, setAcceptingPrivacyPolicy] = useState(false);
+  const [acceptingApplicationConsent, setAcceptingApplicationConsent] = useState(false);
+  const [acceptingConnectConsent, setAcceptingConnectConsent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -254,6 +256,80 @@ const ProfileSettingsPage: React.FC = () => {
       toast.error('Network error. Please try again.');
     } finally {
       setAcceptingPrivacyPolicy(false);
+    }
+  };
+
+  const handleAcceptApplicationConsent = async () => {
+    setAcceptingApplicationConsent(true);
+    try {
+      const response = await fetch(`/api/auth/accept-application-consent`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const updatedUserData = await response.json();
+        console.log('Application Consent accepted, updated user data:', updatedUserData);
+        
+        // Update the user in the auth context
+        if (setUser) {
+          setUser(updatedUserData);
+        }
+        
+        // Update local profile data
+        setProfileData(updatedUserData);
+        
+        toast.success('Application consent accepted successfully!');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to accept Application Consent:', errorData);
+        toast.error(errorData.message || 'Failed to accept application consent.');
+      }
+    } catch (error) {
+      console.error('Error accepting Application Consent:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setAcceptingApplicationConsent(false);
+    }
+  };
+
+  const handleAcceptConnectConsent = async () => {
+    setAcceptingConnectConsent(true);
+    try {
+      const response = await fetch(`/api/auth/accept-connect-consent`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const updatedUserData = await response.json();
+        console.log('Connect Consent accepted, updated user data:', updatedUserData);
+        
+        // Update the user in the auth context
+        if (setUser) {
+          setUser(updatedUserData);
+        }
+        
+        // Update local profile data
+        setProfileData(updatedUserData);
+        
+        toast.success('Connect consent accepted successfully!');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to accept Connect Consent:', errorData);
+        toast.error(errorData.message || 'Failed to accept Connect consent.');
+      }
+    } catch (error) {
+      console.error('Error accepting Connect Consent:', error);
+      toast.error('Network error. Please try again.');
+    } finally {
+      setAcceptingConnectConsent(false);
     }
   };
 
@@ -669,6 +745,128 @@ const ProfileSettingsPage: React.FC = () => {
                         className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all"
                       >
                         {acceptingPrivacyPolicy ? 'Accepting...' : 'Accept Privacy Policy'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Application Consent Section */}
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100 mb-4">Application Consent</h3>
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  {profileData.applicationConsentGiven ? (
+                    <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <ShieldCheckIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  )}
+                </div>
+                <div className="ml-3 flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Application Consent Terms
+                  </h4>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    {profileData.applicationConsentGiven ? (
+                      <>
+                        You have accepted the application consent terms. This is required to submit job applications.
+                        {profileData.applicationConsentGivenAt && (
+                          <span className="block mt-1 text-xs text-gray-500 dark:text-gray-500">
+                            Accepted on: {new Date(profileData.applicationConsentGivenAt).toLocaleDateString()}
+                          </span>
+                        )}
+                        <span className="block mt-2 text-xs text-gray-500 dark:text-gray-500">
+                          If you need to withdraw your consent, please contact support through the chat feature.
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        You must accept the application consent terms to submit job applications. By accepting, you confirm that you have read the{' '}
+                        <Link 
+                          to="/privacy-policy" 
+                          target="_blank"
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 underline"
+                        >
+                          Privacy Policy
+                        </Link>
+                        {' '}and confirm that IST stores your personal details to be able to process your application.
+                      </>
+                    )}
+                  </p>
+                  {!profileData.applicationConsentGiven && (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={handleAcceptApplicationConsent}
+                        disabled={acceptingApplicationConsent}
+                        className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all"
+                      >
+                        {acceptingApplicationConsent ? 'Accepting...' : 'Accept Application Consent'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Connect Consent Section */}
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100 mb-4">Connect Consent</h3>
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  {profileData.connectConsentGiven ? (
+                    <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <ShieldCheckIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  )}
+                </div>
+                <div className="ml-3 flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Connect Consent Terms
+                  </h4>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    {profileData.connectConsentGiven ? (
+                      <>
+                        You have accepted the Connect consent terms. This allows IST to store your personal details to contact you for future job opportunities.
+                        {profileData.connectConsentGivenAt && (
+                          <span className="block mt-1 text-xs text-gray-500 dark:text-gray-500">
+                            Accepted on: {new Date(profileData.connectConsentGivenAt).toLocaleDateString()}
+                          </span>
+                        )}
+                        <span className="block mt-2 text-xs text-gray-500 dark:text-gray-500">
+                          If you need to withdraw your consent, please contact support through the chat feature.
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        By accepting this consent, you confirm that you have read the{' '}
+                        <Link 
+                          to="/privacy-policy" 
+                          target="_blank"
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 underline"
+                        >
+                          Privacy Policy
+                        </Link>
+                        {' '}and confirm that IST store your personal details to be able to contact you for future job opportunities.
+                        <br /><br />
+                        IST will hold your data for future employment opportunities for a maximum period of 2 years, or until you decide to withdraw your consent.
+                      </>
+                    )}
+                  </p>
+                  {!profileData.connectConsentGiven && (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={handleAcceptConnectConsent}
+                        disabled={acceptingConnectConsent}
+                        className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 dark:from-indigo-500 dark:to-indigo-600 dark:hover:from-indigo-600 dark:hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] disabled:transform-none transition-all"
+                      >
+                        {acceptingConnectConsent ? 'Accepting...' : 'Accept Connect Consent'}
                       </button>
                     </div>
                   )}

@@ -39,4 +39,16 @@ public class TokenUtil {
                 .isUsed(false)
                 .build();
     }
+    
+    /**
+     * Generate a Connect consent token for a user and set the token and expiry time
+     * @param user The user to generate and set the token for
+     * @return The generated token
+     */
+    public static String generateConnectConsentToken(User user) {
+        String token = UUID.randomUUID().toString();
+        user.setConnectConsentToken(token);
+        user.setConnectConsentTokenExpiry(LocalDateTime.now().plusDays(7)); // 7 days expiry
+        return token;
+    }
 } 

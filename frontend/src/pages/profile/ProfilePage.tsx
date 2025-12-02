@@ -14,6 +14,8 @@ import {
   BellIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { Link, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -301,6 +303,113 @@ const ProfilePage: React.FC = () => {
                 </dd>
               </div>
             </dl>
+          </div>
+        </div>
+
+        {/* Privacy & Consent Status */}
+        <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+          <div className="px-4 py-5 sm:px-6 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                Privacy & Consent Status
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                Your consent agreements and privacy settings.
+              </p>
+            </div>
+            <Link
+              to="/profile/settings"
+              className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300"
+            >
+              Manage →
+            </Link>
+          </div>
+          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Privacy Policy */}
+              <div className={`rounded-lg p-4 border ${
+                userData.privacyPolicyAccepted 
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                  : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+              }`}>
+                <div className="flex items-center">
+                  {userData.privacyPolicyAccepted ? (
+                    <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
+                  ) : (
+                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+                  )}
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Privacy Policy</h4>
+                </div>
+                <p className={`mt-1 text-xs ${
+                  userData.privacyPolicyAccepted 
+                    ? 'text-green-700 dark:text-green-300' 
+                    : 'text-yellow-700 dark:text-yellow-300'
+                }`}>
+                  {userData.privacyPolicyAccepted ? 'Accepted' : 'Not Accepted'}
+                </p>
+                {userData.privacyPolicyAcceptedAt && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {formatDate(userData.privacyPolicyAcceptedAt)}
+                  </p>
+                )}
+              </div>
+
+              {/* Application Consent */}
+              <div className={`rounded-lg p-4 border ${
+                userData.applicationConsentGiven 
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                  : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+              }`}>
+                <div className="flex items-center">
+                  {userData.applicationConsentGiven ? (
+                    <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
+                  ) : (
+                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+                  )}
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Application Consent</h4>
+                </div>
+                <p className={`mt-1 text-xs ${
+                  userData.applicationConsentGiven 
+                    ? 'text-green-700 dark:text-green-300' 
+                    : 'text-yellow-700 dark:text-yellow-300'
+                }`}>
+                  {userData.applicationConsentGiven ? 'Accepted' : 'Not Accepted'}
+                </p>
+                {userData.applicationConsentGivenAt && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {formatDate(userData.applicationConsentGivenAt)}
+                  </p>
+                )}
+              </div>
+
+              {/* Connect Consent */}
+              <div className={`rounded-lg p-4 border ${
+                userData.connectConsentGiven 
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                  : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+              }`}>
+                <div className="flex items-center">
+                  {userData.connectConsentGiven ? (
+                    <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
+                  ) : (
+                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+                  )}
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Connect Consent</h4>
+                </div>
+                <p className={`mt-1 text-xs ${
+                  userData.connectConsentGiven 
+                    ? 'text-green-700 dark:text-green-300' 
+                    : 'text-yellow-700 dark:text-yellow-300'
+                }`}>
+                  {userData.connectConsentGiven ? 'Accepted' : 'Not Accepted'}
+                </p>
+                {userData.connectConsentGivenAt && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {formatDate(userData.connectConsentGivenAt)}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

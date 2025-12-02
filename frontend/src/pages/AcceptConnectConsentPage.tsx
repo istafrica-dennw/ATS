@@ -159,7 +159,7 @@ const AcceptConnectConsentPage: React.FC = () => {
 
           {!consentChecked && (
             <p className="mt-3 text-xs text-center text-gray-500 dark:text-gray-400">
-              Please check the box above to enable email verification.
+              Please check the required box above to enable email verification.
             </p>
           )}
 

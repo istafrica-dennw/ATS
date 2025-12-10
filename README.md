@@ -11,6 +11,7 @@ The application is hosted on AWS and ready for production use.
 ## Features
 
 ### 📋 Job Management
+
 - **Job Posting Creation**: Rich job descriptions with formatting support
 - **Status Management**: Draft, Published, Expired, Closed, and Reopened statuses
 - **Work Settings**: Remote, Onsite, and Hybrid work arrangements
@@ -19,6 +20,7 @@ The application is hosted on AWS and ready for production use.
 - **Department & Location**: Organized job categorization
 
 ### 👥 Application Processing
+
 - **File Uploads**: Resume, cover letter, and portfolio support
 - **Status Tracking**: 8-stage application workflow (Applied → Accepted/Rejected)
 - **Custom Responses**: Answers to job-specific questions
@@ -28,6 +30,7 @@ The application is hosted on AWS and ready for production use.
 - **🤖 AI Resume Analysis**: Automatic resume parsing with experience extraction, skills matching, and job-specific scoring (powered by free Ollama models)
 
 ### 🤖 AI Resume Analysis
+
 - **Automatic Analysis**: AI-powered resume parsing and scoring
 - **Experience Extraction**: Years of experience and company history
 - **Skills Matching**: Job-specific skill compatibility scoring
@@ -37,6 +40,7 @@ The application is hosted on AWS and ready for production use.
 - **Detailed Insights**: Work history, education, and comprehensive analysis
 
 ### 🎯 User Management
+
 - **Role-Based Access**: Admin, Recruiter, Interviewer, Candidate roles
 - **Authentication**: JWT-based with LinkedIn OAuth integration
 - **Profile Management**: Extended user profiles with pictures
@@ -44,12 +48,14 @@ The application is hosted on AWS and ready for production use.
 - **Password Management**: Reset, change, and recovery features
 
 ### 📊 Interview & Evaluation
+
 - **Interview Scheduling**: Multiple rounds with participant management
 - **Evaluation System**: Structured scoring and feedback collection
 - **Meeting Integration**: Meeting links and scheduling
 - **Performance Tracking**: Comprehensive evaluation metrics
 
 ### 📧 Communication
+
 - **Email Notifications**: Automated email system with templates
 - **Status Updates**: Real-time application status notifications
 - **Template Management**: Customizable email templates
@@ -58,6 +64,7 @@ The application is hosted on AWS and ready for production use.
 ## 🏗️ Technology Stack
 
 ### Backend
+
 - **Spring Boot 3.2.3** - Main framework
 - **PostgreSQL** - Primary database
 - **JWT** - Authentication and security
@@ -66,13 +73,18 @@ The application is hosted on AWS and ready for production use.
 - **Lombok** - Code generation
 
 ### Frontend
+
 - **React** - UI framework
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Styling
 - **Axios** - HTTP client
 - **React Router** - Navigation
+- **Two Independent Frontends**:
+  - `frontend/` - Admin dashboard (recruiters, HR)
+  - `frontend-career/` - Public career portal (job seekers)
 
 ### DevOps & Deployment
+
 - **Docker & Docker Compose** - Containerization
 - **Multi-stage builds** - Optimized container images
 - **Health checks** - Container monitoring
@@ -84,31 +96,73 @@ The application is hosted on AWS and ready for production use.
 ## Quick Start
 
 1. **Clone the repository**
+
 ```bash
 git clone <repository-url>
 cd ats-system
 ```
 
 2. **Start with Docker Compose**
+
 ```bash
 docker-compose up -d
 ```
 
 3. **Access the application**
+
 - **Production**: [https://ist.africa](https://ist.africa)
-- **Local Frontend**: http://localhost:3001 (development)
+- **Local Admin Frontend**: http://localhost:3001 (recruiters/HR)
+- **Local Career Portal**: http://localhost:3002 (job seekers)
 - **Local Backend**: http://localhost:8080
 - **API Documentation**: http://localhost:8080/swagger-ui.html
 
 ### Default Admin Account
+
 - Email: `admin@ist.africa`
 - Password: `admin@atsafrica`
+
+## 🎨 Dual Frontend Architecture
+
+The ATS system features two independent frontend applications:
+
+### Admin Dashboard (`/frontend`)
+
+- **Port**: 3001 (development)
+- **Purpose**: Internal use by recruiters, HR, and administrators
+- **Features**:
+  - Full job management (create, edit, delete)
+  - Application review and processing
+  - Interview scheduling
+  - Email template management
+  - User administration
+  - Analytics and reporting
+
+### Career Portal (`/frontend-career`)
+
+- **Port**: 3002 (development)
+- **Purpose**: Public-facing site for job seekers
+- **Features**:
+  - Browse job openings
+  - Search and filter jobs
+  - View job details
+  - Submit applications with resume upload
+  - Track application status
+  - Responsive design for mobile/tablet
+- **Documentation**: See [FRONTEND_CAREER_SETUP.md](./FRONTEND_CAREER_SETUP.md)
+
+Both frontends:
+
+- Share the same backend API
+- Support dark mode (follows system preference)
+- Are fully containerized with Docker
+- Can be deployed independently
 
 ## 📊 Database Schema
 
 The system uses PostgreSQL with the following key tables:
 
 ### Core Tables
+
 - **users** - User accounts and profiles
 - **jobs** - Job postings with status and settings
 - **job_custom_questions** - Job-specific application questions
@@ -116,12 +170,14 @@ The system uses PostgreSQL with the following key tables:
 - **application_answers** - Responses to custom questions
 
 ### Process Tables
+
 - **interviews** - Interview scheduling and management
 - **interview_participants** - Interview attendees
 - **evaluations** - Interview feedback and scoring
 - **experience_calculations** - Experience analysis
 
 ### Communication
+
 - **email_notifications** - Email delivery tracking
 - **email_templates** - Template management
 - **communications** - Message history
@@ -154,6 +210,7 @@ LINKEDIN_CLIENT_SECRET=your-linkedin-client-secret
 The system provides comprehensive REST APIs:
 
 ### Key Endpoints
+
 - **Jobs**: `/api/jobs/*` - Job management
 - **Applications**: `/api/applications/*` - Application processing
 - **Users**: `/api/users/*` - User management
@@ -161,6 +218,7 @@ The system provides comprehensive REST APIs:
 - **Files**: `/api/files/*` - File uploads
 
 ### Documentation
+
 - **Production API**: https://ist.africa:8080/swagger-ui.html
 - **Local Development**: http://localhost:8080/swagger-ui.html
 - **OpenAPI Spec**: http://localhost:8080/api-docs
@@ -168,18 +226,21 @@ The system provides comprehensive REST APIs:
 ## 🎨 User Interface
 
 ### Admin Dashboard
+
 - Job management with status controls
 - Application review and status updates
 - User management and role assignment
 - Analytics and reporting
 
 ### Candidate Portal
+
 - Job browsing and search
 - Application submission and tracking
 - Profile management
 - Application history
 
 ### Responsive Design
+
 - Mobile-friendly interface
 - Consistent navigation
 - Accessible components
@@ -197,6 +258,7 @@ The system provides comprehensive REST APIs:
 ## 📈 Application Flow
 
 ### Job Application Process
+
 1. **Job Creation** → Admin creates job with custom questions
 2. **Job Publishing** → Job becomes visible to candidates
 3. **Application Submission** → Candidate applies with documents
@@ -211,12 +273,14 @@ The system provides comprehensive REST APIs:
 ### Local Development Setup
 
 1. **Backend Development**
+
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
 
 2. **Frontend Development**
+
 ```bash
 cd frontend
 npm install
@@ -224,6 +288,7 @@ npm start
 ```
 
 3. **Database**
+
 ```bash
 docker run -d --name ats-db \
   -e POSTGRES_DB=ats_database \
@@ -233,6 +298,7 @@ docker run -d --name ats-db \
 ```
 
 ### Testing
+
 - Backend: `./mvnw test`
 - Frontend: `npm test`
 
@@ -254,6 +320,7 @@ docker run -d --name ats-db \
 ## 📞 Support
 
 For questions or issues:
+
 - Check the [Technical Documentation](docs/TECHNICAL_DOCUMENTATION.md)
 - Review the API documentation
 - Check existing issues
@@ -272,4 +339,5 @@ For questions or issues:
 ---
 
 **Built with ❤️ for modern recruitment workflows**
+
 # Trigger deployment with latest workflow changes

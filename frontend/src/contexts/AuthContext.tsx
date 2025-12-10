@@ -4,6 +4,7 @@ import { User, Role } from '../types/user';
 import { toast } from 'react-toastify';
 import { authService, AuthResponse, MfaRequiredResponse, MfaLoginRequest } from '../services/authService';
 import roleAPI, { RoleDTO } from '../services/roleAPI';
+import { tokenBridge } from '../utils/tokenBridge';
 
 interface AuthContextType {
   user: User | null;
@@ -301,6 +302,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Set the auth header for future requests
       axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${authResponse.accessToken}`;
       
+      // Broadcast token to Career Portal for automatic sync
+      try {
+        tokenBridge.broadcastToken(authResponse.accessToken, authResponse.user);
+        console.log('🔗 Token broadcasted to Career Portal');
+      } catch (error) {
+        console.error('Failed to broadcast token:', error);
+      }
+      
       return authResponse;
     } catch (error: any) {
       console.error('AuthContext - Login error:', error);
@@ -324,17 +333,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Update state after successful storage
       setUser({
-        ...response.user, 
+        ...response.user,
         role: userRole,
         lastLogin: response.user.lastLogin ? new Date(response.user.lastLogin) : undefined
       } as User);
       setToken(response.accessToken);
       setIsAuthenticated(true);
       setMfaVerified(true);
-      
+
       // Set the auth header for future requests
       axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.accessToken}`;
-      
+
+      // Broadcast token to Career Portal for automatic sync
+      try {
+        tokenBridge.broadcastToken(response.accessToken, response.user);
+        console.log('🔗 Token broadcasted to Career Portal (MFA login)');
+      } catch (error) {
+        console.error('Failed to broadcast token:', error);
+      }
+
       return response;
     } catch (error: any) {
       console.error('AuthContext - MFA Login error:', error);
@@ -451,10 +468,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    
+
     // First clear all local auth data regardless of server response
     clearAllAuthData();
-    
+
+    // Broadcast logout to Career Portal
+    try {
+      tokenBridge.broadcastLogout();
+      console.log('🔗 Logout broadcasted to Career Portal');
+    } catch (error) {
+      console.error('Failed to broadcast logout:', error);
+    }
+
     // Then notify the server (but don't wait for it)
     axiosInstance.post('/auth/logout')
       .then(() => {

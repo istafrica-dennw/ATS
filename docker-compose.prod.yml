@@ -104,6 +104,23 @@ services:
       - ats-prod-network
     restart: unless-stopped
 
+  frontend-career:
+    build:
+      context: ./frontend-career
+      dockerfile: Dockerfile
+    container_name: ats-frontend-career-prod
+    ports:
+      - "80:80"
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_NAME=Career Portal
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - ats-prod-network
+    restart: unless-stopped
+
 networks:
   ats-prod-network:
     driver: bridge

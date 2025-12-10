@@ -45,6 +45,7 @@ import ContactPage from './pages/ContactPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { isJWTToken, logTokenInfo } from './utils/tokenUtils';
+import { tokenBridge } from './utils/tokenBridge';
 
 // List of paths that should always be accessible, even when authenticated
 const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email', '/dashboard', '/accept-connect-consent'];
@@ -127,6 +128,12 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const App: React.FC = () => {
+  // Initialize token bridge for Admin Portal
+  useEffect(() => {
+    tokenBridge.initAdminBridge();
+    console.log('🔗 Admin Portal token bridge initialized');
+  }, []);
+
   return (
     <AuthProvider>
       <SecurityProvider>

@@ -108,10 +108,10 @@ public class CalendarServiceImpl implements CalendarService {
             } else if (interview.getLocationType() == LocationType.ONLINE) {
                 location = "Online Interview - Meeting link will be provided";
             } else {
-                location = "IST Africa Interview Room";
+                location = " IST Interview Room";
             }
         } else {
-            location = "IST Africa Interview Room";
+            location = " IST Interview Room";
         }
         ics.append("LOCATION:").append(escapeIcsText(location)).append("\n");
         
@@ -232,10 +232,10 @@ public class CalendarServiceImpl implements CalendarService {
                 body.append("• Location: Online Interview\n");
                 body.append("• Meeting Link: https://meet.google.com/abc-defg-hij (Link will be provided)\n");
             } else {
-                body.append("• Location: IST Africa Interview Room\n");
+                body.append("• Location:  IST Interview Room\n");
             }
         } else {
-            body.append("• Location: IST Africa Interview Room\n");
+            body.append("• Location:  IST Interview Room\n");
         }
         body.append("\n");
         

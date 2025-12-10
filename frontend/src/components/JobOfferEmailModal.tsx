@@ -88,7 +88,7 @@ const JobOfferEmailModal: React.FC<JobOfferEmailModalProps> = ({
                         <li>If you have any questions, please contact us</li>
                       </ul>
                       <p className="text-gray-900 mb-2">We believe your skills and experience will be a great addition to our team, and we're looking forward to having you on board!</p>
-                      <p className="text-gray-900 mb-2">Best regards,<br />IST Africa Recruiting Team</p>
+                      <p className="text-gray-900 mb-2">Best regards,<br />IST Recruiting Team</p>
                     </div>
                   </div>
                   <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">

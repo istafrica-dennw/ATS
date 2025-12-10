@@ -743,7 +743,7 @@ const AdminJobDetailsPage: React.FC = () => {
     if (!selectedApplication) return;
     
     try {
-      await axiosInstance.post(`/api/applications/${selectedApplication.id}/send-offer-email`);
+      await axiosInstance.post(`/applications/${selectedApplication.id}/send-offer-email`);
       toast.success('Job offer email sent successfully');
     } catch (error) {
       console.error('Error sending job offer email:', error);

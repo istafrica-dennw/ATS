@@ -357,10 +357,10 @@ public class EmailServiceImpl implements EmailService {
             } else if (interview.getLocationType() == LocationType.ONLINE) {
                 templateVars.put("locationInfo", "Online Interview (Meeting link will be provided)");
             } else {
-                templateVars.put("locationInfo", "IST Africa Interview Room");
+                templateVars.put("locationInfo", " IST Interview Room");
             }
         } else {
-            templateVars.put("locationInfo", "IST Africa Interview Room");
+            templateVars.put("locationInfo", " IST Interview Room");
         }
         
         // Event-specific variables

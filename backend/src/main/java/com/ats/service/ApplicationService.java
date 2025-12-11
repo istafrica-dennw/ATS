@@ -115,11 +115,13 @@ public interface ApplicationService {
 	boolean hasApplied(Long jobId, Long candidateId);
 
 	/**
-	 * Send a job offer email to a candidate
+	 * Send a job offer email to a candidate with optional custom subject and content
 	 * 
 	 * @param applicationId the application ID
+	 * @param customSubject custom email subject (optional, uses default if null)
+	 * @param customContent custom email content with {{candidateName}} placeholder (optional, uses template if null)
 	 * @throws NotFoundException  if the application is not found
 	 * @throws MessagingException if there's an error sending the email
 	 */
-	void sendJobOfferEmail(Long applicationId) throws MessagingException;
+	void sendJobOfferEmail(Long applicationId, String customSubject, String customContent) throws MessagingException;
 }

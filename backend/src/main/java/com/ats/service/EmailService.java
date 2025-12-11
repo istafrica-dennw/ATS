@@ -126,9 +126,20 @@ public interface EmailService {
      * @param content Email content
      * @param calendarContent ICS calendar content
      * @param attachmentName Name for the calendar attachment
+     * @param job Related job (for region determination)
      * @return The created EmailNotification entity
      * @throws MessagingException If there's an error sending the email
      */
     EmailNotification sendEmailWithCalendarAttachment(String to, String subject, String content, 
-                                                    String calendarContent, String attachmentName) throws MessagingException;
+                                                    String calendarContent, String attachmentName, Job job) throws MessagingException;
+    
+    /**
+     * Sends a custom job offer email to a candidate
+     * @param application The application (for candidate info and job region)
+     * @param customSubject Custom email subject
+     * @param customContent Custom email content with {{candidateName}} placeholder
+     * @return The created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    EmailNotification sendCustomJobOfferEmail(Application application, String customSubject, String customContent) throws MessagingException;
 } 

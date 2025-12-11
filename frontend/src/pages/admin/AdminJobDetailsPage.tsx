@@ -739,11 +739,14 @@ const AdminJobDetailsPage: React.FC = () => {
     setIsEmailModalOpen(true);
   };
 
-  const handleEmailSend = async () => {
+  const handleEmailSend = async (subject: string, content: string) => {
     if (!selectedApplication) return;
     
     try {
-      await axiosInstance.post(`/applications/${selectedApplication.id}/send-offer-email`);
+      await axiosInstance.post(`/applications/${selectedApplication.id}/send-offer-email`, {
+        subject,
+        content
+      });
       toast.success('Job offer email sent successfully');
     } catch (error) {
       console.error('Error sending job offer email:', error);

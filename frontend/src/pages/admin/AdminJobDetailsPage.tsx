@@ -823,7 +823,7 @@ const AdminJobDetailsPage: React.FC = () => {
           <ArrowLeftIcon className="h-5 w-5 mr-1" /> Back to Job Management
         </button>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{job.title}</h1>
-          <p className="text-lg text-gray-500 dark:text-gray-400">{job.department || 'IST Africa'}</p>
+          <p className="text-lg text-gray-500 dark:text-gray-400">{job.department || 'IST'}</p>
       </div>
       
         <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] overflow-hidden sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50 mb-8">

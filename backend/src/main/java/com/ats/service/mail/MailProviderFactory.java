@@ -32,14 +32,24 @@ public class MailProviderFactory {
      */
     public MailProvider getProvider(String region) {
         // RW region (IST Africa jobs) use AWS SES (ist.africa)
-        if ("RW".equalsIgnoreCase(region)) {
-            logger.debug("🌍 Selected AWS SES provider for IST Africa job region: RW (no-reply@ist.africa)");
+        if (region == null) {
+            if (postalMailProvider.isEnabled()) {
+                logger.debug("👤 Selected Postal provider for user-related email (no-reply@ats.ist.com)");
+                return postalMailProvider;
+            }
+            logger.warn("⚠️ Postal provider not enabled, falling back to AWS SES for user email");
             return awsMailProvider;
         }
         
-        // All other regions (EU, OTHER, null) use Postal (ats.ist.com) as default
+         // RW region or jobs without region (DEFAULT_JOB_REGION) → AWS SES (ist.africa)
+        if ("RW".equalsIgnoreCase(region) || "DEFAULT_JOB_REGION".equals(region)) {
+            logger.debug("🌍 Selected AWS SES provider for IST Africa, region: {} (no-reply@ist.africa)", region);
+            return awsMailProvider;
+        }
+        
+        // EU, OTHER, and any other regions → Postal (ats.ist.com)
         if (postalMailProvider.isEnabled()) {
-            logger.debug("🌍 Selected Postal provider (default) for job region: {} (no-reply@ats.ist.com)", region != null ? region : "default");
+            logger.debug("🌍 Selected Postal provider for job region: {} (no-reply@ats.ist.com)", region);
             return postalMailProvider;
         } else {
             logger.warn("⚠️ Postal provider not enabled, falling back to AWS SES");

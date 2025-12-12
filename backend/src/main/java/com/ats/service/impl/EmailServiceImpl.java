@@ -89,7 +89,7 @@ public class EmailServiceImpl implements EmailService {
         if (job != null && job.getRegion() != null) {
             return job.getRegion();
         }
-        return null; // Will use default provider (AWS SES with no-reply.ats.ist.com)
+        return "DEFAULT_JOB_REGION"; // Will use default provider (AWS SES with no-reply.ist.africa)
     }
 
     /**

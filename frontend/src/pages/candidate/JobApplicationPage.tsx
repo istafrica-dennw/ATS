@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ExclamationTriangleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import MainLayout from '../../layouts/MainLayout';
 import JobApplicationForm from '../../components/application/JobApplicationForm';
 import axiosInstance from '../../utils/axios';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Job {
   id: number;
@@ -14,12 +15,28 @@ interface Job {
 
 const JobApplicationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Check authentication and redirect to login if not authenticated
   useEffect(() => {
+    if (!isAuthenticated) {
+      // Store the current URL for redirect after login
+      const returnUrl = `/apply/${id}`;
+      sessionStorage.setItem('lastVisitedRoute', returnUrl);
+      console.log('JobApplicationPage - User not authenticated, redirecting to login with returnUrl:', returnUrl);
+      navigate(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+    }
+  }, [isAuthenticated, id, navigate]);
+  
+  useEffect(() => {
+    // Only fetch job details if authenticated
+    if (!isAuthenticated) return;
+    
     const fetchJobDetails = async () => {
       try {
         // Parse job ID as number
@@ -43,9 +60,10 @@ const JobApplicationPage: React.FC = () => {
     };
     
     fetchJobDetails();
-  }, [id]);
+  }, [id, isAuthenticated]);
   
-  if (loading) {
+  // Show loading while checking auth or fetching job
+  if (!isAuthenticated || loading) {
     return (
       <MainLayout>
         <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">

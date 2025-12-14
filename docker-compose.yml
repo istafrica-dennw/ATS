@@ -109,6 +109,29 @@ services:
       - ats-network
     tty: true
     stdin_open: true
+
+  frontend-career:
+    build:
+      context: ./frontend-career
+      dockerfile: Dockerfile.dev
+    container_name: ats-frontend-career
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - NODE_ENV=development
+      - WDS_SOCKET_PORT=0
+    volumes:
+      - ./frontend-career:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - ats-network
+    tty: true
+    stdin_open: true
   certbot:
     image: certbot/certbot
     container_name: ats-certbot

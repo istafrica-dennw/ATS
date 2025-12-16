@@ -169,31 +169,34 @@ public class CalendarServiceImpl implements CalendarService {
             // Email body
             String emailBody = createEmailBody(interview);
             
-            // Send to interviewer
+            // Send to interviewer (use job region)
             emailService.sendEmailWithCalendarAttachment(
                 interviewer.getEmail(),
                 subject,
                 emailBody,
                 calendarInvite,
-                "interview.ics"
+                "interview.ics",
+                interview.getApplication().getJob()
             );
             
-            // Send to candidate
+            // Send to candidate (use job region)
             emailService.sendEmailWithCalendarAttachment(
                 candidate.getEmail(),
                 subject,
                 emailBody,
                 calendarInvite,
-                "interview.ics"
+                "interview.ics",
+                interview.getApplication().getJob()
             );
             
-            // Send to admin (optional, for tracking)
+            // Send to admin (optional, for tracking) (use job region)
             emailService.sendEmailWithCalendarAttachment(
                 admin.getEmail(),
                 subject + " (Admin Copy)",
                 emailBody + "\n\nThis is a copy for your records as the interview coordinator.",
                 calendarInvite,
-                "interview.ics"
+                "interview.ics",
+                interview.getApplication().getJob()
             );
             
             log.info("Calendar invites sent successfully for interview ID: {}", interview.getId());

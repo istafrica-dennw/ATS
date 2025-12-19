@@ -12,9 +12,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ats.dto.JobDTO;
 import com.ats.dto.UserDTO;
 import com.ats.model.JobStatus;
+import com.ats.model.User;
 import com.ats.model.WorkSetting;
+import com.ats.repository.UserRepository;
 import com.ats.service.JobService;
+import com.ats.service.RegionalDataFilterService;
 import com.beust.jcommander.Parameter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,10 +47,48 @@ import org.slf4j.LoggerFactory;
 public class JobsController {
     
     private static final Logger logger = LoggerFactory.getLogger(JobsController.class);
-    private JobService jobService;
+    private final JobService jobService;
+    private final RegionalDataFilterService regionalDataFilterService;
+    private final UserRepository userRepository;
 
-    public JobsController(JobService jobService){
-        this.jobService =  jobService;
+    public JobsController(JobService jobService, RegionalDataFilterService regionalDataFilterService, UserRepository userRepository){
+        this.jobService = jobService;
+        this.regionalDataFilterService = regionalDataFilterService;
+        this.userRepository = userRepository;
+    }
+    
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null) {
+            return userRepository.findByEmail(auth.getName()).orElse(null);
+        }
+        return null;
+    }
+    
+    private boolean canAccessJobRegion(String jobRegion) {
+        User currentUser = getCurrentUser();
+        if (currentUser == null) {
+            return true; // No user context, allow access (handled by security)
+        }
+        
+        Boolean viewingAsNonEU = regionalDataFilterService.getViewModeFromSession(currentUser);
+        
+        // EU admin viewing as non-EU: can only access non-EU jobs
+        if (regionalDataFilterService.isEUAdmin(currentUser) && Boolean.TRUE.equals(viewingAsNonEU)) {
+            return !"EU".equals(jobRegion);
+        }
+        
+        // EU admin in default mode: can only access EU jobs
+        if (regionalDataFilterService.isEUAdmin(currentUser)) {
+            return "EU".equals(jobRegion) || jobRegion == null || jobRegion.isEmpty();
+        }
+        
+        // Non-EU admins can only access non-EU jobs
+        if (regionalDataFilterService.isNonEUAdmin(currentUser)) {
+            return !"EU".equals(jobRegion);
+        }
+        
+        return true; // Default: allow access
     }
 
     @PostMapping
@@ -110,7 +153,15 @@ public class JobsController {
     })
     public ResponseEntity<JobDTO> getJobById(@PathVariable("id") Long id) {
         logger.debug("Getting job with ID: {}", id);
-        return ResponseEntity.ok(jobService.getJobById(id));
+        JobDTO job = jobService.getJobById(id);
+        
+        // Check regional access
+        if (!canAccessJobRegion(job.getRegion())) {
+            logger.warn("Access denied: User cannot access job ID {} in region {}", id, job.getRegion());
+            return ResponseEntity.status(403).build();
+        }
+        
+        return ResponseEntity.ok(job);
     }
 
     @PutMapping("/{id}")
@@ -121,8 +172,15 @@ public class JobsController {
     public ResponseEntity<JobDTO> updatedJob( @Valid @RequestBody JobDTO jobDTO, @PathVariable Long id){
         logger.debug("Updating job with ID: {}", id);
         logger.debug("Job data: {}", jobDTO);
+        
+        // Check regional access before update
+        JobDTO existingJob = jobService.getJobById(id);
+        if (!canAccessJobRegion(existingJob.getRegion())) {
+            logger.warn("Access denied: User cannot update job ID {} in region {}", id, existingJob.getRegion());
+            return ResponseEntity.status(403).build();
+        }
+        
         return ResponseEntity.ok(jobService.updateJob(jobDTO, id));
-
     }
 
 
@@ -135,6 +193,13 @@ public class JobsController {
     public ResponseEntity<JobDTO> updateJobStatus(@RequestBody Map<String, String> statusUpdate, @PathVariable Long id){
         logger.debug("Updating job status for job ID: {}", id);
         logger.debug("Status update payload: {}", statusUpdate);
+        
+        // Check regional access before status update
+        JobDTO existingJob = jobService.getJobById(id);
+        if (!canAccessJobRegion(existingJob.getRegion())) {
+            logger.warn("Access denied: User cannot update status for job ID {} in region {}", id, existingJob.getRegion());
+            return ResponseEntity.status(403).build();
+        }
         
         String statusStr = statusUpdate.get("status");
         if (statusStr == null) {

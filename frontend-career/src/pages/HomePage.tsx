@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   BriefcaseIcon,
   MapPinIcon,
@@ -8,35 +8,38 @@ import {
   HeartIcon,
   SparklesIcon,
   ArrowRightIcon,
-} from '@heroicons/react/24/outline';
-import JobCard from '../components/jobs/JobCard';
-import jobService from '../services/jobService';
-import { Job } from '../types/job';
+} from "@heroicons/react/24/outline";
+import JobCard from "../components/jobs/JobCard";
+import jobService from "../services/jobService";
+import { Job } from "../types/job";
 
 const values = [
   {
     icon: HeartIcon,
-    title: 'Passion',
-    description: 'We are driven by our passion to make a difference in education.',
+    title: "Passion",
+    description:
+      "We are driven by our passion to make a difference in education.",
   },
   {
     icon: UserGroupIcon,
-    title: 'Collaboration',
-    description: 'We believe in the power of working together to achieve great things.',
+    title: "Collaboration",
+    description:
+      "We believe in the power of working together to achieve great things.",
   },
   {
     icon: SparklesIcon,
-    title: 'Innovation',
-    description: 'We constantly push boundaries to create cutting-edge solutions.',
+    title: "Innovation",
+    description:
+      "We constantly push boundaries to create cutting-edge solutions.",
   },
 ];
 
 const locations = [
-  { name: 'Växjö (HQ)', country: 'Sweden', image: '🇸🇪' },
-  { name: 'Stockholm', country: 'Sweden', image: '🇸🇪' },
-  { name: 'Berlin', country: 'Germany', image: '🇩🇪' },
-  { name: 'Oslo', country: 'Norway', image: '🇳🇴' },
-  { name: 'Roskilde', country: 'Denmark', image: '🇩🇰' },
+  { name: "Växjö (HQ)", country: "Sweden", image: "🇸🇪" },
+  { name: "Stockholm", country: "Sweden", image: "🇸🇪" },
+  { name: "Berlin", country: "Germany", image: "🇩🇪" },
+  { name: "Oslo", country: "Norway", image: "🇳🇴" },
+  { name: "Roskilde", country: "Denmark", image: "🇩🇰" },
 ];
 
 const HomePage: React.FC = () => {
@@ -49,11 +52,12 @@ const HomePage: React.FC = () => {
         const jobs = await jobService.getAllJobs();
         // Get most recent 3 jobs as featured
         const sorted = jobs.sort(
-          (a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
+          (a, b) =>
+            new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()
         );
         setFeaturedJobs(sorted.slice(0, 3));
       } catch (error) {
-        console.error('Error fetching jobs:', error);
+        console.error("Error fetching jobs:", error);
       } finally {
         setLoading(false);
       }
@@ -78,8 +82,9 @@ const HomePage: React.FC = () => {
               A career that makes a difference
             </h1>
             <p className="text-xl sm:text-2xl text-primary-100 dark:text-gray-300 max-w-3xl mx-auto mb-10">
-              Join us in shaping the future of education technology. We're looking for passionate people 
-              who want to make learning better for everyone.
+              Join us in shaping the future of education technology. We're
+              looking for passionate people who want to make learning better for
+              everyone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -89,12 +94,12 @@ const HomePage: React.FC = () => {
                 View Job Openings
                 <ArrowRightIcon className="ml-2 h-5 w-5" />
               </Link>
-              <a
-                href="/signup"
+              <Link
+                to="/connect"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-white border-2 border-white rounded-lg hover:bg-white/10 transition-colors"
               >
-                Join Connect
-              </a>
+                Connect
+              </Link>
             </div>
           </motion.div>
         </div>
@@ -118,13 +123,15 @@ const HomePage: React.FC = () => {
                 We are the leading edtech company in Scandinavia!
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-                For more than 35 years we have made everyday life easier for students, parents, 
-                teachers, and managers. Half of us that work here have a background as teachers 
-                or school leaders, so we understand all aspects of school.
+                For more than 35 years we have made everyday life easier for
+                students, parents, teachers, and managers. Half of us that work
+                here have a background as teachers or school leaders, so we
+                understand all aspects of school.
               </p>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-                Together with our users we develop digital solutions for a better way of learning. 
-                We combine technical competence with work experience from schools - to empower learning!
+                Together with our users we develop digital solutions for a
+                better way of learning. We combine technical competence with
+                work experience from schools - to empower learning!
               </p>
               <p className="text-xl font-semibold text-primary-600 dark:text-primary-400">
                 Do you also want to make a difference? Welcome to us!
@@ -142,8 +149,12 @@ const HomePage: React.FC = () => {
                   <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-xl">
                     <span className="text-5xl font-bold text-white">IST</span>
                   </div>
-                  <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300">TwISTers</p>
-                  <p className="text-gray-500 dark:text-gray-400">That's what we call ourselves</p>
+                  <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
+                    TwISTers
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    That's what we call ourselves
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -172,7 +183,10 @@ const HomePage: React.FC = () => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white dark:bg-gray-900 rounded-lg p-6 animate-pulse">
+                <div
+                  key={i}
+                  className="bg-white dark:bg-gray-900 rounded-lg p-6 animate-pulse"
+                >
                   <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
                   <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
@@ -196,7 +210,9 @@ const HomePage: React.FC = () => {
           ) : (
             <div className="text-center py-12">
               <BriefcaseIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-4 text-gray-500 dark:text-gray-400">No open positions at the moment</p>
+              <p className="mt-4 text-gray-500 dark:text-gray-400">
+                No open positions at the moment
+              </p>
             </div>
           )}
 
@@ -226,9 +242,10 @@ const HomePage: React.FC = () => {
               Workplace & Culture
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
-              Everyone of us working at IST is a TwISTer. We're different and unique. This is a great 
-              strength – always finding ways of connecting, cooperating and collaborating to bring our 
-              different experiences, knowledge and personalities together.
+              Everyone of us working at IST is a TwISTer. We're different and
+              unique. This is a great strength – always finding ways of
+              connecting, cooperating and collaborating to bring our different
+              experiences, knowledge and personalities together.
             </p>
           </motion.div>
 
@@ -311,7 +328,6 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
     </div>
   );
 };

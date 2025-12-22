@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ReactComponent as ISTLogo } from "../../assets/logo/IST logo black.svg";
 
 const navigation = [
-  { name: 'Start', href: '/' },
-  { name: 'Jobs', href: '/jobs' },
-  { name: 'Locations', href: '/locations' },
-  { name: 'People', href: '/people' },
+  { name: "Start", href: "/" },
+  { name: "Jobs", href: "/jobs" },
+  { name: "Locations", href: "/locations" },
+  { name: "People", href: "/people" },
 ];
 
 const Header: React.FC = () => {
@@ -14,7 +15,7 @@ const Header: React.FC = () => {
   const location = useLocation();
 
   const isActive = (href: string) => {
-    if (href === '/') return location.pathname === '/';
+    if (href === "/") return location.pathname === "/";
     return location.pathname.startsWith(href);
   };
 
@@ -25,9 +26,7 @@ const Header: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">IST</span>
-              </div>
+              <ISTLogo className="h-10 w-auto dark:invert dark:brightness-200" />
               <span className="hidden sm:block text-xl font-semibold text-gray-900 dark:text-white">
                 Careers
               </span>
@@ -42,8 +41,8 @@ const Header: React.FC = () => {
                 to={item.href}
                 className={`text-sm font-medium transition-colors ${
                   isActive(item.href)
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
+                    ? "text-primary-600 dark:text-primary-400"
+                    : "text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
                 }`}
               >
                 {item.name}
@@ -53,12 +52,12 @@ const Header: React.FC = () => {
 
           {/* Right side buttons */}
           <div className="hidden md:flex md:items-center md:space-x-4">
-            <a
-              href="/signup"
+            <Link
+              to="/connect"
               className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 transition-colors shadow-sm"
             >
-              Join Connect
-            </a>
+              Connect
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -88,8 +87,8 @@ const Header: React.FC = () => {
                   to={item.href}
                   className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
                     isActive(item.href)
-                      ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -97,12 +96,13 @@ const Header: React.FC = () => {
                 </Link>
               ))}
               <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4 space-y-2">
-                <a
-                  href="/signup"
+                <Link
+                  to="/connect"
                   className="block px-3 py-2 rounded-md text-base font-medium text-white bg-primary-600 hover:bg-primary-700 transition-colors text-center"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
-                  Join Connect
-                </a>
+                  Connect
+                </Link>
               </div>
             </div>
           </div>

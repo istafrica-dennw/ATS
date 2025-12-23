@@ -1,15 +1,28 @@
 // Route preservation utilities for maintaining user's current page during authentication flows
 
 /**
- * Stores the current route in sessionStorage if it's a role-based route
+ * Stores the current route in sessionStorage if it's a role-based route or a return URL
  * @param currentPath - The current pathname to potentially store
  */
 export const storeCurrentRouteIfNeeded = (currentPath: string): void => {
+  // Check for returnUrl query parameter first
+  const urlParams = new URLSearchParams(window.location.search);
+  const returnUrl = urlParams.get("returnUrl");
+
+  if (returnUrl) {
+    sessionStorage.setItem("lastVisitedRoute", returnUrl);
+    console.log("RouteUtils - Stored returnUrl for restoration:", returnUrl);
+    return;
+  }
+
+  // Also store apply routes and job routes
   if (
     currentPath.startsWith("/admin/") ||
     currentPath.startsWith("/interviewer/") ||
     currentPath.startsWith("/hiring-manager/") ||
-    currentPath.startsWith("/candidate/")
+    currentPath.startsWith("/candidate/") ||
+    currentPath.startsWith("/apply/") ||
+    currentPath.startsWith("/jobs/")
   ) {
     sessionStorage.setItem("lastVisitedRoute", currentPath);
     console.log("RouteUtils - Stored route for restoration:", currentPath);
@@ -30,6 +43,12 @@ export const getStoredRouteForRole = (userRole: string): string | null => {
 
   // Normalize role
   const normalizedRole = userRole.replace("ROLE_", "").toUpperCase();
+
+  // Apply and jobs routes are valid for any authenticated user (especially candidates)
+  if (storedRoute.startsWith("/apply/") || storedRoute.startsWith("/jobs/")) {
+    console.log("RouteUtils - Apply/Jobs route found:", storedRoute);
+    return storedRoute;
+  }
 
   // Check if stored route is valid for the user's role
   let isValidRoute = false;

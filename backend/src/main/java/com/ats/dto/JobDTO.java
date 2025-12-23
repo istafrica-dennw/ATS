@@ -142,6 +142,26 @@ public class JobDTO {
     )
     private LocalDate expirationDate;
 
+    @Schema(
+        description = "Category ID for the job",
+        example = "1"
+    )
+    private Long categoryId;
+
+    @Schema(
+        description = "Category name for display purposes",
+        example = "Engineering",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private String categoryName;
+
+    @Schema(
+        description = "Category color for UI display",
+        example = "#3b82f6",
+        accessMode = Schema.AccessMode.READ_ONLY
+    )
+    private String categoryColor;
+
     // Getters and Setters (or use Lombok @Data if preferred)
     
     // Optional: Constructors, toString, equals, etc.

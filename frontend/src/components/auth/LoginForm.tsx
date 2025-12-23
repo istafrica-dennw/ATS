@@ -6,6 +6,7 @@ import ForgotPasswordModal from './ForgotPasswordModal';
 import MfaLoginForm from './MfaLoginForm';
 import { toast } from 'react-toastify';
 import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { storeCurrentRouteIfNeeded } from '../../utils/routeUtils';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +24,16 @@ const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+
+  // Check for returnUrl on mount and store it
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const returnUrl = urlParams.get("returnUrl");
+    if (returnUrl) {
+      sessionStorage.setItem("lastVisitedRoute", returnUrl);
+      console.log('LoginForm - Stored returnUrl for after login:', returnUrl);
+    }
+  }, [location.search]);
 
   // Check for MFA verification needed on mount
   useEffect(() => {

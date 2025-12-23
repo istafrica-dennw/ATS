@@ -256,16 +256,20 @@ public class InterviewController {
 
     /**
      * Get all interviews for admin assignment management
-     * Admin only
+     * Admin only - GDPR filtered by admin's region
      */
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<InterviewDTO>> getAllInterviews() {
+    public ResponseEntity<List<InterviewDTO>> getAllInterviews(Authentication authentication) {
         
-        log.debug("Fetching all interviews for admin assignment management");
+        log.debug("Fetching all interviews for admin assignment management (GDPR filtered)");
         
         try {
-            List<InterviewDTO> interviews = interviewService.getAllInterviews();
+            String email = authentication.getName();
+            User admin = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+            
+            List<InterviewDTO> interviews = interviewService.getAllInterviews(admin);
             return ResponseEntity.ok(interviews);
             
         } catch (Exception e) {
@@ -313,14 +317,27 @@ public class InterviewController {
 
     /**
      * Get all shortlisted applications across all jobs
-     * Admin only
+     * Admin only - GDPR filtered by admin's region
      */
     @GetMapping("/applications/shortlisted")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<InterviewDTO.ApplicationSummaryDTO>> getAllShortlistedApplications() {
+    public ResponseEntity<List<InterviewDTO.ApplicationSummaryDTO>> getAllShortlistedApplications(
+            Authentication authentication) {
         
-        List<InterviewDTO.ApplicationSummaryDTO> applications = interviewService.getAllShortlistedApplications();
-        return ResponseEntity.ok(applications);
+        log.debug("Fetching all shortlisted applications (GDPR filtered)");
+        
+        try {
+            String email = authentication.getName();
+            User admin = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+            
+            List<InterviewDTO.ApplicationSummaryDTO> applications = interviewService.getAllShortlistedApplications(admin);
+            return ResponseEntity.ok(applications);
+            
+        } catch (Exception e) {
+            log.error("Error fetching shortlisted applications: {}", e.getMessage());
+            throw e;
+        }
     }
 
     /**

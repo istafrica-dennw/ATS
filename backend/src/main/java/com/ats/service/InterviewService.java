@@ -4,6 +4,7 @@ import com.ats.dto.AssignInterviewRequest;
 import com.ats.dto.InterviewDTO;
 import com.ats.dto.SubmitInterviewRequest;
 import com.ats.model.InterviewStatus;
+import com.ats.model.User;
 
 import java.util.List;
 import java.util.Optional;
@@ -62,8 +63,9 @@ public interface InterviewService {
     
     /**
      * Get all interviews for admin assignment management
+     * Filtered by admin's GDPR region
      */
-    List<InterviewDTO> getAllInterviews();
+    List<InterviewDTO> getAllInterviews(User admin);
     
     /**
      * Shortlist an application
@@ -82,8 +84,9 @@ public interface InterviewService {
     
     /**
      * Get all shortlisted applications across all jobs
+     * Filtered by admin's GDPR region
      */
-    List<InterviewDTO.ApplicationSummaryDTO> getAllShortlistedApplications();
+    List<InterviewDTO.ApplicationSummaryDTO> getAllShortlistedApplications(User admin);
     
     /**
      * Get available interviewers (users with INTERVIEWER role)

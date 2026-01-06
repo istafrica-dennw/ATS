@@ -94,7 +94,6 @@ public class CalendarServiceImpl implements CalendarService {
         
         // Add meeting link for online interviews
         if (interview.getLocationType() == LocationType.ONLINE) {
-            description.append("\nMeeting Link: https://meet.google.com/abc-defg-hij\n");
             description.append("(Actual meeting link will be provided before the interview)");
         }
         

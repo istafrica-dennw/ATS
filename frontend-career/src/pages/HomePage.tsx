@@ -223,7 +223,7 @@ const HomePage: React.FC = () => {
                     TwISTers
                   </p>
                   <p className="text-gray-500 dark:text-gray-400">
-                    That's what we call ourselves
+                    That's what we call ourselvess
                   </p>
                 </div>
               </div>

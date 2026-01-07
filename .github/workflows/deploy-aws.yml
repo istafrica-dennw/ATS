@@ -135,6 +135,11 @@ jobs:
           ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
             sudo mkdir -p ${{ env.DEPLOYMENT_PATH }}
             sudo chown ubuntu:ubuntu ${{ env.DEPLOYMENT_PATH }}
+
+            # Create video directory for frontend-career
+            sudo mkdir -p /opt/ist-videos
+            sudo chown ubuntu:ubuntu /opt/ist-videos
+            echo "Video directory created at /opt/ist-videos"
           EOF
       
       - name: Stop existing application
@@ -182,7 +187,6 @@ jobs:
             echo "MAIL_PORT=587" >> .env
             echo "MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}" >> .env
             echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
-<<<<<<< HEAD
             echo "MAIL_AWS_ENABLED=true" >> .env
             echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> .env
             echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
@@ -194,11 +198,10 @@ jobs:
             echo "MAIL_POSTAL_FROM=${{ secrets.MAIL_POSTAL_FROM }}" >> .env
             echo "MAIL_POSTAL_SEND_ENDPOINT=/api/v1/send/message" >> .env
             echo "" >> .env
-=======
-            echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> .env
-            echo "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}" >> .env
+            echo "# Video Configuration" >> .env
+            echo "VIDEO_PATH=/opt/ist-videos" >> .env
+            echo "REACT_APP_MAIN_APP_URL=${{ secrets.FRONTEND_URL }}" >> .env
             echo "" >> .env
->>>>>>> 48314e32 (Add project files without large video)
             echo "# OAuth Configuration" >> .env
             echo "LINKEDIN_CLIENT_ID=${{ secrets.LINKEDIN_CLIENT_ID }}" >> .env
             echo "LINKEDIN_CLIENT_SECRET=${{ secrets.LINKEDIN_CLIENT_SECRET }}" >> .env
@@ -343,11 +346,15 @@ jobs:
             
             echo -n "Frontend Status: "
             curl -s -o /dev/null -w "%{http_code}" http://localhost:80 || echo "UNKNOWN"
-            
+
+            echo -n "Frontend Career Status: "
+            curl -s -o /dev/null -w "%{http_code}" http://localhost:3002 || echo "UNKNOWN"
+
             echo ""
             echo "Application URLs:"
             PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
             echo "Frontend: http://$PUBLIC_IP:80"
+            echo "Frontend Career: http://$PUBLIC_IP:3002"
             echo "Backend API: http://$PUBLIC_IP:8080"
             echo "API Documentation: http://$PUBLIC_IP:8080/swagger-ui.html"
             
@@ -382,6 +389,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Access URLs:" >> $GITHUB_STEP_SUMMARY
           echo "- **Frontend**: http://$PUBLIC_IP:80" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend Career**: http://$PUBLIC_IP:3002" >> $GITHUB_STEP_SUMMARY
           echo "- **Backend API**: http://$PUBLIC_IP:8080" >> $GITHUB_STEP_SUMMARY
           echo "- **API Documentation**: http://$PUBLIC_IP:8080/swagger-ui.html" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

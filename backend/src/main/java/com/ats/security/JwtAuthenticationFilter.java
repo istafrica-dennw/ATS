@@ -5,15 +5,16 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
+import org.springframework.stereotype.Component; // Added this import
 import java.io.IOException;
 
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
@@ -27,40 +28,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        String header = request.getHeader("Authorization");
+        
+        // DEBUG: Monitor incoming headers
+        if (header != null) {
+            System.out.println("[DEBUG] JwtAuthenticationFilter - Found Authorization Header for " + request.getRequestURI());
+        }
+
         try {
-            String jwt = getJwtFromRequest(request);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             
+            // Skip if user is already authenticated (e.g. by IAA Resource Server)
+            if (auth != null && auth.isAuthenticated() && 
+               !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            String jwt = getJwtFromRequest(request);
             if (jwt != null) {
-                System.out.println("[DEBUG] JwtAuthenticationFilter - Processing token: " + jwt.substring(0, Math.min(20, jwt.length())) + "...");
-                
-                boolean isValid = tokenProvider.validateToken(jwt);
-                System.out.println("[DEBUG] JwtAuthenticationFilter - Token validation result: " + isValid);
-                
-                if (isValid) {
+                // Check if this is a local ATS token
+                if (tokenProvider.validateToken(jwt)) {
                     String username = tokenProvider.getUsernameFromToken(jwt);
-                    System.out.println("[DEBUG] JwtAuthenticationFilter - Username from token: " + username);
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                     
-                    try {
-                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                        System.out.println("[DEBUG] JwtAuthenticationFilter - User details loaded successfully for: " + username);
-                        System.out.println("[DEBUG] JwtAuthenticationFilter - Authorities: " + userDetails.getAuthorities());
-                        
-                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                        System.out.println("[DEBUG] JwtAuthenticationFilter - Authentication set in SecurityContextHolder");
-                    } catch (Exception e) {
-                        System.out.println("[ERROR] JwtAuthenticationFilter - Error loading user details: " + e.getMessage());
-                        e.printStackTrace();
-                    }
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    System.out.println("[DEBUG] JwtAuthenticationFilter - Local ATS Login successful for: " + username);
+                } else {
+                    // This is likely an IAA token; we leave it for the Resource Server to handle
+                    System.out.println("[DEBUG] JwtAuthenticationFilter - Token failed local validation. Passing to IAA Resource Server.");
                 }
             }
         } catch (Exception ex) {
-            logger.error("Could not set user authentication in security context", ex);
+            System.err.println("[ERROR] JwtAuthenticationFilter - Error: " + ex.getMessage());
         }
-
+        
         filterChain.doFilter(request, response);
     }
 
@@ -71,4 +77,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return null;
     }
-} 
+}

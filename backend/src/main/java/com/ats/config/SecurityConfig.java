@@ -39,6 +39,7 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.core.convert.converter.Converter;
 import jakarta.servlet.FilterChain;
+import java.util.Base64;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -80,6 +81,15 @@ import com.ats.security.CustomUserDetailsService;
 import com.ats.security.JwtTokenProvider;
 import com.ats.security.JwtAuthenticationEntryPoint;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import java.security.KeyFactory;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.X509EncodedKeySpec;
 
 @Configuration
 @EnableWebSecurity
@@ -102,6 +112,36 @@ public class SecurityConfig {
     @Value("${app.frontend.cors.allowed-origins}")
     private String corsAllowedOrigins;
 
+    @Value("${iaa.public-key}")
+    private String iaaPublicKeyPem;
+
+    @Bean
+    public JwtDecoder iaaJwtDecoder() {
+        try {
+            // This handles cases where \n is escaped or literal, and removes headers/whitespace
+            String publicKeyContent = iaaPublicKeyPem
+                    .replace("-----BEGIN PUBLIC KEY-----", "")
+                    .replace("-----END PUBLIC KEY-----", "")
+                    .replace("\\n", "") // Handles escaped newlines
+                    .replace("\n", "")  // Handles actual newlines
+                    .replace("\r", "")  // Handles Windows carriage returns
+                    .replaceAll("\\s", ""); // Removes all whitespace
+
+            byte[] decoded = Base64.getDecoder().decode(publicKeyContent);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            RSAPublicKey publicKey = (RSAPublicKey) keyFactory.generatePublic(new X509EncodedKeySpec(decoded));
+
+            return NimbusJwtDecoder.withPublicKey(publicKey).build();
+        } catch (Exception e) {
+            System.err.println("[ERROR] Failed to initialize IAA Public Key Decoder: " + e.getMessage());
+            // Return a dummy decoder that throws an exception when used, instead of crashing the app during startup
+            return token -> { 
+                throw new org.springframework.security.oauth2.jwt.JwtException("IAA Decoder is not configured correctly. Check your public key."); 
+            };
+        }
+    }
+
+
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter(tokenProvider, new CustomUserDetailsService(userRepository, userRoleRepository));
@@ -114,8 +154,12 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .securityContext(context -> context
+            .securityContextRepository(new RequestAttributeSecurityContextRepository()))
             .exceptionHandling(exc -> exc
-                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint))
+            .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**", "/error",
@@ -125,6 +169,23 @@ public class SecurityConfig {
                 .requestMatchers("/api/jobs/**").authenticated()
                 .anyRequest().authenticated()
             )
+
+            .oauth2ResourceServer(oauth2 -> oauth2
+            .bearerTokenResolver(request -> {
+                // If our local filter already authenticated the user, 
+                // return null to tell the Resource Server to SKIP this request.
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)) {
+                    return null; 
+                }
+                String bearerToken = request.getHeader("Authorization");
+                if (org.springframework.util.StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+                    return bearerToken.substring(7);
+                }
+                return null;
+            })
+            .jwt(jwt -> jwt.decoder(iaaJwtDecoder()))
+        )
             .oauth2Login(oauth2 -> oauth2
                 .authorizationEndpoint(authorization -> authorization
                     .authorizationRequestResolver(authorizationRequestResolver())
@@ -244,7 +305,8 @@ public class SecurityConfig {
                 configuration.addAllowedOrigin(origin.trim());
             }
         }
-        
+
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3001"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With",
             "Access-Control-Request-Method", "Access-Control-Request-Headers"));

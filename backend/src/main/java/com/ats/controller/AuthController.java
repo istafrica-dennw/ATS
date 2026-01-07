@@ -44,6 +44,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -64,6 +67,23 @@ public class AuthController {
     private final EmailService emailService;
     private final PasswordResetService passwordResetService;
     private final UserService userService;
+
+    @GetMapping("/iaa-profile")
+    public ResponseEntity<?> getIaaProfile(@AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            return ResponseEntity.status(401).body("No valid IAA token found");
+        }
+
+        // 'sub' is the unique ID from IAA
+        String iaaUserId = jwt.getSubject(); 
+        
+        return ResponseEntity.ok(java.util.Map.of(
+            "message", "Successfully authenticated with IAA",
+            "iaa_user_id", iaaUserId,
+            "claims", jwt.getClaims()
+        ));
+    }
+
 
     @PostMapping("/signup")
     @Operation(

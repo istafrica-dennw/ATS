@@ -83,6 +83,7 @@ services:
       # - OLLAMA_BASE_URL=http://ollama:11434
       # - OLLAMA_MODEL=${OLLAMA_MODEL:-phi3}
       - APP_RESUME_ANALYSIS_PROVIDER=${APP_RESUME_ANALYSIS_PROVIDER:-ollama}
+      - IAA_PUBLIC_KEY=${IAA_PUBLIC_KEY}
     volumes:
       - profile_uploads:/app/uploads
     depends_on:

@@ -45,6 +45,7 @@ import ContactPage from './pages/ContactPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { isJWTToken, logTokenInfo } from './utils/tokenUtils';
+import IAAWidgetLoader from './components/IAAWidgetLoader';
 
 // List of paths that should always be accessible, even when authenticated
 const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email', '/dashboard', '/accept-connect-consent'];
@@ -132,6 +133,7 @@ const App: React.FC = () => {
       <SecurityProvider>
         <ThemeProvider>
           <Router>
+            <IAAWidgetLoader />
             <URLTokenHandler />
             <ToastContainer 
               position="top-right"

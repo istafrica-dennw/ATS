@@ -5,7 +5,10 @@ import com.ats.model.User;
 import com.ats.model.Application;
 import com.ats.model.EmailEvent;
 import com.ats.model.Interview;
+<<<<<<< HEAD
 import com.ats.model.Job;
+=======
+>>>>>>> 48314e32 (Add project files without large video)
 import com.ats.model.LocationType;
 import com.ats.model.RecipientType;
 import com.ats.repository.EmailNotificationRepository;
@@ -35,10 +38,13 @@ import com.ats.dto.BulkEmailResponseDTO;
 import com.ats.model.ApplicationStatus;
 import com.ats.repository.ApplicationRepository;
 import com.ats.service.SubscriptionService;
+<<<<<<< HEAD
 import com.ats.service.mail.MailProvider;
 import com.ats.service.mail.MailProviderFactory;
 
 import java.nio.charset.StandardCharsets;
+=======
+>>>>>>> 48314e32 (Add project files without large video)
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +54,10 @@ public class EmailServiceImpl implements EmailService {
     private final EmailNotificationRepository emailNotificationRepository;
     private final ApplicationRepository applicationRepository;
     private final SubscriptionService subscriptionService;
+<<<<<<< HEAD
     private final MailProviderFactory mailProviderFactory;
+=======
+>>>>>>> 48314e32 (Add project files without large video)
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -79,6 +88,7 @@ public class EmailServiceImpl implements EmailService {
     );
 
     /**
+<<<<<<< HEAD
      * Determines the region for job-related emails based on the job's region.
      * For job-related emails, this ensures we use the correct regional mail provider.
      * 
@@ -95,6 +105,9 @@ public class EmailServiceImpl implements EmailService {
     /**
      * Generic method to send an email with a template and save notification.
      * This version uses the DEFAULT provider (no-reply.ats.ist.com) for user-related emails.
+=======
+     * Generic method to send an email with a template and save notification
+>>>>>>> 48314e32 (Add project files without large video)
      * 
      * @param to Recipient email address
      * @param subject Email subject
@@ -107,6 +120,7 @@ public class EmailServiceImpl implements EmailService {
     @Transactional
     private EmailNotification sendTemplateEmail(String to, String subject, String templateName, 
             Map<String, Object> templateVariables, User user) throws MessagingException {
+<<<<<<< HEAD
         // For user-related emails, use null region (default provider with no-reply.ats.ist.com)
         return sendTemplateEmailWithRegion(to, subject, templateName, templateVariables, user, null);
     }
@@ -147,6 +161,8 @@ public class EmailServiceImpl implements EmailService {
     @Transactional
     private EmailNotification sendTemplateEmailWithRegion(String to, String subject, String templateName, 
             Map<String, Object> templateVariables, User user, String region) throws MessagingException {
+=======
+>>>>>>> 48314e32 (Add project files without large video)
         
         // Create Thymeleaf context and add variables
         Context context = new Context();
@@ -154,10 +170,13 @@ public class EmailServiceImpl implements EmailService {
         
         // Process template
         String emailContent = templateEngine.process(templateName, context);
+<<<<<<< HEAD
 
         // Select mail provider based on region
         MailProvider mailProvider = mailProviderFactory.getProvider(region);
         String from = mailProvider.getDefaultFromAddress();
+=======
+>>>>>>> 48314e32 (Add project files without large video)
         
         // Create email notification record
         EmailNotification.EmailNotificationBuilder builder = EmailNotification.builder()
@@ -178,8 +197,21 @@ public class EmailServiceImpl implements EmailService {
         notification = emailNotificationRepository.save(notification);
 
         try {
+<<<<<<< HEAD
             // Try to send the email with use of region-aware mail provider
             mailProvider.sendEmail(to, from, subject, emailContent);
+=======
+            // Try to send the email
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setFrom("no-reply@ist.africa");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(emailContent, true);
+            
+            mailSender.send(message);
+>>>>>>> 48314e32 (Add project files without large video)
             
             // Update status to SENT
             notification.setStatus(EmailNotification.EmailStatus.SENT);
@@ -291,8 +323,12 @@ public class EmailServiceImpl implements EmailService {
         // Generate template variables based on event
         Map<String, Object> templateVars = buildApplicationTemplateVariables(application, event);
         
+<<<<<<< HEAD
         // Use job's region for job-related emails
         return sendTemplateEmailWithJob(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser, application.getJob());
+=======
+        return sendTemplateEmail(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser);
+>>>>>>> 48314e32 (Add project files without large video)
     }
 
     @Override
@@ -313,8 +349,12 @@ public class EmailServiceImpl implements EmailService {
         // Generate template variables based on event
         Map<String, Object> templateVars = buildInterviewTemplateVariables(interview, event);
         
+<<<<<<< HEAD
         // Use job's region for job-related emails
         return sendTemplateEmailWithJob(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser, interview.getApplication().getJob());
+=======
+        return sendTemplateEmail(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser);
+>>>>>>> 48314e32 (Add project files without large video)
     }
 
     /**
@@ -562,17 +602,25 @@ public class EmailServiceImpl implements EmailService {
         // Send test email first if requested
         if (request.getSendTest() && request.getTestEmailRecipient() != null) {
             try {
+<<<<<<< HEAD
                 // For test emails, use job's region from first application if available
                 Job testJob = applications.isEmpty() ? null : applications.get(0).getJob();
                 EmailNotification testEmail = sendEmailWithNotificationForJob(
+=======
+                EmailNotification testEmail = sendEmailWithNotification(
+>>>>>>> 48314e32 (Add project files without large video)
                     request.getTestEmailRecipient(),
                     "[TEST] " + request.getSubject(),
                     request.getContent(),
                     request.getIsHtml(),
                     senderUser,
                     "bulk-email-test",
+<<<<<<< HEAD
                     campaignId,
                     testJob
+=======
+                    campaignId
+>>>>>>> 48314e32 (Add project files without large video)
                 );
                 emailNotificationIds.add(testEmail.getId());
                 successCount++;
@@ -631,16 +679,24 @@ public class EmailServiceImpl implements EmailService {
                     candidateName
                 );
                 
+<<<<<<< HEAD
                 // Use job's region for bulk emails to applicants (job-related)
                 EmailNotification notification = sendEmailWithNotificationForJob(
+=======
+                EmailNotification notification = sendEmailWithNotification(
+>>>>>>> 48314e32 (Add project files without large video)
                     candidateEmail,
                     request.getSubject(),
                     personalizedContent,
                     request.getIsHtml(),
                     senderUser,
                     "bulk-email",
+<<<<<<< HEAD
                     campaignId,
                     application.getJob()
+=======
+                    campaignId
+>>>>>>> 48314e32 (Add project files without large video)
                 );
                 
                 emailNotificationIds.add(notification.getId());
@@ -715,6 +771,7 @@ public class EmailServiceImpl implements EmailService {
     }
     
     /**
+<<<<<<< HEAD
      * Reusable utility method to send email and record notification with status tracking.
      * This version uses the DEFAULT provider (no-reply.ats.ist.com) for user-related emails.
      * Can be used for both individual emails and bulk emails with campaign tracking.
@@ -748,6 +805,14 @@ public class EmailServiceImpl implements EmailService {
         // Select mail provider based on region
         MailProvider mailProvider = mailProviderFactory.getProvider(region);
         String from = mailProvider.getDefaultFromAddress();
+=======
+     * Reusable utility method to send email and record notification with status tracking
+     * This method handles the common pattern of creating notification, sending email, and updating status
+     * Can be used for both individual emails and bulk emails with campaign tracking
+     */
+    private EmailNotification sendEmailWithNotification(String to, String subject, String content, Boolean isHtml, 
+                                                       User senderUser, String templateName, String campaignId) throws MessagingException {
+>>>>>>> 48314e32 (Add project files without large video)
         // Create email notification record
         EmailNotification notification = EmailNotification.builder()
             .recipientEmail(to)
@@ -763,7 +828,18 @@ public class EmailServiceImpl implements EmailService {
 
         try {
             // Send the email
+<<<<<<< HEAD
             mailProvider.sendEmail(to, from, subject, content);
+=======
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, isHtml != null ? isHtml : false);
+            
+            mailSender.send(message);
+>>>>>>> 48314e32 (Add project files without large video)
             
             // Update status to SENT
             notification.setStatus(EmailNotification.EmailStatus.SENT);
@@ -825,11 +901,15 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Transactional
     public EmailNotification sendEmailWithCalendarAttachment(String to, String subject, String content, 
+<<<<<<< HEAD
                                                            String calendarContent, String attachmentName, Job job) throws MessagingException {
         // Use job's region for calendar invites (job-related emails)
         String region = determineRegionFromJob(job);
         MailProvider mailProvider = mailProviderFactory.getProvider(region);
         String from = mailProvider.getDefaultFromAddress();
+=======
+                                                           String calendarContent, String attachmentName) throws MessagingException {
+>>>>>>> 48314e32 (Add project files without large video)
         // Create email notification record
         EmailNotification notification = EmailNotification.builder()
             .recipientEmail(to)
@@ -844,6 +924,7 @@ public class EmailServiceImpl implements EmailService {
 
         try {
             // Create the email message
+<<<<<<< HEAD
            mailProvider.sendEmailWithAttachment(
                 to,
                 from,
@@ -853,6 +934,22 @@ public class EmailServiceImpl implements EmailService {
                 calendarContent.getBytes(StandardCharsets.UTF_8),
                 "text/calendar; method=REQUEST"
             );
+=======
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setFrom("no-reply@ist.africa");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content, false); // Plain text email
+            
+            // Add calendar attachment with proper MIME type for Outlook compatibility
+            DataSource dataSource = new ByteArrayDataSource(calendarContent.getBytes("UTF-8"), "text/calendar; method=PUBLISH");
+            helper.addAttachment(attachmentName, dataSource);
+            
+            // Send the email
+            mailSender.send(message);
+>>>>>>> 48314e32 (Add project files without large video)
             
             // Update status to SENT
             notification.setStatus(EmailNotification.EmailStatus.SENT);
@@ -867,6 +964,7 @@ public class EmailServiceImpl implements EmailService {
             throw new MessagingException("Failed to send email with calendar attachment", e);
         }
     }
+<<<<<<< HEAD
     
     @Override
     @Transactional
@@ -1069,4 +1167,6 @@ public class EmailServiceImpl implements EmailService {
         result.append("</div></body></html>");
         return result.toString();
     }
+=======
+>>>>>>> 48314e32 (Add project files without large video)
 } 

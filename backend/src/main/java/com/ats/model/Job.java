@@ -7,6 +7,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+<<<<<<< HEAD
+=======
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+>>>>>>> 48314e32 (Add project files without large video)
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +24,13 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Job extends BaseEntity {
+<<<<<<< HEAD
+=======
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private JobCategory category;
+>>>>>>> 48314e32 (Add project files without large video)
     @Column(nullable = false, unique = false)
     @NotBlank (message="Title can't be blank")
     @NotNull (message="Title can't be Null")

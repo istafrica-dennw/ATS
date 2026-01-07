@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ats.dto.JobDTO;
 import com.ats.dto.UserDTO;
 import com.ats.model.JobStatus;
+<<<<<<< HEAD
 import com.ats.model.User;
 import com.ats.model.WorkSetting;
 import com.ats.repository.UserRepository;
@@ -20,6 +21,11 @@ import com.ats.service.RegionalDataFilterService;
 import com.beust.jcommander.Parameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+=======
+import com.ats.model.WorkSetting;
+import com.ats.service.JobService;
+import com.beust.jcommander.Parameter;
+>>>>>>> 48314e32 (Add project files without large video)
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -47,6 +53,7 @@ import org.slf4j.LoggerFactory;
 public class JobsController {
     
     private static final Logger logger = LoggerFactory.getLogger(JobsController.class);
+<<<<<<< HEAD
     private final JobService jobService;
     private final RegionalDataFilterService regionalDataFilterService;
     private final UserRepository userRepository;
@@ -89,6 +96,12 @@ public class JobsController {
         }
         
         return true; // Default: allow access
+=======
+    private JobService jobService;
+
+    public JobsController(JobService jobService){
+        this.jobService =  jobService;
+>>>>>>> 48314e32 (Add project files without large video)
     }
 
     @PostMapping
@@ -153,6 +166,7 @@ public class JobsController {
     })
     public ResponseEntity<JobDTO> getJobById(@PathVariable("id") Long id) {
         logger.debug("Getting job with ID: {}", id);
+<<<<<<< HEAD
         JobDTO job = jobService.getJobById(id);
         
         // Check regional access
@@ -162,6 +176,9 @@ public class JobsController {
         }
         
         return ResponseEntity.ok(job);
+=======
+        return ResponseEntity.ok(jobService.getJobById(id));
+>>>>>>> 48314e32 (Add project files without large video)
     }
 
     @PutMapping("/{id}")
@@ -172,6 +189,7 @@ public class JobsController {
     public ResponseEntity<JobDTO> updatedJob( @Valid @RequestBody JobDTO jobDTO, @PathVariable Long id){
         logger.debug("Updating job with ID: {}", id);
         logger.debug("Job data: {}", jobDTO);
+<<<<<<< HEAD
         
         // Check regional access before update
         JobDTO existingJob = jobService.getJobById(id);
@@ -181,6 +199,10 @@ public class JobsController {
         }
         
         return ResponseEntity.ok(jobService.updateJob(jobDTO, id));
+=======
+        return ResponseEntity.ok(jobService.updateJob(jobDTO, id));
+
+>>>>>>> 48314e32 (Add project files without large video)
     }
 
 
@@ -194,6 +216,7 @@ public class JobsController {
         logger.debug("Updating job status for job ID: {}", id);
         logger.debug("Status update payload: {}", statusUpdate);
         
+<<<<<<< HEAD
         // Check regional access before status update
         JobDTO existingJob = jobService.getJobById(id);
         if (!canAccessJobRegion(existingJob.getRegion())) {
@@ -201,6 +224,8 @@ public class JobsController {
             return ResponseEntity.status(403).build();
         }
         
+=======
+>>>>>>> 48314e32 (Add project files without large video)
         String statusStr = statusUpdate.get("status");
         if (statusStr == null) {
             throw new IllegalArgumentException("Status field is required");

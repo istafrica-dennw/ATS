@@ -115,6 +115,7 @@ public interface ApplicationService {
 	boolean hasApplied(Long jobId, Long candidateId);
 
 	/**
+<<<<<<< HEAD
 	 * Send a job offer email to a candidate with optional custom subject and content
 	 * 
 	 * @param applicationId the application ID
@@ -124,4 +125,13 @@ public interface ApplicationService {
 	 * @throws MessagingException if there's an error sending the email
 	 */
 	void sendJobOfferEmail(Long applicationId, String customSubject, String customContent) throws MessagingException;
+=======
+	 * Send a job offer email to a candidate
+	 * 
+	 * @param applicationId the application ID
+	 * @throws NotFoundException  if the application is not found
+	 * @throws MessagingException if there's an error sending the email
+	 */
+	void sendJobOfferEmail(Long applicationId) throws MessagingException;
+>>>>>>> 48314e32 (Add project files without large video)
 }

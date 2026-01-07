@@ -739,6 +739,7 @@ const AdminJobDetailsPage: React.FC = () => {
     setIsEmailModalOpen(true);
   };
 
+<<<<<<< HEAD
   const handleEmailSend = async (subject: string, content: string) => {
     if (!selectedApplication) return;
     
@@ -747,6 +748,13 @@ const AdminJobDetailsPage: React.FC = () => {
         subject,
         content
       });
+=======
+  const handleEmailSend = async () => {
+    if (!selectedApplication) return;
+    
+    try {
+      await axiosInstance.post(`/applications/${selectedApplication.id}/send-offer-email`);
+>>>>>>> 48314e32 (Add project files without large video)
       toast.success('Job offer email sent successfully');
     } catch (error) {
       console.error('Error sending job offer email:', error);
@@ -823,7 +831,11 @@ const AdminJobDetailsPage: React.FC = () => {
           <ArrowLeftIcon className="h-5 w-5 mr-1" /> Back to Job Management
         </button>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{job.title}</h1>
+<<<<<<< HEAD
           <p className="text-lg text-gray-500 dark:text-gray-400">{job.department || 'IST'}</p>
+=======
+          <p className="text-lg text-gray-500 dark:text-gray-400">{job.department || 'IST Africa'}</p>
+>>>>>>> 48314e32 (Add project files without large video)
       </div>
       
         <div className="bg-white dark:bg-gray-800 shadow-lg dark:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] overflow-hidden sm:rounded-lg border border-gray-200/50 dark:border-gray-700/50 mb-8">

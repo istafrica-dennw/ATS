@@ -9,11 +9,19 @@ import com.ats.dto.JobCustomQuestionDTO;
 import com.ats.dto.JobDTO;
 import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.Job;
+<<<<<<< HEAD
+=======
+import com.ats.model.JobCategory;
+>>>>>>> 48314e32 (Add project files without large video)
 import com.ats.model.User;
 import com.ats.service.JobCustomQuestionService;
 import com.ats.service.RegionalDataFilterService;
 import com.ats.model.JobStatus;
 import com.ats.model.WorkSetting;
+<<<<<<< HEAD
+=======
+import com.ats.repository.JobCategoryRepository;
+>>>>>>> 48314e32 (Add project files without large video)
 import com.ats.repository.JobRepository;
 import com.ats.service.JobService;
 import com.ats.util.ModelMapperUtil;
@@ -43,6 +51,12 @@ public class JobServiceImpl implements JobService {
     private JobRepository jobRepository;
     
     @Autowired
+<<<<<<< HEAD
+=======
+    private JobCategoryRepository jobCategoryRepository;
+    
+    @Autowired
+>>>>>>> 48314e32 (Add project files without large video)
     private JobCustomQuestionService jobCustomQuestionService;
     
     @Autowired
@@ -87,6 +101,16 @@ public class JobServiceImpl implements JobService {
             job.setExpirationDate(jobDTO.getExpirationDate());
         }
         
+<<<<<<< HEAD
+=======
+        // Set category if provided
+        if (jobDTO.getCategoryId() != null) {
+            JobCategory category = jobCategoryRepository.findById(jobDTO.getCategoryId())
+                    .orElseThrow(() -> new NotFoundException("Job category not found with id: " + jobDTO.getCategoryId()));
+            job.setCategory(category);
+        }
+        
+>>>>>>> 48314e32 (Add project files without large video)
         // Save the job first
         job = jobRepository.save(job);
         
@@ -122,12 +146,32 @@ public class JobServiceImpl implements JobService {
         Job job = jobOpt.get();
         JobDTO jobDTO = modelMapper.map(job, JobDTO.class);
         
+<<<<<<< HEAD
+=======
+        // Map category information
+        mapCategoryToDTO(job, jobDTO);
+        
+>>>>>>> 48314e32 (Add project files without large video)
         // Fetch and set custom questions
         List<JobCustomQuestionDTO> customQuestions = jobCustomQuestionService.getAllCustomQuestionsbyJobId(id);
         jobDTO.setCustomQuestions(customQuestions);
         
         return jobDTO;
     }
+<<<<<<< HEAD
+=======
+    
+    /**
+     * Helper method to map category information to JobDTO
+     */
+    private void mapCategoryToDTO(Job job, JobDTO jobDTO) {
+        if (job.getCategory() != null) {
+            jobDTO.setCategoryId(job.getCategory().getId());
+            jobDTO.setCategoryName(job.getCategory().getName());
+            jobDTO.setCategoryColor(job.getCategory().getColor());
+        }
+    }
+>>>>>>> 48314e32 (Add project files without large video)
 
     @Override
     @Transactional
@@ -149,6 +193,18 @@ public class JobServiceImpl implements JobService {
             updatedJob.setJobStatus(jobDTO.getJobStatus());
             updatedJob.setExpirationDate(jobDTO.getExpirationDate());
             
+<<<<<<< HEAD
+=======
+            // Update category if provided
+            if (jobDTO.getCategoryId() != null) {
+                JobCategory category = jobCategoryRepository.findById(jobDTO.getCategoryId())
+                        .orElseThrow(() -> new NotFoundException("Job category not found with id: " + jobDTO.getCategoryId()));
+                updatedJob.setCategory(category);
+            } else {
+                updatedJob.setCategory(null); // Remove category if not provided
+            }
+            
+>>>>>>> 48314e32 (Add project files without large video)
             // Set posted date if job is being published for the first time or reopened
             if ((oldStatus != JobStatus.PUBLISHED && oldStatus != JobStatus.REOPENED) && 
                 (jobDTO.getJobStatus() == JobStatus.PUBLISHED || jobDTO.getJobStatus() == JobStatus.REOPENED)) {
@@ -288,9 +344,24 @@ public class JobServiceImpl implements JobService {
         // Execute query and map to DTOs
         return jobRepository.findAll(spec)
                 .stream()
+<<<<<<< HEAD
                 .map(job -> modelMapper.map(job, JobDTO.class))
                 .collect(Collectors.toList());
     }
+=======
+                .map(this::mapJobToDTO)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Helper method to map Job entity to JobDTO with category information
+     */
+    private JobDTO mapJobToDTO(Job job) {
+        JobDTO jobDTO = modelMapper.map(job, JobDTO.class);
+        mapCategoryToDTO(job, jobDTO);
+        return jobDTO;
+    }
+>>>>>>> 48314e32 (Add project files without large video)
     @Override
     public List<JobDTO> getActiveJobs() {
         // Check if request is from ist.com subdomain
@@ -340,7 +411,11 @@ public class JobServiceImpl implements JobService {
         }
         
         return jobs.stream()
+<<<<<<< HEAD
                 .map(job -> modelMapper.map(job, JobDTO.class))
+=======
+                .map(this::mapJobToDTO)
+>>>>>>> 48314e32 (Add project files without large video)
                 .collect(Collectors.toList());
     }
 
@@ -389,7 +464,11 @@ public class JobServiceImpl implements JobService {
         }
         
         return jobs.stream()
+<<<<<<< HEAD
                 .map(job -> modelMapper.map(job, JobDTO.class))
+=======
+                .map(this::mapJobToDTO)
+>>>>>>> 48314e32 (Add project files without large video)
                 .collect(Collectors.toList());
     }
     @Override
@@ -438,7 +517,11 @@ public class JobServiceImpl implements JobService {
         }
         
         return jobs.stream()
+<<<<<<< HEAD
                 .map(job -> modelMapper.map(job, JobDTO.class))
+=======
+                .map(this::mapJobToDTO)
+>>>>>>> 48314e32 (Add project files without large video)
                 .collect(Collectors.toList());
     }
 
@@ -466,7 +549,11 @@ public class JobServiceImpl implements JobService {
                 notifySubscribers(savedJob);
             }
             
+<<<<<<< HEAD
             return modelMapper.map(savedJob, JobDTO.class);
+=======
+            return mapJobToDTO(savedJob);
+>>>>>>> 48314e32 (Add project files without large video)
         } else {
             throw new NotFoundException("Job not found with id: " + id);
         }

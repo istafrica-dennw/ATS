@@ -126,11 +126,15 @@ public interface EmailService {
      * @param content Email content
      * @param calendarContent ICS calendar content
      * @param attachmentName Name for the calendar attachment
+<<<<<<< HEAD
      * @param job Related job (for region determination)
+=======
+>>>>>>> 48314e32 (Add project files without large video)
      * @return The created EmailNotification entity
      * @throws MessagingException If there's an error sending the email
      */
     EmailNotification sendEmailWithCalendarAttachment(String to, String subject, String content, 
+<<<<<<< HEAD
                                                     String calendarContent, String attachmentName, Job job) throws MessagingException;
     
     /**
@@ -142,4 +146,7 @@ public interface EmailService {
      * @throws MessagingException If there's an error sending the email
      */
     EmailNotification sendCustomJobOfferEmail(Application application, String customSubject, String customContent) throws MessagingException;
+=======
+                                                    String calendarContent, String attachmentName) throws MessagingException;
+>>>>>>> 48314e32 (Add project files without large video)
 } 

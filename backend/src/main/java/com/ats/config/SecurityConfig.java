@@ -121,6 +121,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**", "/error",
                     "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/api-docs/**",
                     "/api/test/**", "/api/files/**", "/api/geolocation/**").permitAll()
+<<<<<<< HEAD
+=======
+                // Public job categories endpoints (for career portal and job dropdowns)
+                .requestMatchers(HttpMethod.GET, "/api/job-categories", "/api/job-categories/active", "/api/job-categories/*").permitAll()
+                // Public user job preferences endpoints (for career portal connect feature)
+                .requestMatchers(HttpMethod.POST, "/api/user-job-preferences").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/user-job-preferences/check-email").permitAll()
+>>>>>>> 48314e32 (Add project files without large video)
                 .requestMatchers(HttpMethod.GET, "/api/jobs", "/api/jobs/*", "/api/jobs/*/custom-questions").permitAll()
                 .requestMatchers("/api/jobs/**").authenticated()
                 .anyRequest().authenticated()

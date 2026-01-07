@@ -256,6 +256,7 @@ public class InterviewController {
 
     /**
      * Get all interviews for admin assignment management
+<<<<<<< HEAD
      * Admin only - GDPR filtered by admin's region
      */
     @GetMapping("/all")
@@ -270,6 +271,18 @@ public class InterviewController {
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
             
             List<InterviewDTO> interviews = interviewService.getAllInterviews(admin);
+=======
+     * Admin only
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<InterviewDTO>> getAllInterviews() {
+        
+        log.debug("Fetching all interviews for admin assignment management");
+        
+        try {
+            List<InterviewDTO> interviews = interviewService.getAllInterviews();
+>>>>>>> 48314e32 (Add project files without large video)
             return ResponseEntity.ok(interviews);
             
         } catch (Exception e) {
@@ -317,6 +330,7 @@ public class InterviewController {
 
     /**
      * Get all shortlisted applications across all jobs
+<<<<<<< HEAD
      * Admin only - GDPR filtered by admin's region
      */
     @GetMapping("/applications/shortlisted")
@@ -338,6 +352,16 @@ public class InterviewController {
             log.error("Error fetching shortlisted applications: {}", e.getMessage());
             throw e;
         }
+=======
+     * Admin only
+     */
+    @GetMapping("/applications/shortlisted")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<InterviewDTO.ApplicationSummaryDTO>> getAllShortlistedApplications() {
+        
+        List<InterviewDTO.ApplicationSummaryDTO> applications = interviewService.getAllShortlistedApplications();
+        return ResponseEntity.ok(applications);
+>>>>>>> 48314e32 (Add project files without large video)
     }
 
     /**

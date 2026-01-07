@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useParams, Link } from 'react-router-dom';
+=======
+import { useParams, Link, useNavigate } from 'react-router-dom';
+>>>>>>> 48314e32 (Add project files without large video)
 import { ExclamationTriangleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import MainLayout from '../../layouts/MainLayout';
 import JobApplicationForm from '../../components/application/JobApplicationForm';
 import axiosInstance from '../../utils/axios';
+<<<<<<< HEAD
+=======
+import { useAuth } from '../../contexts/AuthContext';
+>>>>>>> 48314e32 (Add project files without large video)
 
 interface Job {
   id: number;
@@ -14,12 +22,35 @@ interface Job {
 
 const JobApplicationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+<<<<<<< HEAD
+=======
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+>>>>>>> 48314e32 (Add project files without large video)
   
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+<<<<<<< HEAD
   useEffect(() => {
+=======
+  // Check authentication and redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // Store the current URL for redirect after login
+      const returnUrl = `/apply/${id}`;
+      sessionStorage.setItem('lastVisitedRoute', returnUrl);
+      console.log('JobApplicationPage - User not authenticated, redirecting to login with returnUrl:', returnUrl);
+      navigate(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+    }
+  }, [isAuthenticated, id, navigate]);
+  
+  useEffect(() => {
+    // Only fetch job details if authenticated
+    if (!isAuthenticated) return;
+    
+>>>>>>> 48314e32 (Add project files without large video)
     const fetchJobDetails = async () => {
       try {
         // Parse job ID as number
@@ -43,9 +74,16 @@ const JobApplicationPage: React.FC = () => {
     };
     
     fetchJobDetails();
+<<<<<<< HEAD
   }, [id]);
   
   if (loading) {
+=======
+  }, [id, isAuthenticated]);
+  
+  // Show loading while checking auth or fetching job
+  if (!isAuthenticated || loading) {
+>>>>>>> 48314e32 (Add project files without large video)
     return (
       <MainLayout>
         <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">

@@ -4,7 +4,10 @@ import com.ats.dto.AssignInterviewRequest;
 import com.ats.dto.InterviewDTO;
 import com.ats.dto.SubmitInterviewRequest;
 import com.ats.model.InterviewStatus;
+<<<<<<< HEAD
 import com.ats.model.User;
+=======
+>>>>>>> 48314e32 (Add project files without large video)
 
 import java.util.List;
 import java.util.Optional;
@@ -63,9 +66,14 @@ public interface InterviewService {
     
     /**
      * Get all interviews for admin assignment management
+<<<<<<< HEAD
      * Filtered by admin's GDPR region
      */
     List<InterviewDTO> getAllInterviews(User admin);
+=======
+     */
+    List<InterviewDTO> getAllInterviews();
+>>>>>>> 48314e32 (Add project files without large video)
     
     /**
      * Shortlist an application
@@ -84,9 +92,14 @@ public interface InterviewService {
     
     /**
      * Get all shortlisted applications across all jobs
+<<<<<<< HEAD
      * Filtered by admin's GDPR region
      */
     List<InterviewDTO.ApplicationSummaryDTO> getAllShortlistedApplications(User admin);
+=======
+     */
+    List<InterviewDTO.ApplicationSummaryDTO> getAllShortlistedApplications();
+>>>>>>> 48314e32 (Add project files without large video)
     
     /**
      * Get available interviewers (users with INTERVIEWER role)

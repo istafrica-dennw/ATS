@@ -58,11 +58,14 @@ services:
       # Email Configuration
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+<<<<<<< HEAD
        # Postal Configuration (default for all other emails)
       - MAIL_POSTAL_ENABLED=${MAIL_POSTAL_ENABLED:-true}
       - MAIL_POSTAL_API_URL=${MAIL_POSTAL_API_URL}
       - MAIL_POSTAL_KEY=${MAIL_POSTAL_KEY}
       - MAIL_POSTAL_FROM=${MAIL_POSTAL_FROM}
+=======
+>>>>>>> 48314e32 (Add project files without large video)
       # OAuth Configuration
       - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
       - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}

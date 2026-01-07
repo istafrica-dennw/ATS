@@ -10,7 +10,10 @@ import com.ats.repository.*;
 import com.ats.service.InterviewService;
 import com.ats.service.EmailService;
 import com.ats.service.CalendarService;
+<<<<<<< HEAD
 import com.ats.service.RegionalDataFilterService;
+=======
+>>>>>>> 48314e32 (Add project files without large video)
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,7 +37,10 @@ public class InterviewServiceImpl implements InterviewService {
     private final JobRepository jobRepository;
     private final EmailService emailService;
     private final CalendarService calendarService;
+<<<<<<< HEAD
     private final RegionalDataFilterService regionalDataFilterService;
+=======
+>>>>>>> 48314e32 (Add project files without large video)
 
     @Autowired
     public InterviewServiceImpl(
@@ -45,8 +51,12 @@ public class InterviewServiceImpl implements InterviewService {
             InterviewSkeletonRepository interviewSkeletonRepository,
             JobRepository jobRepository,
             EmailService emailService,
+<<<<<<< HEAD
             CalendarService calendarService,
             RegionalDataFilterService regionalDataFilterService) {
+=======
+            CalendarService calendarService) {
+>>>>>>> 48314e32 (Add project files without large video)
         this.interviewRepository = interviewRepository;
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
@@ -55,7 +65,10 @@ public class InterviewServiceImpl implements InterviewService {
         this.jobRepository = jobRepository;
         this.emailService = emailService;
         this.calendarService = calendarService;
+<<<<<<< HEAD
         this.regionalDataFilterService = regionalDataFilterService;
+=======
+>>>>>>> 48314e32 (Add project files without large video)
     }
 
     @Override
@@ -286,6 +299,7 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     @Transactional(readOnly = true)
+<<<<<<< HEAD
     public List<InterviewDTO> getAllInterviews(User admin) {
         log.debug("Fetching all interviews for admin assignment management (GDPR filtered)");
         
@@ -313,6 +327,11 @@ public class InterviewServiceImpl implements InterviewService {
                     
                     return true; // Fallback for non-admin users
                 })
+=======
+    public List<InterviewDTO> getAllInterviews() {
+        log.debug("Fetching all interviews for admin assignment management");
+        return interviewRepository.findAll().stream()
+>>>>>>> 48314e32 (Add project files without large video)
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -372,6 +391,7 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     @Transactional(readOnly = true)
+<<<<<<< HEAD
     public List<InterviewDTO.ApplicationSummaryDTO> getAllShortlistedApplications(User admin) {
         log.debug("Fetching all shortlisted applications across all jobs (GDPR filtered)");
         
@@ -399,6 +419,11 @@ public class InterviewServiceImpl implements InterviewService {
                     
                     return true; // Fallback for non-admin users
                 })
+=======
+    public List<InterviewDTO.ApplicationSummaryDTO> getAllShortlistedApplications() {
+        log.debug("Fetching all shortlisted applications across all jobs");
+        return applicationRepository.findByIsShortlisted(true).stream()
+>>>>>>> 48314e32 (Add project files without large video)
                 .map(this::mapToApplicationSummaryDTO)
                 .collect(Collectors.toList());
     }

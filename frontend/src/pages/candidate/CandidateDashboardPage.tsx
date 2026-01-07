@@ -116,7 +116,11 @@ const CandidateDashboardPage: React.FC = () => {
               updatedApplications[index] = {
                 ...updatedApplications[index],
                 jobTitle: 'Software Engineer Position',
+<<<<<<< HEAD
                 department: 'IST'
+=======
+                department: 'IST Africa'
+>>>>>>> 48314e32 (Add project files without large video)
               };
             }
           })

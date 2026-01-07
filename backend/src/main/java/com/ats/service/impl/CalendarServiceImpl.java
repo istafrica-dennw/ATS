@@ -36,7 +36,11 @@ public class CalendarServiceImpl implements CalendarService {
         // ICS Header with proper Outlook compatibility
         ics.append("BEGIN:VCALENDAR\n");
         ics.append("VERSION:2.0\n");
+<<<<<<< HEAD
         ics.append("PRODID:-// IST//ATS System//EN\n");
+=======
+        ics.append("PRODID:-//IST Africa//ATS System//EN\n");
+>>>>>>> 48314e32 (Add project files without large video)
         ics.append("CALSCALE:GREGORIAN\n");
         ics.append("METHOD:PUBLISH\n");
         
@@ -94,6 +98,10 @@ public class CalendarServiceImpl implements CalendarService {
         
         // Add meeting link for online interviews
         if (interview.getLocationType() == LocationType.ONLINE) {
+<<<<<<< HEAD
+=======
+            description.append("\nMeeting Link: https://meet.google.com/abc-defg-hij\n");
+>>>>>>> 48314e32 (Add project files without large video)
             description.append("(Actual meeting link will be provided before the interview)");
         }
         
@@ -168,34 +176,56 @@ public class CalendarServiceImpl implements CalendarService {
             // Email body
             String emailBody = createEmailBody(interview);
             
+<<<<<<< HEAD
             // Send to interviewer (use job region)
+=======
+            // Send to interviewer
+>>>>>>> 48314e32 (Add project files without large video)
             emailService.sendEmailWithCalendarAttachment(
                 interviewer.getEmail(),
                 subject,
                 emailBody,
                 calendarInvite,
+<<<<<<< HEAD
                 "interview.ics",
                 interview.getApplication().getJob()
             );
             
             // Send to candidate (use job region)
+=======
+                "interview.ics"
+            );
+            
+            // Send to candidate
+>>>>>>> 48314e32 (Add project files without large video)
             emailService.sendEmailWithCalendarAttachment(
                 candidate.getEmail(),
                 subject,
                 emailBody,
                 calendarInvite,
+<<<<<<< HEAD
                 "interview.ics",
                 interview.getApplication().getJob()
             );
             
             // Send to admin (optional, for tracking) (use job region)
+=======
+                "interview.ics"
+            );
+            
+            // Send to admin (optional, for tracking)
+>>>>>>> 48314e32 (Add project files without large video)
             emailService.sendEmailWithCalendarAttachment(
                 admin.getEmail(),
                 subject + " (Admin Copy)",
                 emailBody + "\n\nThis is a copy for your records as the interview coordinator.",
                 calendarInvite,
+<<<<<<< HEAD
                 "interview.ics",
                 interview.getApplication().getJob()
+=======
+                "interview.ics"
+>>>>>>> 48314e32 (Add project files without large video)
             );
             
             log.info("Calendar invites sent successfully for interview ID: {}", interview.getId());
@@ -259,7 +289,11 @@ public class CalendarServiceImpl implements CalendarService {
         body.append("For any questions or rescheduling requests, please contact ").append(admin.getFirstName())
             .append(" ").append(admin.getLastName()).append(" at ").append(admin.getEmail()).append(".\n\n");
         body.append("Best regards,\n");
+<<<<<<< HEAD
         body.append(" IST ATS System");
+=======
+        body.append("IST Africa ATS System");
+>>>>>>> 48314e32 (Add project files without large video)
         
         return body.toString();
     }

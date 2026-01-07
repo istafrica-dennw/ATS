@@ -313,6 +313,13 @@ public class ApplicationServiceImpl implements ApplicationService {
 					emailService.sendApplicationEmail(updatedApplication, EmailEvent.APPLICATION_SHORTLISTED);
 					log.info("Application shortlisted email sent for application ID: {}", applicationId);
 					break;
+<<<<<<< HEAD
+=======
+				case OFFERED:
+					emailService.sendApplicationEmail(updatedApplication, EmailEvent.JOB_OFFER);
+					log.info("Job offer email sent for application ID: {}", applicationId);
+					break;
+>>>>>>> 48314e32 (Add project files without large video)
 				// Add more cases if needed for other status changes
 				}
 			}
@@ -504,6 +511,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 	}
 
 	@Override
+<<<<<<< HEAD
 	public void sendJobOfferEmail(Long applicationId, String customSubject, String customContent) throws MessagingException {
 		Application application = applicationRepository.findById(applicationId)
 				.orElseThrow(() -> new NotFoundException("Application not found with ID: " + applicationId));
@@ -515,5 +523,13 @@ public class ApplicationServiceImpl implements ApplicationService {
 			// Send the email using the default template
 			emailService.sendApplicationEmail(application, EmailEvent.JOB_OFFER);
 		}
+=======
+	public void sendJobOfferEmail(Long applicationId) throws MessagingException {
+		Application application = applicationRepository.findById(applicationId)
+				.orElseThrow(() -> new NotFoundException("Application not found with ID: " + applicationId));
+
+		// Send the email using the email service with the template
+		emailService.sendApplicationEmail(application, EmailEvent.JOB_OFFER);
+>>>>>>> 48314e32 (Add project files without large video)
 	}
 }

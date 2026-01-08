@@ -5,6 +5,7 @@ import com.ats.model.User;
 import com.ats.model.Application;
 import com.ats.model.EmailEvent;
 import com.ats.model.Interview;
+import com.ats.model.Job;
 import com.ats.model.LocationType;
 import com.ats.model.RecipientType;
 import com.ats.repository.EmailNotificationRepository;
@@ -34,6 +35,10 @@ import com.ats.dto.BulkEmailResponseDTO;
 import com.ats.model.ApplicationStatus;
 import com.ats.repository.ApplicationRepository;
 import com.ats.service.SubscriptionService;
+import com.ats.service.mail.MailProvider;
+import com.ats.service.mail.MailProviderFactory;
+
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +48,7 @@ public class EmailServiceImpl implements EmailService {
     private final EmailNotificationRepository emailNotificationRepository;
     private final ApplicationRepository applicationRepository;
     private final SubscriptionService subscriptionService;
+    private final MailProviderFactory mailProviderFactory;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -73,7 +79,22 @@ public class EmailServiceImpl implements EmailService {
     );
 
     /**
-     * Generic method to send an email with a template and save notification
+     * Determines the region for job-related emails based on the job's region.
+     * For job-related emails, this ensures we use the correct regional mail provider.
+     * 
+     * @param job The job to get region from (can be null)
+     * @return The region string or null for default provider
+     */
+    private String determineRegionFromJob(Job job) {
+        if (job != null && job.getRegion() != null) {
+            return job.getRegion();
+        }
+        return "DEFAULT_JOB_REGION"; // Will use default provider (AWS SES with no-reply.ist.africa)
+    }
+
+    /**
+     * Generic method to send an email with a template and save notification.
+     * This version uses the DEFAULT provider (no-reply.ats.ist.com) for user-related emails.
      * 
      * @param to Recipient email address
      * @param subject Email subject
@@ -86,6 +107,46 @@ public class EmailServiceImpl implements EmailService {
     @Transactional
     private EmailNotification sendTemplateEmail(String to, String subject, String templateName, 
             Map<String, Object> templateVariables, User user) throws MessagingException {
+        // For user-related emails, use null region (default provider with no-reply.ats.ist.com)
+        return sendTemplateEmailWithRegion(to, subject, templateName, templateVariables, user, null);
+    }
+    
+    /**
+     * Generic method to send an email with a template and save notification.
+     * This version uses the JOB's region for determining the mail provider.
+     * 
+     * @param to Recipient email address
+     * @param subject Email subject
+     * @param templateName Template name to use
+     * @param templateVariables Variables to pass to the template
+     * @param user Related user (optional)
+     * @param job Related job (for region determination)
+     * @return Created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    @Transactional
+    private EmailNotification sendTemplateEmailWithJob(String to, String subject, String templateName, 
+            Map<String, Object> templateVariables, User user, Job job) throws MessagingException {
+        // For job-related emails, use job's region
+        String region = determineRegionFromJob(job);
+        return sendTemplateEmailWithRegion(to, subject, templateName, templateVariables, user, region);
+    }
+    
+    /**
+     * Core method to send an email with a template and save notification.
+     * 
+     * @param to Recipient email address
+     * @param subject Email subject
+     * @param templateName Template name to use
+     * @param templateVariables Variables to pass to the template
+     * @param user Related user (optional)
+     * @param region Region for mail provider selection (null for default)
+     * @return Created EmailNotification entity
+     * @throws MessagingException If there's an error sending the email
+     */
+    @Transactional
+    private EmailNotification sendTemplateEmailWithRegion(String to, String subject, String templateName, 
+            Map<String, Object> templateVariables, User user, String region) throws MessagingException {
         
         // Create Thymeleaf context and add variables
         Context context = new Context();
@@ -93,6 +154,10 @@ public class EmailServiceImpl implements EmailService {
         
         // Process template
         String emailContent = templateEngine.process(templateName, context);
+
+        // Select mail provider based on region
+        MailProvider mailProvider = mailProviderFactory.getProvider(region);
+        String from = mailProvider.getDefaultFromAddress();
         
         // Create email notification record
         EmailNotification.EmailNotificationBuilder builder = EmailNotification.builder()
@@ -113,16 +178,8 @@ public class EmailServiceImpl implements EmailService {
         notification = emailNotificationRepository.save(notification);
 
         try {
-            // Try to send the email
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
-            helper.setFrom("no-reply@ist.africa");
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(emailContent, true);
-            
-            mailSender.send(message);
+            // Try to send the email with use of region-aware mail provider
+            mailProvider.sendEmail(to, from, subject, emailContent);
             
             // Update status to SENT
             notification.setStatus(EmailNotification.EmailStatus.SENT);
@@ -234,7 +291,8 @@ public class EmailServiceImpl implements EmailService {
         // Generate template variables based on event
         Map<String, Object> templateVars = buildApplicationTemplateVariables(application, event);
         
-        return sendTemplateEmail(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser);
+        // Use job's region for job-related emails
+        return sendTemplateEmailWithJob(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser, application.getJob());
     }
 
     @Override
@@ -255,7 +313,8 @@ public class EmailServiceImpl implements EmailService {
         // Generate template variables based on event
         Map<String, Object> templateVars = buildInterviewTemplateVariables(interview, event);
         
-        return sendTemplateEmail(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser);
+        // Use job's region for job-related emails
+        return sendTemplateEmailWithJob(recipientEmail, subject, event.getTemplateName(), templateVars, relatedUser, interview.getApplication().getJob());
     }
 
     /**
@@ -503,14 +562,17 @@ public class EmailServiceImpl implements EmailService {
         // Send test email first if requested
         if (request.getSendTest() && request.getTestEmailRecipient() != null) {
             try {
-                EmailNotification testEmail = sendEmailWithNotification(
+                // For test emails, use job's region from first application if available
+                Job testJob = applications.isEmpty() ? null : applications.get(0).getJob();
+                EmailNotification testEmail = sendEmailWithNotificationForJob(
                     request.getTestEmailRecipient(),
                     "[TEST] " + request.getSubject(),
                     request.getContent(),
                     request.getIsHtml(),
                     senderUser,
                     "bulk-email-test",
-                    campaignId
+                    campaignId,
+                    testJob
                 );
                 emailNotificationIds.add(testEmail.getId());
                 successCount++;
@@ -569,14 +631,16 @@ public class EmailServiceImpl implements EmailService {
                     candidateName
                 );
                 
-                EmailNotification notification = sendEmailWithNotification(
+                // Use job's region for bulk emails to applicants (job-related)
+                EmailNotification notification = sendEmailWithNotificationForJob(
                     candidateEmail,
                     request.getSubject(),
                     personalizedContent,
                     request.getIsHtml(),
                     senderUser,
                     "bulk-email",
-                    campaignId
+                    campaignId,
+                    application.getJob()
                 );
                 
                 emailNotificationIds.add(notification.getId());
@@ -651,12 +715,39 @@ public class EmailServiceImpl implements EmailService {
     }
     
     /**
-     * Reusable utility method to send email and record notification with status tracking
-     * This method handles the common pattern of creating notification, sending email, and updating status
-     * Can be used for both individual emails and bulk emails with campaign tracking
+     * Reusable utility method to send email and record notification with status tracking.
+     * This version uses the DEFAULT provider (no-reply.ats.ist.com) for user-related emails.
+     * Can be used for both individual emails and bulk emails with campaign tracking.
      */
     private EmailNotification sendEmailWithNotification(String to, String subject, String content, Boolean isHtml, 
                                                        User senderUser, String templateName, String campaignId) throws MessagingException {
+        // For user-related emails, use null region (default provider with no-reply.ats.ist.com)
+        return sendEmailWithNotificationAndRegion(to, subject, content, isHtml, senderUser, templateName, campaignId, null);
+    }
+    
+    /**
+     * Reusable utility method to send email and record notification with status tracking.
+     * This version uses the JOB's region for determining the mail provider.
+     * Can be used for both individual emails and bulk emails with campaign tracking.
+     */
+    private EmailNotification sendEmailWithNotificationForJob(String to, String subject, String content, Boolean isHtml, 
+                                                       User senderUser, String templateName, String campaignId, Job job) throws MessagingException {
+        // For job-related emails, use job's region
+        String region = determineRegionFromJob(job);
+        return sendEmailWithNotificationAndRegion(to, subject, content, isHtml, senderUser, templateName, campaignId, region);
+    }
+    
+    /**
+     * Core utility method to send email and record notification with status tracking.
+     * This method handles the common pattern of creating notification, sending email, and updating status.
+     * Can be used for both individual emails and bulk emails with campaign tracking.
+     */
+    private EmailNotification sendEmailWithNotificationAndRegion(String to, String subject, String content, Boolean isHtml, 
+                                                       User senderUser, String templateName, String campaignId, String region) throws MessagingException {
+
+        // Select mail provider based on region
+        MailProvider mailProvider = mailProviderFactory.getProvider(region);
+        String from = mailProvider.getDefaultFromAddress();
         // Create email notification record
         EmailNotification notification = EmailNotification.builder()
             .recipientEmail(to)
@@ -672,14 +763,7 @@ public class EmailServiceImpl implements EmailService {
 
         try {
             // Send the email
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(content, isHtml != null ? isHtml : false);
-            
-            mailSender.send(message);
+            mailProvider.sendEmail(to, from, subject, content);
             
             // Update status to SENT
             notification.setStatus(EmailNotification.EmailStatus.SENT);
@@ -741,7 +825,11 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Transactional
     public EmailNotification sendEmailWithCalendarAttachment(String to, String subject, String content, 
-                                                           String calendarContent, String attachmentName) throws MessagingException {
+                                                           String calendarContent, String attachmentName, Job job) throws MessagingException {
+        // Use job's region for calendar invites (job-related emails)
+        String region = determineRegionFromJob(job);
+        MailProvider mailProvider = mailProviderFactory.getProvider(region);
+        String from = mailProvider.getDefaultFromAddress();
         // Create email notification record
         EmailNotification notification = EmailNotification.builder()
             .recipientEmail(to)
@@ -756,20 +844,15 @@ public class EmailServiceImpl implements EmailService {
 
         try {
             // Create the email message
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
-            helper.setFrom("no-reply@ist.africa");
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(content, false); // Plain text email
-            
-            // Add calendar attachment with proper MIME type for Outlook compatibility
-            DataSource dataSource = new ByteArrayDataSource(calendarContent.getBytes("UTF-8"), "text/calendar; method=PUBLISH");
-            helper.addAttachment(attachmentName, dataSource);
-            
-            // Send the email
-            mailSender.send(message);
+           mailProvider.sendEmailWithAttachment(
+                to,
+                from,
+                subject,
+                content,
+                attachmentName,
+                calendarContent.getBytes(StandardCharsets.UTF_8),
+                "text/calendar; method=REQUEST"
+            );
             
             // Update status to SENT
             notification.setStatus(EmailNotification.EmailStatus.SENT);
@@ -783,5 +866,207 @@ public class EmailServiceImpl implements EmailService {
             
             throw new MessagingException("Failed to send email with calendar attachment", e);
         }
+    }
+    
+    @Override
+    @Transactional
+    public EmailNotification sendCustomJobOfferEmail(Application application, String customSubject, String customContent) 
+            throws MessagingException {
+        
+        String candidateName = application.getCandidate().getFirstName() + " " + application.getCandidate().getLastName();
+        String candidateEmail = application.getCandidate().getEmail();
+        
+        // Replace {{candidateName}} placeholder with actual candidate name
+        String personalizedContent = customContent.replace("{{candidateName}}", candidateName);
+        
+        // Convert plain text to HTML (preserve line breaks and basic formatting)
+        String htmlContent = convertPlainTextToHtml(personalizedContent);
+        
+        // Use job's region for email provider selection
+        String region = determineRegionFromJob(application.getJob());
+        MailProvider mailProvider = mailProviderFactory.getProvider(region);
+        String from = mailProvider.getDefaultFromAddress();
+        
+        // Create email notification record
+        EmailNotification notification = EmailNotification.builder()
+            .recipientEmail(candidateEmail)
+            .subject(customSubject)
+            .body(htmlContent)
+            .status(EmailNotification.EmailStatus.PENDING)
+            .templateName("custom-job-offer")
+            .relatedUser(application.getCandidate())
+            .build();
+        
+        notification = emailNotificationRepository.save(notification);
+
+        try {
+            // Send the email
+            mailProvider.sendEmail(candidateEmail, from, customSubject, htmlContent);
+            
+            // Update status to SENT
+            notification.setStatus(EmailNotification.EmailStatus.SENT);
+            return emailNotificationRepository.save(notification);
+        } catch (MessagingException e) {
+            // Update status to FAILED and save error message
+            notification.setStatus(EmailNotification.EmailStatus.FAILED);
+            notification.setErrorMessage(e.getMessage());
+            notification = emailNotificationRepository.save(notification);
+            
+            throw e;
+        }
+    }
+    
+    /**
+     * Convert plain text to HTML with professional styling matching the job-offer template
+     */
+    private String convertPlainTextToHtml(String plainText) {
+        if (plainText == null) return "";
+        
+        // Escape HTML special characters first
+        String html = plainText
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;");
+        
+        // Convert markdown-style bold (**text**) to HTML
+        html = html.replaceAll("\\*\\*(.+?)\\*\\*", "<strong>$1</strong>");
+        
+        StringBuilder result = new StringBuilder();
+        result.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head>");
+        result.append("<body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\">");
+        result.append("<div style=\"max-width: 600px; margin: 0 auto; padding: 20px;\">");
+        
+        // Add header
+        result.append("<h2 style=\"color: #2563eb;\">Congratulations! Job Offer from IST Africa</h2>");
+        
+        // Parse the content into sections
+        String[] paragraphs = html.split("\n\n");
+        boolean inNextSteps = false;
+        StringBuilder nextStepsContent = new StringBuilder();
+        
+        for (String para : paragraphs) {
+            String trimmedPara = para.trim();
+            if (trimmedPara.isEmpty()) continue;
+            
+            // Check if this is the job title/info section (contains "Application ID")
+            if (trimmedPara.contains("Application ID:")) {
+                String[] lines = trimmedPara.split("\n");
+                result.append("<div style=\"background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;\">");
+                for (String line : lines) {
+                    line = line.trim();
+                    if (line.startsWith("<strong>") || (line.length() > 0 && !line.contains("Application ID"))) {
+                        result.append("<h3 style=\"margin: 0; color: #1f2937;\">").append(line).append("</h3>");
+                    } else if (line.contains("Application ID")) {
+                        result.append("<p style=\"margin: 5px 0 0 0; color: #6b7280;\">").append(line).append("</p>");
+                    }
+                }
+                result.append("</div>");
+            }
+            // Check if this is the congratulations section (contains emoji or "Congratulations!")
+            else if (trimmedPara.contains("🎉") || (trimmedPara.contains("Congratulations!") && !trimmedPara.contains("Job Offer"))) {
+                result.append("<div style=\"background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0;\">");
+                result.append("<p style=\"margin: 0; color: #047857;\">").append(trimmedPara.replace("\n", "<br>")).append("</p>");
+                result.append("</div>");
+            }
+            // Check if this starts the Next Steps section
+            else if (trimmedPara.contains("<strong>Next Steps:</strong>") || trimmedPara.contains("Next Steps:")) {
+                inNextSteps = true;
+                nextStepsContent = new StringBuilder();
+                // Process the current paragraph for bullet points
+                String[] lines = trimmedPara.split("\n");
+                for (String line : lines) {
+                    line = line.trim();
+                    if (line.startsWith("•") || line.startsWith("*")) {
+                        nextStepsContent.append("<li>").append(line.substring(1).trim()).append("</li>");
+                    }
+                }
+            }
+            // Check if this is a bullet point list (part of Next Steps or standalone)
+            else if (trimmedPara.startsWith("•") || trimmedPara.startsWith("*")) {
+                if (inNextSteps) {
+                    String[] lines = trimmedPara.split("\n");
+                    for (String line : lines) {
+                        line = line.trim();
+                        if (line.startsWith("•") || line.startsWith("*")) {
+                            nextStepsContent.append("<li>").append(line.substring(1).trim()).append("</li>");
+                        }
+                    }
+                } else {
+                    // Standalone bullet list
+                    result.append("<ul style=\"margin: 10px 0; padding-left: 20px;\">");
+                    String[] lines = trimmedPara.split("\n");
+                    for (String line : lines) {
+                        line = line.trim();
+                        if (line.startsWith("•") || line.startsWith("*")) {
+                            result.append("<li>").append(line.substring(1).trim()).append("</li>");
+                        }
+                    }
+                    result.append("</ul>");
+                }
+            }
+            // Check if this is sign-off (contains "Best regards" or "Sincerely")
+            else if (trimmedPara.toLowerCase().contains("best regards") || 
+                     trimmedPara.toLowerCase().contains("sincerely") ||
+                     trimmedPara.contains("Recruiting Team")) {
+                // First, close Next Steps if it was open
+                if (inNextSteps && nextStepsContent.length() > 0) {
+                    result.append("<div style=\"background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;\">");
+                    result.append("<p style=\"margin: 0; color: #1e40af;\"><strong>Next Steps:</strong></p>");
+                    result.append("<ul style=\"margin: 10px 0 0 0; padding-left: 20px; color: #1e40af;\">");
+                    result.append(nextStepsContent);
+                    result.append("</ul></div>");
+                    inNextSteps = false;
+                }
+                
+                result.append("<p style=\"margin-top: 30px;\">");
+                String[] lines = trimmedPara.split("\n");
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i].trim();
+                    if (line.contains("Recruiting Team") || line.contains("Team")) {
+                        result.append("<strong>").append(line).append("</strong>");
+                    } else {
+                        result.append(line);
+                    }
+                    if (i < lines.length - 1) {
+                        result.append("<br>");
+                    }
+                }
+                result.append("</p>");
+            }
+            // Regular paragraph
+            else {
+                // Close Next Steps if it was open and we hit a regular paragraph
+                if (inNextSteps && nextStepsContent.length() > 0) {
+                    result.append("<div style=\"background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;\">");
+                    result.append("<p style=\"margin: 0; color: #1e40af;\"><strong>Next Steps:</strong></p>");
+                    result.append("<ul style=\"margin: 10px 0 0 0; padding-left: 20px; color: #1e40af;\">");
+                    result.append(nextStepsContent);
+                    result.append("</ul></div>");
+                    inNextSteps = false;
+                }
+                
+                String formattedPara = trimmedPara.replace("\n", "<br>");
+                result.append("<p style=\"margin: 10px 0;\">").append(formattedPara).append("</p>");
+            }
+        }
+        
+        // Close Next Steps if still open at the end
+        if (inNextSteps && nextStepsContent.length() > 0) {
+            result.append("<div style=\"background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0;\">");
+            result.append("<p style=\"margin: 0; color: #1e40af;\"><strong>Next Steps:</strong></p>");
+            result.append("<ul style=\"margin: 10px 0 0 0; padding-left: 20px; color: #1e40af;\">");
+            result.append(nextStepsContent);
+            result.append("</ul></div>");
+        }
+        
+        // Add footer
+        result.append("<hr style=\"border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;\">");
+        result.append("<p style=\"font-size: 0.9em; color: #666;\">");
+        result.append("If you have any questions about the offer, please contact us at ");
+        result.append("<a href=\"mailto:denis.niwemugisha@ist.com\" style=\"color: #2563eb;\">denis.niwemugisha@ist.com</a>");
+        result.append("</p>");
+        
+        result.append("</div></body></html>");
+        return result.toString();
     }
 } 

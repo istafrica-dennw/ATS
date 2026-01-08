@@ -36,7 +36,7 @@ public class CalendarServiceImpl implements CalendarService {
         // ICS Header with proper Outlook compatibility
         ics.append("BEGIN:VCALENDAR\n");
         ics.append("VERSION:2.0\n");
-        ics.append("PRODID:-//IST Africa//ATS System//EN\n");
+        ics.append("PRODID:-// IST//ATS System//EN\n");
         ics.append("CALSCALE:GREGORIAN\n");
         ics.append("METHOD:PUBLISH\n");
         
@@ -94,7 +94,6 @@ public class CalendarServiceImpl implements CalendarService {
         
         // Add meeting link for online interviews
         if (interview.getLocationType() == LocationType.ONLINE) {
-            description.append("\nMeeting Link: https://meet.google.com/abc-defg-hij\n");
             description.append("(Actual meeting link will be provided before the interview)");
         }
         
@@ -169,31 +168,34 @@ public class CalendarServiceImpl implements CalendarService {
             // Email body
             String emailBody = createEmailBody(interview);
             
-            // Send to interviewer
+            // Send to interviewer (use job region)
             emailService.sendEmailWithCalendarAttachment(
                 interviewer.getEmail(),
                 subject,
                 emailBody,
                 calendarInvite,
-                "interview.ics"
+                "interview.ics",
+                interview.getApplication().getJob()
             );
             
-            // Send to candidate
+            // Send to candidate (use job region)
             emailService.sendEmailWithCalendarAttachment(
                 candidate.getEmail(),
                 subject,
                 emailBody,
                 calendarInvite,
-                "interview.ics"
+                "interview.ics",
+                interview.getApplication().getJob()
             );
             
-            // Send to admin (optional, for tracking)
+            // Send to admin (optional, for tracking) (use job region)
             emailService.sendEmailWithCalendarAttachment(
                 admin.getEmail(),
                 subject + " (Admin Copy)",
                 emailBody + "\n\nThis is a copy for your records as the interview coordinator.",
                 calendarInvite,
-                "interview.ics"
+                "interview.ics",
+                interview.getApplication().getJob()
             );
             
             log.info("Calendar invites sent successfully for interview ID: {}", interview.getId());
@@ -257,7 +259,7 @@ public class CalendarServiceImpl implements CalendarService {
         body.append("For any questions or rescheduling requests, please contact ").append(admin.getFirstName())
             .append(" ").append(admin.getLastName()).append(" at ").append(admin.getEmail()).append(".\n\n");
         body.append("Best regards,\n");
-        body.append("IST Africa ATS System");
+        body.append(" IST ATS System");
         
         return body.toString();
     }

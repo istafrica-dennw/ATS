@@ -380,9 +380,14 @@ public class ApplicationController {
 			@ApiResponse(responseCode = "500", description = "Internal server error") })
 	@PostMapping("/{id}/send-offer-email")
 	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<?> sendJobOfferEmail(@PathVariable("id") Long applicationId) {
+	public ResponseEntity<?> sendJobOfferEmail(
+			@PathVariable("id") Long applicationId,
+			@RequestBody(required = false) Map<String, String> emailContent) {
 		try {
-			applicationService.sendJobOfferEmail(applicationId);
+			String customSubject = emailContent != null ? emailContent.get("subject") : null;
+			String customContent = emailContent != null ? emailContent.get("content") : null;
+			
+			applicationService.sendJobOfferEmail(applicationId, customSubject, customContent);
 			return ResponseEntity.ok().build();
 		} catch (MessagingException e) {
 			log.error("Failed to send job offer email for application ID: {}: {}", applicationId, e.getMessage());

@@ -10,6 +10,7 @@ import com.ats.repository.*;
 import com.ats.service.InterviewService;
 import com.ats.service.EmailService;
 import com.ats.service.CalendarService;
+import com.ats.service.RegionalDataFilterService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class InterviewServiceImpl implements InterviewService {
     private final JobRepository jobRepository;
     private final EmailService emailService;
     private final CalendarService calendarService;
+    private final RegionalDataFilterService regionalDataFilterService;
 
     @Autowired
     public InterviewServiceImpl(
@@ -43,7 +45,8 @@ public class InterviewServiceImpl implements InterviewService {
             InterviewSkeletonRepository interviewSkeletonRepository,
             JobRepository jobRepository,
             EmailService emailService,
-            CalendarService calendarService) {
+            CalendarService calendarService,
+            RegionalDataFilterService regionalDataFilterService) {
         this.interviewRepository = interviewRepository;
         this.applicationRepository = applicationRepository;
         this.userRepository = userRepository;
@@ -52,6 +55,7 @@ public class InterviewServiceImpl implements InterviewService {
         this.jobRepository = jobRepository;
         this.emailService = emailService;
         this.calendarService = calendarService;
+        this.regionalDataFilterService = regionalDataFilterService;
     }
 
     @Override
@@ -282,9 +286,33 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InterviewDTO> getAllInterviews() {
-        log.debug("Fetching all interviews for admin assignment management");
+    public List<InterviewDTO> getAllInterviews(User admin) {
+        log.debug("Fetching all interviews for admin assignment management (GDPR filtered)");
+        
+        // Get view mode from session (for EU admins who can switch to view as Non-EU)
+        Boolean viewingAsNonEU = regionalDataFilterService.getViewModeFromSession(admin);
+        
         return interviewRepository.findAll().stream()
+                .filter(interview -> {
+                    String jobRegion = interview.getApplication().getJob().getRegion();
+                    
+                    // EU admin viewing as non-EU: show non-EU job interviews
+                    if (regionalDataFilterService.isEUAdmin(admin) && Boolean.TRUE.equals(viewingAsNonEU)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    // EU admin in default mode: show only EU job interviews
+                    if (regionalDataFilterService.isEUAdmin(admin)) {
+                        return "EU".equals(jobRegion);
+                    }
+                    
+                    // Non-EU admin: show only non-EU job interviews
+                    if (regionalDataFilterService.isNonEUAdmin(admin)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    return true; // Fallback for non-admin users
+                })
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -344,9 +372,33 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InterviewDTO.ApplicationSummaryDTO> getAllShortlistedApplications() {
-        log.debug("Fetching all shortlisted applications across all jobs");
+    public List<InterviewDTO.ApplicationSummaryDTO> getAllShortlistedApplications(User admin) {
+        log.debug("Fetching all shortlisted applications across all jobs (GDPR filtered)");
+        
+        // Get view mode from session (for EU admins who can switch to view as Non-EU)
+        Boolean viewingAsNonEU = regionalDataFilterService.getViewModeFromSession(admin);
+        
         return applicationRepository.findByIsShortlisted(true).stream()
+                .filter(application -> {
+                    String jobRegion = application.getJob().getRegion();
+                    
+                    // EU admin viewing as non-EU: show non-EU job applications
+                    if (regionalDataFilterService.isEUAdmin(admin) && Boolean.TRUE.equals(viewingAsNonEU)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    // EU admin in default mode: show only EU job applications
+                    if (regionalDataFilterService.isEUAdmin(admin)) {
+                        return "EU".equals(jobRegion);
+                    }
+                    
+                    // Non-EU admin: show only non-EU job applications
+                    if (regionalDataFilterService.isNonEUAdmin(admin)) {
+                        return !"EU".equals(jobRegion);
+                    }
+                    
+                    return true; // Fallback for non-admin users
+                })
                 .map(this::mapToApplicationSummaryDTO)
                 .collect(Collectors.toList());
     }

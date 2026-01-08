@@ -116,7 +116,7 @@ const CandidateDashboardPage: React.FC = () => {
               updatedApplications[index] = {
                 ...updatedApplications[index],
                 jobTitle: 'Software Engineer Position',
-                department: 'IST Africa'
+                department: 'IST'
               };
             }
           })

@@ -117,7 +117,6 @@ services:
     volumes:
       - ./certbot:/var/www/certbot
       - /etc/letsencrypt:/etc/letsencrypt:ro   # certificates read-only
-
     depends_on:
       - backend
     networks:
@@ -130,6 +129,37 @@ services:
           memory: 512M
         reservations:
           memory: 256M
+
+  frontend-career:
+    build:
+      context: ./frontend-career
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+    container_name: ats-frontend-career-aws
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_MAIN_APP_URL=${REACT_APP_MAIN_APP_URL:-http://localhost:3001}
+      - NODE_ENV=production
+    volumes:
+      - /opt/videos/hero-video.mp4:/app/public/videos/hero-video.mp4:ro
+    depends_on:
+      - backend
+    networks:
+      - ats-network
+    restart: unless-stopped
+    # Memory limits for Frontend Career
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
   certbot:
     image: certbot/certbot
     container_name: ats-certbot

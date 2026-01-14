@@ -7,6 +7,7 @@ import com.ats.model.User;
 import com.ats.model.Role;
 import com.ats.model.Region;
 import com.ats.repository.UserRepository;
+import com.ats.repository.EmailNotificationRepository;
 import com.ats.service.EmailService;
 import com.ats.service.UserService;
 import com.ats.service.RegionalDataFilterService;
@@ -36,14 +37,16 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
     private final TotpService totpService;
     private final RegionalDataFilterService regionalDataFilterService;
+    private final EmailNotificationRepository emailNotificationRepository;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, TotpService totpService, RegionalDataFilterService regionalDataFilterService) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, TotpService totpService, RegionalDataFilterService regionalDataFilterService, EmailNotificationRepository emailNotificationRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.totpService = totpService;
         this.regionalDataFilterService = regionalDataFilterService;
+        this.emailNotificationRepository = emailNotificationRepository;
     }
 
     @Override
@@ -249,6 +252,12 @@ public class UserServiceImpl implements UserService {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("User not found");
         }
+
+        // First, nullify the foreign key references in email_notifications
+        // This prevents the foreign key constraint violation
+        emailNotificationRepository.nullifyRelatedUserByUserId(id);
+
+        // Now safe to delete the user
         userRepository.deleteById(id);
     }
 

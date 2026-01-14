@@ -90,6 +90,12 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -184,7 +190,9 @@ public class SecurityConfig {
                 }
                 return null;
             })
-            .jwt(jwt -> jwt.decoder(iaaJwtDecoder()))
+            .jwt(jwt -> jwt.decoder(iaaJwtDecoder())
+            .jwtAuthenticationConverter(jwtAuthenticationConverter())
+            )
         )
             .oauth2Login(oauth2 -> oauth2
                 .authorizationEndpoint(authorization -> authorization
@@ -381,6 +389,34 @@ public class SecurityConfig {
                 return response;
             }
         };
+    }
+
+    /**
+     * This converter extracts authorities from the JWT.
+     * It also "Force-injects" ROLE_CANDIDATE for IAA users so they can access the dashboard.
+     */
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        // This looks for "scope" or "scp" claims by default
+        authoritiesConverter.setAuthorityPrefix("ROLE_"); 
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            // 1. Get standard authorities (like scopes)
+            Collection<GrantedAuthority> authorities = authoritiesConverter.convert(jwt);
+            
+            // 2. THE AMAZE FACTOR: Manually add ROLE_CANDIDATE 
+            // Because this is an IAA authenticated user, we trust them as a candidate.
+            authorities.add(new SimpleGrantedAuthority("ROLE_CANDIDATE"));
+            
+            // Optional: If IAA sends a custom "role" claim, you can map it here:
+            // String iaaRole = jwt.getClaimAsString("role");
+            // if (iaaRole != null) authorities.add(new SimpleGrantedAuthority("ROLE_" + iaaRole));
+
+            return authorities;
+        });
+        return converter;
     }
 
     @Bean

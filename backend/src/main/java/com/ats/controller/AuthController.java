@@ -1,5 +1,6 @@
 package com.ats.controller;
 
+import java.util.Optional;
 import com.ats.dto.AuthRequest;
 import com.ats.dto.AuthResponse;
 import com.ats.dto.UserDTO;
@@ -347,15 +348,66 @@ public class AuthController {
             )
         )
     })
+
     @RequiresAuthentication
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
+        // 1. Resolve the email (Identify who this is)
+        String tempEmail = authentication.getName();
+    Jwt jwt = null;
+
+    if (authentication.getPrincipal() instanceof Jwt) {
+        jwt = (Jwt) authentication.getPrincipal();
+        String emailClaim = jwt.getClaimAsString("email");
+        if (emailClaim != null) {
+            tempEmail = emailClaim;
+        }
+    }
+
+    // --- THE FIX ---
+    final String finalizedEmail = tempEmail;
+
+        // 2. Fetch from DB or Create "Just In Time"
+        // This is the part that might have been deleted/broken
+        User user = userRepository.findByEmail(finalizedEmail).orElseGet(() -> {
+        // Now the lambda uses finalizedEmail, which is final.
+        logger.info("[JIT] Creating record for: {}", finalizedEmail);
+        User newUser = new User();
+        newUser.setEmail(finalizedEmail);
+        newUser.setRole(Role.CANDIDATE);
+        newUser.setIsActive(true);
+        newUser.setIsEmailVerified(true);
+        newUser.setCreatedAt(LocalDateTime.now());
+        newUser.setPrivacyPolicyAccepted(true);
+        newUser.setPrivacyPolicyAcceptedAt(LocalDateTime.now());
+        return userRepository.save(newUser);
+    });
+
+        // 3. Sync Profile Data from IAA (The LinkedIn Feel)
+        if (jwt != null) {
+            // Mapping names from IAA token
+            String firstName = jwt.getClaimAsString("given_name") != null ? 
+                               jwt.getClaimAsString("given_name") : jwt.getClaimAsString("firstName");
+            String lastName = jwt.getClaimAsString("family_name") != null ? 
+                              jwt.getClaimAsString("family_name") : jwt.getClaimAsString("lastName");
+
+            if (firstName != null) user.setFirstName(firstName);
+            if (lastName != null) user.setLastName(lastName);
+
+            // Sync Profile Picture
+            String pictureUrl = jwt.getClaimAsString("picture") != null ? 
+                                jwt.getClaimAsString("picture") : jwt.getClaimAsString("avatar");
+            if (pictureUrl != null) user.setProfilePictureUrl(pictureUrl);
+            
+            // Ensure Role is set (Prevents Access Denied)
+            if (user.getRole() == null) user.setRole(Role.CANDIDATE);
+            
+            // Update the record with the synced info
+            user = userRepository.save(user);
+        }
+
         return ResponseEntity.ok(convertToDTO(user));
     }
-    
+
     @PutMapping("/me")
     @Operation(
         summary = "Update current user profile",

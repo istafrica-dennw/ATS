@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.ats.util.SecurityUtils;
+import org.springframework.security.core.Authentication;
+import com.ats.model.User;
 
 import java.util.List;
 
@@ -22,14 +25,21 @@ import java.util.List;
 public class RoleController {
     
     private final RoleService roleService;
+    private final SecurityUtils securityUtils;
     
     /**
      * Get all available roles for the current user
      */
     @GetMapping("/available")
-    public ResponseEntity<List<RoleDTO>> getAvailableRoles() {
+    public ResponseEntity<List<RoleDTO>> getAvailableRoles(Authentication authentication) {
         log.debug("Getting available roles for current user");
-        List<RoleDTO> roles = roleService.getAvailableRoles();
+        
+        // Use securityUtils to get the user (Handles both IAA and Local)
+        User user = securityUtils.getCurrentUser(authentication);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        // Pass the user ID to the service so it doesn't have to "guess" who it is
+        List<RoleDTO> roles = roleService.getAvailableRoles(user.getId());
         return ResponseEntity.ok(roles);
     }
     
@@ -48,9 +58,14 @@ public class RoleController {
      * Get current active role for the current user
      */
     @GetMapping("/current")
-    public ResponseEntity<RoleDTO> getCurrentRole() {
+    public ResponseEntity<RoleDTO> getCurrentRole(Authentication authentication) {
         log.debug("Getting current role for current user");
-        RoleDTO currentRole = roleService.getCurrentRole();
+        
+        User user = securityUtils.getCurrentUser(authentication);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        // Pass the user object or ID to the service
+        RoleDTO currentRole = roleService.getCurrentRole(user); 
         return ResponseEntity.ok(currentRole);
     }
     

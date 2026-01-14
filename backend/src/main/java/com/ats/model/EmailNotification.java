@@ -44,7 +44,7 @@ public class EmailNotification extends BaseEntity {
     private LocalDateTime lastRetryAt;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "related_user_id")
+    @JoinColumn(name = "related_user_id", nullable = true)
     private User relatedUser;
     
     @Column(name = "bulk_email_campaign_id")

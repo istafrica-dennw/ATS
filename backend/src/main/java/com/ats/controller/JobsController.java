@@ -100,7 +100,7 @@ public class JobsController {
                 mediaType = "application/json",
                 examples = @ExampleObject(
                     value = "{\"id\": \"1\", \"title\":\"Software Engineer\", \"description\":\"Job description goes here\"   }"
-                                    
+
                 )
             )
         )
@@ -165,6 +165,7 @@ public class JobsController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Update job by ID",
         description = "Update a specific job by an its id "

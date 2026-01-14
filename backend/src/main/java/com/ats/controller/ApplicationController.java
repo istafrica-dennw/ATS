@@ -5,11 +5,17 @@ import com.ats.dto.JobOfferEmailRequest;
 import com.ats.exception.AtsCustomExceptions.BadRequestException;
 import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.ApplicationStatus;
+import com.ats.model.Role;
 import com.ats.model.User;
 import com.ats.repository.UserRepository;
 import com.ats.service.ApplicationService;
 import com.ats.service.FileStorageService;
 import com.ats.service.JobCustomQuestionService;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,9 +24,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
+import com.ats.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -45,6 +52,7 @@ import jakarta.mail.MessagingException;
 @RequestMapping("/api/applications")
 @Tag(name = "Applications", description = "APIs for managing job applications")
 @Slf4j
+@RequiredArgsConstructor
 public class ApplicationController {
 
 	private final ApplicationService applicationService;
@@ -52,17 +60,8 @@ public class ApplicationController {
 	private final FileStorageService fileStorageService;
 	private final ObjectMapper objectMapper;
 	private final UserRepository userRepository;
+	private final SecurityUtils securityUtils;
 
-	@Autowired
-	public ApplicationController(ApplicationService applicationService,
-			JobCustomQuestionService jobCustomQuestionService, FileStorageService fileStorageService,
-			ObjectMapper objectMapper, UserRepository userRepository) {
-		this.applicationService = applicationService;
-		this.jobCustomQuestionService = jobCustomQuestionService;
-		this.fileStorageService = fileStorageService;
-		this.objectMapper = objectMapper;
-		this.userRepository = userRepository;
-	}
 
 	@Operation(summary = "Submit a job application", description = "Submit a new job application with answers to custom questions")
 	@ApiResponses(value = {
@@ -73,18 +72,16 @@ public class ApplicationController {
 			@ApiResponse(responseCode = "500", description = "Internal server error") })
 	@PostMapping(consumes = { "multipart/form-data" })
 	public ResponseEntity<?> submitApplication(@Valid @RequestPart("applicationDTO") ApplicationDTO applicationDTO,
-			@AuthenticationPrincipal UserDetails userDetails,
+			Authentication authentication, // Change UserDetails to Authentication
 			@RequestPart(value = "files", required = false) MultipartFile[] files) {
 
 		try {
-			// Extract the user ID from the authenticated user
-			// In a real implementation, you would extract the user ID from UserDetails
-			// For now, we'll use a placeholder that would be replaced with actual code
-			Long candidateId = extractUserIdFromUserDetails(userDetails);
+			// Use our "Amaze" utility to get the user ID safely
+			User user = securityUtils.getCurrentUser(authentication);
+			if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-			ApplicationDTO submittedApplication = applicationService.submitApplication(applicationDTO, candidateId,
-					files);
-			log.info("Application submitted successfully with ID: {}", submittedApplication.getId());
+			ApplicationDTO submittedApplication = applicationService.submitApplication(applicationDTO, user.getId(), files);
+			log.info("Application submitted successfully for user: {}", user.getEmail());
 
 			return new ResponseEntity<>(submittedApplication, HttpStatus.CREATED);
 
@@ -113,10 +110,14 @@ public class ApplicationController {
 			@ApiResponse(responseCode = "500", description = "Internal server error") })
 	@GetMapping("/check-status/{jobId}")
 	public ResponseEntity<?> checkApplicationStatus(@PathVariable Long jobId,
-			@AuthenticationPrincipal UserDetails userDetails) {
+			Authentication authentication) {
 
 		try {
-			Long candidateId = extractUserIdFromUserDetails(userDetails);
+			User user = securityUtils.getCurrentUser(authentication);
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found or not authenticated"));
+			}
+			Long candidateId = user.getId();
 			boolean hasApplied = applicationService.hasApplied(jobId, candidateId);
 
 			Map<String, Object> response = new HashMap<>();
@@ -141,21 +142,27 @@ public class ApplicationController {
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Returns paginated list of applications"),
 			@ApiResponse(responseCode = "500", description = "Internal server error") })
 	@GetMapping("/my-applications")
-	public ResponseEntity<Page<ApplicationDTO>> getMyApplications(@PageableDefault(size = 10) Pageable pageable,
-			@AuthenticationPrincipal UserDetails userDetails) {
-
+	public ResponseEntity<?> getMyApplications(Authentication authentication, @PageableDefault(size = 10) Pageable pageable) {
 		try {
-			Long candidateId = extractUserIdFromUserDetails(userDetails);
-			Page<ApplicationDTO> applications = applicationService.getApplicationsByCandidateId(candidateId, pageable);
+			User user = securityUtils.getCurrentUser(authentication);
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found or not authenticated");
+			}
 
+			Page<ApplicationDTO> applications = applicationService.getApplicationsByCandidateId(user.getId(), pageable);
 			return ResponseEntity.ok(applications);
 
+		} catch (ResponseStatusException e) {
+			// Re-throw known status exceptions (like 404)
+			throw e;
 		} catch (Exception e) {
-			log.error("Error getting applications for candidate", e);
+			// Log unexpected errors
+			log.error("Error getting applications for user: {}", authentication.getName(), e);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
 					"An error occurred while retrieving applications", e);
 		}
 	}
+
 
 	@Operation(summary = "Get application by ID", description = "Get details of a specific application by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Returns application details"),
@@ -163,25 +170,20 @@ public class ApplicationController {
 			@ApiResponse(responseCode = "403", description = "Forbidden - not authorized to view this application"),
 			@ApiResponse(responseCode = "500", description = "Internal server error") })
 	@GetMapping("/{id}")
-	public ResponseEntity<?> getApplicationById(@PathVariable("id") Long applicationId,
-			@AuthenticationPrincipal UserDetails userDetails) {
-
+	public ResponseEntity<?> getApplicationById(@PathVariable("id") Long applicationId, Authentication authentication) {
 		try {
 			ApplicationDTO application = applicationService.getApplicationById(applicationId);
+			User user = securityUtils.getCurrentUser(authentication);
+            if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
 
-			// Check if the user is authorized to view this application
-			// Either the user is the candidate who submitted the application or an admin
-			Long userId = extractUserIdFromUserDetails(userDetails);
-			boolean isAdmin = userDetails.getAuthorities().stream()
+			boolean isAdmin = authentication.getAuthorities().stream()
 					.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-			if (!isAdmin && !application.getCandidateId().equals(userId)) {
-				return ResponseEntity.status(HttpStatus.FORBIDDEN)
-						.body(Map.of("error", "You are not authorized to view this application"));
+			if (!isAdmin && !application.getCandidateId().equals(user.getId())) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Not authorized"));
 			}
 
 			return ResponseEntity.ok(application);
-
 		} catch (NotFoundException e) {
 			log.warn("Application not found: {}", e.getMessage());
 			Map<String, String> response = new HashMap<>();
@@ -334,16 +336,20 @@ public class ApplicationController {
 			@ApiResponse(responseCode = "500", description = "Internal server error") })
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> deleteApplication(@PathVariable("id") Long applicationId,
-			@AuthenticationPrincipal UserDetails userDetails) {
+			Authentication authentication) {
 
 		try {
 			ApplicationDTO application = applicationService.getApplicationById(applicationId);
 
 			// Check if the user is authorized to delete this application
 			// Either the user is the candidate who submitted the application or an admin
-			Long userId = extractUserIdFromUserDetails(userDetails);
-			boolean isAdmin = userDetails.getAuthorities().stream()
-					.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+			User user = securityUtils.getCurrentUser(authentication);
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found or not authenticated"));
+			}
+			Long userId = user.getId();
+			boolean isAdmin = user.getRole() == Role.ADMIN || authentication.getAuthorities().stream()
+					.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN"));
 
 			if (!isAdmin && !application.getCandidateId().equals(userId)) {
 				return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -404,11 +410,15 @@ public class ApplicationController {
 			@ApiResponse(responseCode = "500", description = "Internal server error") })
 	@PostMapping("/{id}/respond-offer")
 	public ResponseEntity<?> respondToJobOffer(@PathVariable("id") Long applicationId,
-			@RequestBody Map<String, String> response, @AuthenticationPrincipal UserDetails userDetails) {
+			@RequestBody Map<String, String> response, Authentication authentication) {
 
 		try {
-			// Extract user ID from UserDetails
-			Long userId = extractUserIdFromUserDetails(userDetails);
+			// Get authenticated user (works for both local and IAA authentication)
+			User user = securityUtils.getCurrentUser(authentication);
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found or not authenticated");
+			}
+			Long userId = user.getId();
 
 			// Get the application
 			ApplicationDTO application = applicationService.getApplicationById(applicationId);
@@ -456,11 +466,15 @@ public class ApplicationController {
 			@ApiResponse(responseCode = "500", description = "Internal server error") })
 	@PatchMapping("/{id}/withdraw")
 	public ResponseEntity<?> withdrawApplication(@PathVariable("id") Long applicationId,
-			@AuthenticationPrincipal UserDetails userDetails) {
+			Authentication authentication) {
 
 		try {
-			// Extract user ID from UserDetails
-			Long userId = extractUserIdFromUserDetails(userDetails);
+			// Get authenticated user (works for both local and IAA authentication)
+			User user = securityUtils.getCurrentUser(authentication);
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found or not authenticated"));
+			}
+			Long userId = user.getId();
 
 			// Get the application
 			ApplicationDTO application = applicationService.getApplicationById(applicationId);
@@ -509,14 +523,13 @@ public class ApplicationController {
 	 * @param userDetails the authenticated user details
 	 * @return the user ID
 	 */
-	private Long extractUserIdFromUserDetails(UserDetails userDetails) {
-		// Get the email from UserDetails (which is used as the username)
-		String email = userDetails.getUsername();
-
-		// Find the user by email and return their ID
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-
-		return user.getId();
+	private Long extractUserIdFromUserDetails(Object principal) {
+        if (principal instanceof User user) {
+            return user.getId();
+        } else if (principal instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            String email = jwt.getClaimAsString("email");
+            return userRepository.findByEmail(email).map(User::getId).orElse(null);
+        }
+        return null;
 	}
 }

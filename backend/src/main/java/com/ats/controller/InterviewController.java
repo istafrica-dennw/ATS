@@ -5,6 +5,7 @@ import com.ats.model.InterviewStatus;
 import com.ats.model.User;
 import com.ats.repository.UserRepository;
 import com.ats.service.InterviewService;
+import com.ats.util.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,24 +13,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.security.core.Authentication; 
 
 @RestController
 @RequestMapping("/api/interviews")
 @Slf4j
+@RequiredArgsConstructor
 public class InterviewController {
 
     private final InterviewService interviewService;
     private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
-    @Autowired
-    public InterviewController(InterviewService interviewService, UserRepository userRepository) {
-        this.interviewService = interviewService;
-        this.userRepository = userRepository;
-    }
 
     /**
      * Assign an interview to an interviewer
@@ -356,21 +356,24 @@ public class InterviewController {
      * Get interviews for current candidate (by their applications)
      * Candidate only
      */
-    @GetMapping("/my-candidate-interviews")
+     @GetMapping("/my-candidate-interviews")
     @PreAuthorize("hasRole('CANDIDATE')")
     public ResponseEntity<List<InterviewDTO>> getMyCandidateInterviews(Authentication authentication) {
-        
         try {
-            String email = authentication.getName();
-            User candidate = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Candidate not found"));
+            // Use the utility to handle both local and IAA users safely
+            User candidate = securityUtils.getCurrentUser(authentication);
+            
+            if (candidate == null) {
+                log.error("Candidate profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
             
             List<InterviewDTO> interviews = interviewService.getInterviewsForCandidate(candidate.getId());
             return ResponseEntity.ok(interviews);
             
         } catch (Exception e) {
-            log.error("Error fetching candidate interviews: {}", e.getMessage());
-            throw e;
+            log.error("Error fetching candidate interviews: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

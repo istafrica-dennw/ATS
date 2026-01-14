@@ -17,8 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -407,7 +406,30 @@ public class InterviewServiceImpl implements InterviewService {
     @Transactional(readOnly = true)
     public List<UserDTO> getAvailableInterviewers() {
         log.debug("Fetching available interviewers");
-        return userRoleRepository.findUsersByRole(Role.INTERVIEWER).stream()
+
+        // Get users from user_roles table
+        List<User> usersFromRoleTable = userRoleRepository.findUsersByRole(Role.INTERVIEWER);
+
+        // Get users who have INTERVIEWER as their primary role in users table
+        List<User> usersFromMainTable = userRepository.findByRole(Role.INTERVIEWER);
+
+        // Combine and deduplicate
+        Set<Long> seenIds = new HashSet<>();
+        List<User> allInterviewers = new ArrayList<>();
+
+        for (User user : usersFromRoleTable) {
+            if (user.getIsActive() && seenIds.add(user.getId())) {
+                allInterviewers.add(user);
+            }
+        }
+
+        for (User user : usersFromMainTable) {
+            if (user.getIsActive() && seenIds.add(user.getId())) {
+                allInterviewers.add(user);
+            }
+        }
+
+        return allInterviewers.stream()
                 .map(this::mapToUserDTO)
                 .collect(Collectors.toList());
     }

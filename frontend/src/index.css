@@ -18,4 +18,15 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Hide IAA login button when user is authenticated */
+body.iaa-authenticated #iaa-login-button,
+body.iaa-authenticated [id*="iaa-"],
+body.iaa-authenticated [class*="iaa-widget"],
+body.iaa-authenticated [class*="iaa-btn"],
+body.iaa-authenticated button[class*="iaa"],
+body.iaa-authenticated div[id*="iaa-auth"] {
+  display: none !important;
+  visibility: hidden !important;
 } 

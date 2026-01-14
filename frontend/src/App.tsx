@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SecurityProvider } from './contexts/SecurityContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import LoginPage from './pages/LoginPage';
+import CallbackPage from './pages/CallbackPage';
 import SignupPage from './pages/SignupPage';
 import AdminLayout from './components/admin/AdminLayout';
 import MainLayout from './layouts/MainLayout';
@@ -48,7 +49,7 @@ import { isJWTToken, logTokenInfo } from './utils/tokenUtils';
 import IAAWidgetLoader from './components/IAAWidgetLoader';
 
 // List of paths that should always be accessible, even when authenticated
-const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email', '/dashboard', '/accept-connect-consent'];
+const ALWAYS_ACCESSIBLE_PATHS = ['/reset-password', '/verify-email', '/dashboard', '/accept-connect-consent',  '/callback'];
 
 // URL Token Handler - This component processes authentication tokens in the URL
 // Separate from PublicRoute to ensure it runs on every route
@@ -148,6 +149,7 @@ const App: React.FC = () => {
               theme="colored"
             />
             <Routes>
+              <Route path="/callback" element={<CallbackPage />} />
               <Route path="/login" element={
                 <PublicRoute>
                   <LoginPage />
@@ -173,6 +175,8 @@ const App: React.FC = () => {
                   <AcceptConnectConsentPage />
                 </PublicRoute>
               } />
+
+              <Route path="/callback" element={<CallbackPage />} />
               
               <Route path="/dashboard" element={<DashboardPage />} />
               

@@ -15,7 +15,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import 'styles/react-quill.css'
 
-import axios from 'axios';
+import axios from '../../utils/axios';
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -181,7 +181,7 @@ const JobManagementPage: React.FC = () => {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/jobs');
+      const response = await axios.get('/jobs');
       setJobs(response.data);
       setError(null);
     } catch (err) {
@@ -306,11 +306,11 @@ const JobManagementPage: React.FC = () => {
 
       if (isEditing && currentJobId) {
         // Update existing job
-        await axios.put(`/api/jobs/${currentJobId}`, submitData);
+        await axios.put(`/jobs/${currentJobId}`, submitData);
         toast.success('Job updated successfully!');
       } else {
         // Create new job
-        await axios.post('/api/jobs', submitData);
+        await axios.post('/jobs', submitData);
         toast.success('Job created successfully!');
       }
       
@@ -396,7 +396,7 @@ const JobManagementPage: React.FC = () => {
 
     // For existing questions, check if they have answers
     try {
-      await axios.delete(`/api/jobs/custom-questions/${id}`);
+      await axios.delete(`/jobs/custom-questions/${id}`);
       setFormData({
         ...formData,
         customQuestions: formData.customQuestions.filter(q => q.id !== id)
@@ -439,7 +439,7 @@ const JobManagementPage: React.FC = () => {
     
     try {
       // Fetch the complete job details including custom questions
-      const response = await axios.get(`/api/jobs/${job.id}`);
+      const response = await axios.get(`/jobs/${job.id}`);
       const fullJobData = response.data;
       
       console.log('Full job data with custom questions:', fullJobData);
@@ -490,7 +490,7 @@ const JobManagementPage: React.FC = () => {
     setIsDeleting(true);
     
     try {
-      const response = await axios.delete(`/api/jobs/${jobToDelete.id}`);
+      const response = await axios.delete(`/jobs/${jobToDelete.id}`);
       console.log('Delete response:', response);
       
       toast.success(`Job "${jobToDelete.title}" deleted successfully!`);
@@ -535,7 +535,7 @@ const JobManagementPage: React.FC = () => {
       
       // Make API call to update status using PATCH
       // The backend expects a JobStatus enum, so we need to send it as a JSON object with the status property
-      const response = await axios.patch(`/api/jobs/${id}/status`, { status: newStatus });
+      const response = await axios.patch(`/jobs/${id}/status`, { status: newStatus });
       console.log('Status update response:', response.data);
       
       toast.success(`Job status updated to ${newStatus.toLowerCase()}`);

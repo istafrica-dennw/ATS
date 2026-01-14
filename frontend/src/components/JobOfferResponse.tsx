@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import axios from 'axios';
+import axios from '../utils/axios';
 import { toast } from 'react-toastify';
 
 interface JobOfferResponseProps {
@@ -19,7 +19,7 @@ const JobOfferResponse: React.FC<JobOfferResponseProps> = ({
   const handleResponse = async (action: 'ACCEPT' | 'REJECT') => {
     setIsResponding(true);
     try {
-      const response = await axios.post(`/api/applications/${applicationId}/respond-offer`, {
+      const response = await axios.post(`/applications/${applicationId}/respond-offer`, {
         action,
       });
       

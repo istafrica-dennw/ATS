@@ -1,4 +1,3 @@
-import axios from 'axios';
 import axiosInstance from '../utils/axios';
 
 // Use a relative path to leverage the proxy configuration in package.json

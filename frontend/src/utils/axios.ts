@@ -1,115 +1,62 @@
 import axios from 'axios';
-import { toast } from 'react-toastify';
 
 const axiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: '/api', // Maintain this to keep the local proxy working
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor
+// Request interceptor: The "Token Hunter"
 axiosInstance.interceptors.request.use(
   (config) => {
-    console.log('Axios - Setting up request config');
-    let token = null;
-    
-    // Try to get token from localStorage with error handling
-    try {
-      token = localStorage.getItem('token');
-      console.log('Axios - Token from localStorage:', token ? 'found' : 'not found');
-    } catch (e) {
-      console.error('Axios - Error accessing localStorage:', e);
-    }
-    
-    // Try sessionStorage as fallback if localStorage fails
+    // 1. Check for standard string tokens (ATS local or simple IAA save)
+    let token = localStorage.getItem('token') || localStorage.getItem('ats_token');
+
+    // 2. Fallback: If no string token found, check the IAA Widget's JSON format
+    // This prevents the Widget Watchdog from logging you out!
     if (!token) {
-      try {
-        token = sessionStorage.getItem('token');
-        console.log('Axios - Token from sessionStorage:', token ? 'found' : 'not found');
-      } catch (e) {
-        console.error('Axios - Error accessing sessionStorage:', e);
+      const authTokensStr = localStorage.getItem('auth_tokens');
+      if (authTokensStr) {
+        try {
+          const parsed = JSON.parse(authTokensStr);
+          token = parsed.accessToken; // Extract the specific field the widget saves
+        } catch (e) {
+          console.error("Axios Interceptor: Could not parse auth_tokens JSON", e);
+        }
       }
     }
-    
+
+    // 3. If we found a token in ANY of those locations, attach it to the header
     if (token) {
-      // Ensure token has Bearer prefix
       const formattedToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
       config.headers.Authorization = formattedToken;
-      console.log('Axios - Authorization header set');
-    } else {
-      console.log('Axios - No token found for Authorization header');
     }
-    
+
     return config;
   },
   (error) => {
-    console.error('Axios - Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor
+// Response interceptor: Handle Session Expiry
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('Axios - Response error:', error.response?.status, error.config?.url);
-    console.error('Axios - Error data:', error.response?.data);
-    
-    // Handle 401 Unauthorized errors
-    if (error.response?.status === 401 && !error.response?.config?.url?.includes('/login')) {
-      console.log('Axios - 401 Unauthorized, clearing all auth data');
+    // If the backend returns 401 (Unauthorized), the token is likely expired
+    if (error.response?.status === 401) {
+      console.warn("Axios: Unauthorized detected. Clearing storage and redirecting to login.");
       
-      // Clear all authentication data thoroughly
-      try {
-        // Clear localStorage
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('mfaVerified');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('authExpires');
-        localStorage.removeItem('loginTime');
-        
-        // Clear sessionStorage too
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('user');
-        sessionStorage.removeItem('mfaVerified');
-        sessionStorage.removeItem('refreshToken');
-        sessionStorage.removeItem('authExpires');
-        sessionStorage.removeItem('loginTime');
-        
-        // Clear axios authorization header
-        delete axiosInstance.defaults.headers.common['Authorization'];
-        
-        console.log('Axios - All auth data cleared due to 401');
-      } catch (e) {
-        console.error('Axios - Error clearing auth data:', e);
-      }
+      // Clear everything so the IAA Widget Watchdog doesn't get stuck
+      localStorage.clear();
+      sessionStorage.clear();
       
-      // Redirect to login with full page reload
+      // Redirect to login
       window.location.href = '/login';
     }
-    
-    // Handle MFA Required errors (403 with requiresMfa flag)
-    if (error.response?.status === 403 && error.response?.data?.requiresMfa === true) {
-      console.log('Axios - MFA required for this operation');
-      
-      // Show a toast message informing the user
-      toast.error('Two-factor authentication is required for this operation. Please set up 2FA in your security settings.', {
-        autoClose: 7000,  // Keep the message visible longer
-        onClose: () => {
-          // Redirect to security settings page
-          window.location.href = '/profile/security';
-        }
-      });
-      
-      // Prevent further navigation while the toast is visible
-      return new Promise(() => {});  // Never resolves, effectively blocking the request
-    }
-
-    // Ensure the original error is passed through with response data intact
     return Promise.reject(error);
   }
 );
 
-export default axiosInstance; 
+export default axiosInstance;

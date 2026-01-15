@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "framework": "create-react-app",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://your-ats-backend.onrender.com/api/:path*"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "@react_app_api_url",
+    "REACT_APP_SOCKET_URL": "@react_app_socket_url",
+    "REACT_APP_IAA_URL": "@react_app_iaa_url",
+    "REACT_APP_IAA_FRONTEND_URL": "@react_app_iaa_frontend_url",
+    "REACT_APP_IAA_CLIENT_ID": "@react_app_iaa_client_id",
+    "REACT_APP_IAA_CLIENT_SECRET": "@react_app_iaa_client_secret"
+  }
+}

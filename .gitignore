@@ -106,6 +106,15 @@ backend/application-*.properties
 .env*
 docker-compose.override.yml
 
+# Deployment files with actual credentials
+backend/.env.render
+frontend/.env.production
+frontend/.env.vercel
+
+# Uploads directory
+backend/uploads/
+uploads/
+
 # System Files
 .DS_Store
 Thumbs.db 

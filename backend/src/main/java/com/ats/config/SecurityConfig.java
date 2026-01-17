@@ -124,6 +124,8 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder iaaJwtDecoder() {
         try {
+            System.out.println("[DEBUG] Initializing IAA JWT Decoder...");
+
             // This handles cases where \n is escaped or literal, and removes headers/whitespace
             String publicKeyContent = iaaPublicKeyPem
                     .replace("-----BEGIN PUBLIC KEY-----", "")
@@ -133,16 +135,34 @@ public class SecurityConfig {
                     .replace("\r", "")  // Handles Windows carriage returns
                     .replaceAll("\\s", ""); // Removes all whitespace
 
+            System.out.println("[DEBUG] IAA Public Key (cleaned, first 50 chars): " + publicKeyContent.substring(0, Math.min(50, publicKeyContent.length())));
+
             byte[] decoded = Base64.getDecoder().decode(publicKeyContent);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             RSAPublicKey publicKey = (RSAPublicKey) keyFactory.generatePublic(new X509EncodedKeySpec(decoded));
 
-            return NimbusJwtDecoder.withPublicKey(publicKey).build();
+            System.out.println("[DEBUG] IAA JWT Decoder initialized successfully!");
+
+            // Wrap the decoder to add logging
+            NimbusJwtDecoder decoder = NimbusJwtDecoder.withPublicKey(publicKey).build();
+            return token -> {
+                try {
+                    System.out.println("[DEBUG] IAA Decoder - Decoding token (first 50 chars): " + token.substring(0, Math.min(50, token.length())));
+                    var jwt = decoder.decode(token);
+                    System.out.println("[DEBUG] IAA Decoder - Token decoded successfully! Subject: " + jwt.getSubject() + ", Email: " + jwt.getClaimAsString("email"));
+                    return jwt;
+                } catch (Exception e) {
+                    System.err.println("[ERROR] IAA Decoder - Failed to decode token: " + e.getMessage());
+                    e.printStackTrace();
+                    throw e;
+                }
+            };
         } catch (Exception e) {
             System.err.println("[ERROR] Failed to initialize IAA Public Key Decoder: " + e.getMessage());
+            e.printStackTrace();
             // Return a dummy decoder that throws an exception when used, instead of crashing the app during startup
-            return token -> { 
-                throw new org.springframework.security.oauth2.jwt.JwtException("IAA Decoder is not configured correctly. Check your public key."); 
+            return token -> {
+                throw new org.springframework.security.oauth2.jwt.JwtException("IAA Decoder is not configured correctly. Check your public key: " + e.getMessage());
             };
         }
     }
@@ -393,27 +413,44 @@ public class SecurityConfig {
 
     /**
      * This converter extracts authorities from the JWT.
-     * It also "Force-injects" ROLE_CANDIDATE for IAA users so they can access the dashboard.
+     * THE AMAZE FACTOR: Dynamically looks up the user's actual role from the database
+     * so that ADMIN, INTERVIEWER, CANDIDATE, etc. all work with IAA authentication.
      */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        // This looks for "scope" or "scp" claims by default
-        authoritiesConverter.setAuthorityPrefix("ROLE_"); 
+        authoritiesConverter.setAuthorityPrefix("ROLE_");
 
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            // 1. Get standard authorities (like scopes)
-            Collection<GrantedAuthority> authorities = authoritiesConverter.convert(jwt);
-            
-            // 2. THE AMAZE FACTOR: Manually add ROLE_CANDIDATE 
-            // Because this is an IAA authenticated user, we trust them as a candidate.
-            authorities.add(new SimpleGrantedAuthority("ROLE_CANDIDATE"));
-            
-            // Optional: If IAA sends a custom "role" claim, you can map it here:
-            // String iaaRole = jwt.getClaimAsString("role");
-            // if (iaaRole != null) authorities.add(new SimpleGrantedAuthority("ROLE_" + iaaRole));
+            // 1. Start with standard authorities (like scopes)
+            Set<GrantedAuthority> authorities = new HashSet<>(authoritiesConverter.convert(jwt));
 
+            // 2. THE AMAZE FACTOR: Look up the user's ACTUAL role from the database!
+            // This makes IAA auth work for ALL roles, not just candidates.
+            String email = jwt.getClaimAsString("email");
+            System.out.println("[JWT Converter] Processing token for email: " + email);
+
+            if (email != null) {
+                userRepository.findByEmail(email).ifPresent(user -> {
+                    if (user.getRole() != null) {
+                        String roleName = "ROLE_" + user.getRole().name();
+                        System.out.println("[JWT Converter] Found user in DB with role: " + roleName);
+                        authorities.add(new SimpleGrantedAuthority(roleName));
+                    }
+                });
+            }
+
+            // 3. Fallback: Add ROLE_CANDIDATE if no specific role was found
+            // This handles brand new IAA users who don't exist in the DB yet
+            boolean hasAppRole = authorities.stream()
+                    .anyMatch(a -> a.getAuthority().matches("ROLE_(ADMIN|INTERVIEWER|CANDIDATE|HIRING_MANAGER)"));
+            if (!hasAppRole) {
+                System.out.println("[JWT Converter] No app role found, adding default ROLE_CANDIDATE");
+                authorities.add(new SimpleGrantedAuthority("ROLE_CANDIDATE"));
+            }
+
+            System.out.println("[JWT Converter] Final authorities: " + authorities);
             return authorities;
         });
         return converter;

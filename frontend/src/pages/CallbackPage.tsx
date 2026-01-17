@@ -20,7 +20,8 @@ const CallbackPage: React.FC = () => {
 
       const clientId = process.env.REACT_APP_IAA_CLIENT_ID;
       const clientSecret = process.env.REACT_APP_IAA_CLIENT_SECRET;
-      const tokenEndpoint = `http://localhost:5000/api/auth/tokens?code=${encodeURIComponent(code)}`;
+      const iaaUrl = process.env.REACT_APP_IAA_URL;
+      const tokenEndpoint = `${iaaUrl}/api/auth/tokens?code=${encodeURIComponent(code)}`;
 
       console.log("[IAA] Exchanging authorization code...");
 
@@ -52,8 +53,9 @@ const CallbackPage: React.FC = () => {
           toast.success('Successfully authenticated via IAA!');
 
           // 3. Small delay to let storage settle before navigation
+          // Navigate to /dashboard which will route user based on their role (ADMIN, INTERVIEWER, CANDIDATE, etc.)
           setTimeout(() => {
-            navigate('/candidate');
+            navigate('/dashboard');
           }, 300);
         }
       })
@@ -64,7 +66,7 @@ const CallbackPage: React.FC = () => {
 
         // If we are already authenticated (from a previous attempt), just go to dashboard
         if (localStorage.getItem('iaa_authenticated') === 'true') {
-            navigate('/candidate');
+            navigate('/dashboard');
         } else {
             setTimeout(() => {
               navigate('/login?error=iaa_failed');

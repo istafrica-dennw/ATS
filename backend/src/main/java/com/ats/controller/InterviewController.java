@@ -40,15 +40,18 @@ public class InterviewController {
     public ResponseEntity<InterviewDTO> assignInterview(
             @Valid @RequestBody AssignInterviewRequest request,
             Authentication authentication) {
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             InterviewDTO interview = interviewService.assignInterview(request, admin.getId());
             return new ResponseEntity<>(interview, HttpStatus.CREATED);
-            
+
         } catch (Exception e) {
             log.error("Error assigning interview: {}", e.getMessage());
             throw e;
@@ -64,15 +67,18 @@ public class InterviewController {
     public ResponseEntity<InterviewDTO> startInterview(
             @PathVariable Long interviewId,
             Authentication authentication) {
-        
+
         try {
-            String email = authentication.getName(); // get the email of the interviewer
-            User interviewer = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Interviewer not found"));
-            
+            User interviewer = securityUtils.getCurrentUser(authentication);
+
+            if (interviewer == null) {
+                log.error("Interviewer profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             InterviewDTO interview = interviewService.startInterview(interviewId, interviewer.getId());
             return ResponseEntity.ok(interview);
-            
+
         } catch (Exception e) {
             log.error("Error starting interview: {}", e.getMessage());
             throw e;
@@ -89,15 +95,18 @@ public class InterviewController {
             @PathVariable Long interviewId,
             @Valid @RequestBody SubmitInterviewRequest request,
             Authentication authentication) {
-        
+
         try {
-            String email = authentication.getName();
-            User interviewer = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Interviewer not found"));
-            
+            User interviewer = securityUtils.getCurrentUser(authentication);
+
+            if (interviewer == null) {
+                log.error("Interviewer profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             InterviewDTO interview = interviewService.submitInterview(interviewId, request, interviewer.getId());
             return ResponseEntity.ok(interview);
-            
+
         } catch (Exception e) {
             log.error("Error submitting interview: {}", e.getMessage());
             throw e;
@@ -113,27 +122,30 @@ public class InterviewController {
     public ResponseEntity<InterviewDTO> getInterviewById(
             @PathVariable Long interviewId,
             Authentication authentication) {
-        
+
         Optional<InterviewDTO> interviewOpt = interviewService.getInterviewById(interviewId);
-        
+
         if (interviewOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        
+
         InterviewDTO interview = interviewOpt.get();
-        
-        // Check if interviewer is trying to access their own interview
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
+        // Use securityUtils to handle both local and IAA users
+        User user = securityUtils.getCurrentUser(authentication);
+
+        if (user == null) {
+            log.error("User profile not found for: {}", authentication.getName());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        
+
         if (!isAdmin && !interview.getInterviewerId().equals(user.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         return ResponseEntity.ok(interview);
     }
 
@@ -144,18 +156,24 @@ public class InterviewController {
     @GetMapping("/my-interviews")
     @PreAuthorize("hasRole('INTERVIEWER')")
     public ResponseEntity<List<InterviewDTO>> getMyInterviews(Authentication authentication) {
-        
+
         try {
-            String email = authentication.getName();
-            User interviewer = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Interviewer not found"));
-            
+            // Use securityUtils to handle both local and IAA users
+            User interviewer = securityUtils.getCurrentUser(authentication);
+
+            if (interviewer == null) {
+                log.error("Interviewer profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            log.debug("Fetching interviews for interviewer: {} (ID: {})", interviewer.getEmail(), interviewer.getId());
+
             List<InterviewDTO> interviews = interviewService.getInterviewsByInterviewer(interviewer.getId());
             return ResponseEntity.ok(interviews);
-            
+
         } catch (Exception e) {
-            log.error("Error fetching interviews: {}", e.getMessage());
-            throw e;
+            log.error("Error fetching interviews: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -168,18 +186,21 @@ public class InterviewController {
     public ResponseEntity<List<InterviewDTO>> getMyInterviewsByStatus(
             @PathVariable InterviewStatus status,
             Authentication authentication) {
-        
+
         log.debug("Fetching interviews for current interviewer with status: {}", status);
-        
+
         try {
-            String email = authentication.getName();
-            User interviewer = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Interviewer not found"));
-            
+            User interviewer = securityUtils.getCurrentUser(authentication);
+
+            if (interviewer == null) {
+                log.error("Interviewer profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             List<InterviewDTO> interviews = interviewService.getInterviewsByInterviewerAndStatus(
                     interviewer.getId(), status);
             return ResponseEntity.ok(interviews);
-            
+
         } catch (Exception e) {
             log.error("Error fetching interviewer's interviews by status: {}", e.getMessage());
             throw e;
@@ -217,17 +238,20 @@ public class InterviewController {
     @GetMapping("/assigned-by-me")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InterviewDTO>> getInterviewsAssignedByMe(Authentication authentication) {
-        
+
         log.debug("Fetching interviews assigned by current admin");
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             List<InterviewDTO> interviews = interviewService.getInterviewsAssignedBy(admin.getId());
             return ResponseEntity.ok(interviews);
-            
+
         } catch (Exception e) {
             log.error("Error fetching admin's assigned interviews: {}", e.getMessage());
             throw e;
@@ -261,17 +285,20 @@ public class InterviewController {
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InterviewDTO>> getAllInterviews(Authentication authentication) {
-        
+
         log.debug("Fetching all interviews for admin assignment management (GDPR filtered)");
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             List<InterviewDTO> interviews = interviewService.getAllInterviews(admin);
             return ResponseEntity.ok(interviews);
-            
+
         } catch (Exception e) {
             log.error("Error fetching all interviews: {}", e.getMessage());
             throw e;
@@ -287,15 +314,18 @@ public class InterviewController {
     public ResponseEntity<Void> shortlistApplication(
             @PathVariable Long applicationId,
             Authentication authentication) {
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             interviewService.shortlistApplication(applicationId, admin.getId());
             return ResponseEntity.ok().build();
-            
+
         } catch (Exception e) {
             log.error("Error shortlisting application: {}", e.getMessage());
             throw e;
@@ -323,17 +353,20 @@ public class InterviewController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InterviewDTO.ApplicationSummaryDTO>> getAllShortlistedApplications(
             Authentication authentication) {
-        
+
         log.debug("Fetching all shortlisted applications (GDPR filtered)");
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             List<InterviewDTO.ApplicationSummaryDTO> applications = interviewService.getAllShortlistedApplications(admin);
             return ResponseEntity.ok(applications);
-            
+
         } catch (Exception e) {
             log.error("Error fetching shortlisted applications: {}", e.getMessage());
             throw e;
@@ -386,15 +419,18 @@ public class InterviewController {
     public ResponseEntity<Void> cancelInterview(
             @PathVariable Long interviewId,
             Authentication authentication) {
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             interviewService.cancelInterview(interviewId, admin.getId());
             return ResponseEntity.ok().build();
-            
+
         } catch (Exception e) {
             log.error("Error cancelling interview: {}", e.getMessage());
             throw e;

@@ -351,61 +351,114 @@ public class AuthController {
 
     @RequiresAuthentication
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-        // 1. Resolve the email (Identify who this is)
-        String tempEmail = authentication.getName();
-    Jwt jwt = null;
+        try {
+            logger.debug("[/api/auth/me] Processing request. Authentication: {}", authentication != null ? authentication.getClass().getSimpleName() : "null");
 
-    if (authentication.getPrincipal() instanceof Jwt) {
-        jwt = (Jwt) authentication.getPrincipal();
-        String emailClaim = jwt.getClaimAsString("email");
-        if (emailClaim != null) {
-            tempEmail = emailClaim;
+            if (authentication == null) {
+                logger.warn("[/api/auth/me] No authentication found");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not authenticated"));
+            }
+
+            // 1. Resolve the email (Identify who this is)
+            String tempEmail = authentication.getName();
+            Jwt jwt = null;
+
+            logger.debug("[/api/auth/me] Principal type: {}", authentication.getPrincipal().getClass().getSimpleName());
+
+            if (authentication.getPrincipal() instanceof Jwt) {
+                jwt = (Jwt) authentication.getPrincipal();
+                String emailClaim = jwt.getClaimAsString("email");
+                logger.debug("[/api/auth/me] JWT email claim: {}", emailClaim);
+                if (emailClaim != null) {
+                    tempEmail = emailClaim;
+                }
+            }
+
+            // --- THE FIX ---
+            final String finalizedEmail = tempEmail;
+            logger.info("[/api/auth/me] Resolved email: {}", finalizedEmail);
+
+            if (finalizedEmail == null || finalizedEmail.isEmpty()) {
+                logger.warn("[/api/auth/me] Could not resolve email from authentication");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Could not resolve user email from token"));
+            }
+
+            // 2. Fetch from DB or Create "Just In Time"
+            // If user exists with same email -> Link IAA to existing account (preserves history)
+            // If user doesn't exist -> Create new account
+            Optional<User> existingUser = userRepository.findByEmail(finalizedEmail);
+
+            User user;
+            if (existingUser.isPresent()) {
+                user = existingUser.get();
+                logger.info("[IAA Link] Found existing ATS user with email: {}. Linking IAA account. User ID: {}, Role: {}",
+                    finalizedEmail, user.getId(), user.getRole());
+            } else {
+                logger.info("[JIT] No existing user found. Creating new record for: {}", finalizedEmail);
+                User newUser = new User();
+                newUser.setEmail(finalizedEmail);
+                newUser.setRole(Role.CANDIDATE);
+                newUser.setIsActive(true);
+                newUser.setIsEmailVerified(true);
+                newUser.setCreatedAt(LocalDateTime.now());
+                newUser.setPrivacyPolicyAccepted(true);
+                newUser.setPrivacyPolicyAcceptedAt(LocalDateTime.now());
+                user = userRepository.save(newUser);
+                logger.info("[JIT] Created new user with ID: {}", user.getId());
+            }
+
+            // 3. Sync Profile Data from IAA (Only update fields that are empty)
+            // This preserves existing ATS user data when they link their IAA account
+            if (jwt != null) {
+                boolean needsUpdate = false;
+
+                // Mapping names from IAA token - only update if user doesn't have a name set
+                String firstName = jwt.getClaimAsString("given_name") != null ?
+                                   jwt.getClaimAsString("given_name") : jwt.getClaimAsString("firstName");
+                String lastName = jwt.getClaimAsString("family_name") != null ?
+                                  jwt.getClaimAsString("family_name") : jwt.getClaimAsString("lastName");
+
+                // Only update firstName if user doesn't have one
+                if ((user.getFirstName() == null || user.getFirstName().isEmpty()) && firstName != null) {
+                    user.setFirstName(firstName);
+                    needsUpdate = true;
+                }
+
+                // Only update lastName if user doesn't have one
+                if ((user.getLastName() == null || user.getLastName().isEmpty()) && lastName != null) {
+                    user.setLastName(lastName);
+                    needsUpdate = true;
+                }
+
+                // Sync Profile Picture - only if user doesn't have one
+                String pictureUrl = jwt.getClaimAsString("picture") != null ?
+                                    jwt.getClaimAsString("picture") : jwt.getClaimAsString("avatar");
+                if ((user.getProfilePictureUrl() == null || user.getProfilePictureUrl().isEmpty()) && pictureUrl != null) {
+                    user.setProfilePictureUrl(pictureUrl);
+                    needsUpdate = true;
+                }
+
+                // Ensure Role is set (Prevents Access Denied)
+                if (user.getRole() == null) {
+                    user.setRole(Role.CANDIDATE);
+                    needsUpdate = true;
+                }
+
+                // Only save if we made changes
+                if (needsUpdate) {
+                    logger.info("[IAA Sync] Updated profile for existing user: {}", finalizedEmail);
+                    user = userRepository.save(user);
+                }
+            }
+
+            logger.info("[/api/auth/me] Successfully returning user: {} with role: {}", user.getEmail(), user.getRole());
+            return ResponseEntity.ok(convertToDTO(user));
+
+        } catch (Exception e) {
+            logger.error("[/api/auth/me] Error processing request: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to get user profile: " + e.getMessage()));
         }
-    }
-
-    // --- THE FIX ---
-    final String finalizedEmail = tempEmail;
-
-        // 2. Fetch from DB or Create "Just In Time"
-        // This is the part that might have been deleted/broken
-        User user = userRepository.findByEmail(finalizedEmail).orElseGet(() -> {
-        // Now the lambda uses finalizedEmail, which is final.
-        logger.info("[JIT] Creating record for: {}", finalizedEmail);
-        User newUser = new User();
-        newUser.setEmail(finalizedEmail);
-        newUser.setRole(Role.CANDIDATE);
-        newUser.setIsActive(true);
-        newUser.setIsEmailVerified(true);
-        newUser.setCreatedAt(LocalDateTime.now());
-        newUser.setPrivacyPolicyAccepted(true);
-        newUser.setPrivacyPolicyAcceptedAt(LocalDateTime.now());
-        return userRepository.save(newUser);
-    });
-
-        // 3. Sync Profile Data from IAA (The LinkedIn Feel)
-        if (jwt != null) {
-            // Mapping names from IAA token
-            String firstName = jwt.getClaimAsString("given_name") != null ? 
-                               jwt.getClaimAsString("given_name") : jwt.getClaimAsString("firstName");
-            String lastName = jwt.getClaimAsString("family_name") != null ? 
-                              jwt.getClaimAsString("family_name") : jwt.getClaimAsString("lastName");
-
-            if (firstName != null) user.setFirstName(firstName);
-            if (lastName != null) user.setLastName(lastName);
-
-            // Sync Profile Picture
-            String pictureUrl = jwt.getClaimAsString("picture") != null ? 
-                                jwt.getClaimAsString("picture") : jwt.getClaimAsString("avatar");
-            if (pictureUrl != null) user.setProfilePictureUrl(pictureUrl);
-            
-            // Ensure Role is set (Prevents Access Denied)
-            if (user.getRole() == null) user.setRole(Role.CANDIDATE);
-            
-            // Update the record with the synced info
-            user = userRepository.save(user);
-        }
-
-        return ResponseEntity.ok(convertToDTO(user));
     }
 
     @PutMapping("/me")

@@ -11,9 +11,10 @@ const Callback: React.FC = () => {
     if (code) {
       const clientId = process.env.REACT_APP_IAA_CLIENT_ID;
       const clientSecret = process.env.REACT_APP_IAA_CLIENT_SECRET;
-      
+      const iaaUrl = process.env.REACT_APP_IAA_URL;
+
       // The endpoint from your Next.js reference
-      const tokenEndpoint = `http://localhost:5000/api/auth/tokens?code=${encodeURIComponent(code)}`;
+      const tokenEndpoint = `${iaaUrl}/api/auth/tokens?code=${encodeURIComponent(code)}`;
 
       fetch(tokenEndpoint, {
         method: "POST",
@@ -48,10 +49,10 @@ const Callback: React.FC = () => {
 
           console.log("[IAA Callback] Security state synced successfully.");
 
-          // 5. NAVIGATE TO CANDIDATES
+          // 5. NAVIGATE TO DASHBOARD (will route based on user role)
           // Small timeout ensures storage is written before the next page loads
           setTimeout(() => {
-            navigate('/candidates');
+            navigate('/dashboard');
           }, 100);
         } else {
           throw new Error("No tokens received");

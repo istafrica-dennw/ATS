@@ -5,6 +5,7 @@ import com.ats.dto.InterviewSkeletonDTO;
 import com.ats.model.User;
 import com.ats.repository.UserRepository;
 import com.ats.service.InterviewSkeletonService;
+import com.ats.util.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,11 +25,15 @@ public class InterviewSkeletonController {
 
     private final InterviewSkeletonService interviewSkeletonService;
     private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @Autowired
-    public InterviewSkeletonController(InterviewSkeletonService interviewSkeletonService, UserRepository userRepository) {
+    public InterviewSkeletonController(InterviewSkeletonService interviewSkeletonService,
+                                       UserRepository userRepository,
+                                       SecurityUtils securityUtils) {
         this.interviewSkeletonService = interviewSkeletonService;
         this.userRepository = userRepository;
+        this.securityUtils = securityUtils;
     }
 
     /**
@@ -40,19 +45,22 @@ public class InterviewSkeletonController {
     public ResponseEntity<InterviewSkeletonDTO> createSkeleton(
             @Valid @RequestBody CreateInterviewSkeletonRequest request,
             Authentication authentication) {
-        
+
         log.info("Creating interview skeleton: {}", request.getName());
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-            
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             InterviewSkeletonDTO skeleton = interviewSkeletonService.createSkeleton(request, admin.getId());
-            
+
             log.info("Interview skeleton created successfully with ID: {}", skeleton.getId());
             return new ResponseEntity<>(skeleton, HttpStatus.CREATED);
-            
+
         } catch (Exception e) {
             log.error("Error creating interview skeleton: {}", e.getMessage());
             throw e;
@@ -69,19 +77,22 @@ public class InterviewSkeletonController {
             @PathVariable Long skeletonId,
             @Valid @RequestBody CreateInterviewSkeletonRequest request,
             Authentication authentication) {
-        
+
         log.info("Updating interview skeleton: {}", skeletonId);
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-                    
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             InterviewSkeletonDTO skeleton = interviewSkeletonService.updateSkeleton(skeletonId, request, admin.getId());
-            
+
             log.info("Interview skeleton updated successfully: {}", skeletonId);
             return ResponseEntity.ok(skeleton);
-            
+
         } catch (Exception e) {
             log.error("Error updating interview skeleton {}: {}", skeletonId, e.getMessage());
             throw e;
@@ -131,17 +142,20 @@ public class InterviewSkeletonController {
     @GetMapping("/my-skeletons")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<InterviewSkeletonDTO>> getMySkeletons(Authentication authentication) {
-        
+
         log.debug("Fetching skeletons created by current admin");
-        
+
         try {
-            String email = authentication.getName();
-            User admin = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-                    
+            User admin = securityUtils.getCurrentUser(authentication);
+
+            if (admin == null) {
+                log.error("Admin profile not found for: {}", authentication.getName());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             List<InterviewSkeletonDTO> skeletons = interviewSkeletonService.getSkeletonsByCreatedBy(admin.getId());
             return ResponseEntity.ok(skeletons);
-            
+
         } catch (Exception e) {
             log.error("Error fetching admin's skeletons: {}", e.getMessage());
             throw e;

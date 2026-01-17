@@ -54,10 +54,12 @@ const IAAWidgetLoader: React.FC = () => {
       if ((window as any).IAAAuthWidget) {
         if (!window.iaa) window.iaa = { engine: null };
 
+        // Use environment variable for redirect URI, fallback to current origin
+        const redirectUri = process.env.REACT_APP_REDIRECT_URI || `${window.location.origin}/callback`;
+
         window.iaa.engine = new (window as any).IAAAuthWidget({
           clientId: process.env.REACT_APP_IAA_CLIENT_ID,
-          // Point to your React App
-          redirectUri: "http://localhost:3001/callback", 
+          redirectUri: redirectUri,
           iaaFrontendUrl: process.env.REACT_APP_IAA_FRONTEND_URL,
         });
         console.log('[IAA Loader] IAA Engine initialized.');

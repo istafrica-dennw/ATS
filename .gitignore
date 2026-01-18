@@ -109,3 +109,6 @@ docker-compose.override.yml
 # System Files
 .DS_Store
 Thumbs.db 
+# Video files (mounted from host)
+**/videos/
+*.mp4

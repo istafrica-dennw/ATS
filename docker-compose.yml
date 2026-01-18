@@ -135,7 +135,7 @@ services:
     volumes:
       - ./frontend-career:/app
       - /app/node_modules
-      - C:/Users/ricma/Downloads/IST Brandmovie mp4.mp4:/app/public/videos/hero-video.mp4:ro
+      - /Users/denisniwemugisha/videos/IST_brand_movie.mp4:/app/public/videos/hero-video.mp4:ro
     depends_on:
       - backend
     networks:

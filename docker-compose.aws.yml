@@ -146,7 +146,7 @@ services:
       - REACT_APP_MAIN_APP_URL=${REACT_APP_MAIN_APP_URL:-http://localhost:3001}
       - NODE_ENV=production
     volumes:
-      - /home/ubuntu/videos/IST_brand_movie.mp4:/app/public/videos/hero-video.mp4:ro
+      - /home/ubuntu/videos/IST_brand_movie.mp4:/usr/share/nginx/html/videos/hero-video.mp4:ro
     depends_on:
       - backend
     networks:

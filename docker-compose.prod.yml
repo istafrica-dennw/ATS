@@ -104,6 +104,27 @@ services:
       - ats-prod-network
     restart: unless-stopped
 
+  frontend-career:
+    build:
+      context: ./frontend-career
+      dockerfile: Dockerfile
+    container_name: ats-frontend-career-prod
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_MAIN_APP_URL=${REACT_APP_MAIN_APP_URL:-http://localhost:3001}
+      - NODE_ENV=production
+    volumes:
+      - /opt/videos/hero-video.mp4:/app/public/videos/hero-video.mp4:ro
+    depends_on:
+      - backend
+    networks:
+      - ats-prod-network
+    restart: unless-stopped
+
 networks:
   ats-prod-network:
     driver: bridge

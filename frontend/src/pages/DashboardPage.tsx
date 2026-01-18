@@ -74,11 +74,14 @@ const DashboardPage: React.FC = () => {
     console.log('DashboardPage - Stored route found:', storedRoute);
     
     if (user && storedRoute) {
-      // Check if the stored route matches the user's role
+      // Check if the stored route matches the user's role or is a public route like /apply/
       const userRole = user.role;
       let shouldRestoreRoute = false;
       
-      if (userRole === Role.ADMIN && storedRoute.startsWith('/admin/')) {
+      // Apply and jobs routes are valid for any authenticated user
+      if (storedRoute.startsWith('/apply/') || storedRoute.startsWith('/jobs/')) {
+        shouldRestoreRoute = true;
+      } else if (userRole === Role.ADMIN && storedRoute.startsWith('/admin/')) {
         shouldRestoreRoute = true;
       } else if (userRole === Role.INTERVIEWER && storedRoute.startsWith('/interviewer/')) {
         shouldRestoreRoute = true;

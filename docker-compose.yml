@@ -117,6 +117,31 @@ services:
       - ats-network
     tty: true
     stdin_open: true
+
+  frontend-career:
+    build:
+      context: ./frontend-career
+      dockerfile: Dockerfile.dev
+    container_name: ats-frontend-career
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_MAIN_APP_URL=${REACT_APP_MAIN_APP_URL:-http://localhost:3001}
+      - NODE_ENV=development
+      - WDS_SOCKET_PORT=0
+    volumes:
+      - ./frontend-career:/app
+      - /app/node_modules
+      - C:/Users/ricma/Downloads/IST Brandmovie mp4.mp4:/app/public/videos/hero-video.mp4:ro
+    depends_on:
+      - backend
+    networks:
+      - ats-network
+    tty: true
+    stdin_open: true
   certbot:
     image: certbot/certbot
     container_name: ats-certbot

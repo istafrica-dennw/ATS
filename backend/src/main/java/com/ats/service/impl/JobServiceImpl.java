@@ -9,11 +9,13 @@ import com.ats.dto.JobCustomQuestionDTO;
 import com.ats.dto.JobDTO;
 import com.ats.exception.AtsCustomExceptions.NotFoundException;
 import com.ats.model.Job;
+import com.ats.model.JobCategory;
 import com.ats.model.User;
 import com.ats.service.JobCustomQuestionService;
 import com.ats.service.RegionalDataFilterService;
 import com.ats.model.JobStatus;
 import com.ats.model.WorkSetting;
+import com.ats.repository.JobCategoryRepository;
 import com.ats.repository.JobRepository;
 import com.ats.service.JobService;
 import com.ats.util.ModelMapperUtil;
@@ -41,6 +43,9 @@ public class JobServiceImpl implements JobService {
 
     @Autowired
     private JobRepository jobRepository;
+    
+    @Autowired
+    private JobCategoryRepository jobCategoryRepository;
     
     @Autowired
     private JobCustomQuestionService jobCustomQuestionService;
@@ -87,6 +92,13 @@ public class JobServiceImpl implements JobService {
             job.setExpirationDate(jobDTO.getExpirationDate());
         }
         
+        // Set category if provided
+        if (jobDTO.getCategoryId() != null) {
+            JobCategory category = jobCategoryRepository.findById(jobDTO.getCategoryId())
+                    .orElseThrow(() -> new NotFoundException("Job category not found with id: " + jobDTO.getCategoryId()));
+            job.setCategory(category);
+        }
+        
         // Save the job first
         job = jobRepository.save(job);
         
@@ -122,11 +134,25 @@ public class JobServiceImpl implements JobService {
         Job job = jobOpt.get();
         JobDTO jobDTO = modelMapper.map(job, JobDTO.class);
         
+        // Map category information
+        mapCategoryToDTO(job, jobDTO);
+        
         // Fetch and set custom questions
         List<JobCustomQuestionDTO> customQuestions = jobCustomQuestionService.getAllCustomQuestionsbyJobId(id);
         jobDTO.setCustomQuestions(customQuestions);
         
         return jobDTO;
+    }
+    
+    /**
+     * Helper method to map category information to JobDTO
+     */
+    private void mapCategoryToDTO(Job job, JobDTO jobDTO) {
+        if (job.getCategory() != null) {
+            jobDTO.setCategoryId(job.getCategory().getId());
+            jobDTO.setCategoryName(job.getCategory().getName());
+            jobDTO.setCategoryColor(job.getCategory().getColor());
+        }
     }
 
     @Override
@@ -148,6 +174,15 @@ public class JobServiceImpl implements JobService {
             updatedJob.setWorkSetting(jobDTO.getWorkSetting());
             updatedJob.setJobStatus(jobDTO.getJobStatus());
             updatedJob.setExpirationDate(jobDTO.getExpirationDate());
+            
+            // Update category if provided
+            if (jobDTO.getCategoryId() != null) {
+                JobCategory category = jobCategoryRepository.findById(jobDTO.getCategoryId())
+                        .orElseThrow(() -> new NotFoundException("Job category not found with id: " + jobDTO.getCategoryId()));
+                updatedJob.setCategory(category);
+            } else {
+                updatedJob.setCategory(null); // Remove category if not provided
+            }
             
             // Set posted date if job is being published for the first time or reopened
             if ((oldStatus != JobStatus.PUBLISHED && oldStatus != JobStatus.REOPENED) && 
@@ -288,8 +323,17 @@ public class JobServiceImpl implements JobService {
         // Execute query and map to DTOs
         return jobRepository.findAll(spec)
                 .stream()
-                .map(job -> modelMapper.map(job, JobDTO.class))
+                .map(this::mapJobToDTO)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Helper method to map Job entity to JobDTO with category information
+     */
+    private JobDTO mapJobToDTO(Job job) {
+        JobDTO jobDTO = modelMapper.map(job, JobDTO.class);
+        mapCategoryToDTO(job, jobDTO);
+        return jobDTO;
     }
     @Override
     public List<JobDTO> getActiveJobs() {
@@ -340,7 +384,7 @@ public class JobServiceImpl implements JobService {
         }
         
         return jobs.stream()
-                .map(job -> modelMapper.map(job, JobDTO.class))
+                .map(this::mapJobToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -389,7 +433,7 @@ public class JobServiceImpl implements JobService {
         }
         
         return jobs.stream()
-                .map(job -> modelMapper.map(job, JobDTO.class))
+                .map(this::mapJobToDTO)
                 .collect(Collectors.toList());
     }
     @Override
@@ -438,7 +482,7 @@ public class JobServiceImpl implements JobService {
         }
         
         return jobs.stream()
-                .map(job -> modelMapper.map(job, JobDTO.class))
+                .map(this::mapJobToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -466,7 +510,7 @@ public class JobServiceImpl implements JobService {
                 notifySubscribers(savedJob);
             }
             
-            return modelMapper.map(savedJob, JobDTO.class);
+            return mapJobToDTO(savedJob);
         } else {
             throw new NotFoundException("Job not found with id: " + id);
         }

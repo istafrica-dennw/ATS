@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -58,7 +58,7 @@ services:
       # Email Configuration
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
-       # Postal Configuration (default for all other emails)
+        # Postal Configuration (default for all other emails)
       - MAIL_POSTAL_ENABLED=${MAIL_POSTAL_ENABLED:-true}
       - MAIL_POSTAL_API_URL=${MAIL_POSTAL_API_URL}
       - MAIL_POSTAL_KEY=${MAIL_POSTAL_KEY}
@@ -116,8 +116,7 @@ services:
       - NODE_ENV=production
     volumes:
       - ./certbot:/var/www/certbot
-      - /etc/letsencrypt:/etc/letsencrypt:ro   # certificates read-only
-
+      - /etc/letsencrypt:/etc/letsencrypt:ro # certificates read-only
     depends_on:
       - backend
     networks:
@@ -130,6 +129,37 @@ services:
           memory: 512M
         reservations:
           memory: 256M
+
+  frontend-career:
+    build:
+      context: ./frontend-career
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+    container_name: ats-frontend-career-aws
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_MAIN_APP_URL=${REACT_APP_MAIN_APP_URL:-http://localhost:3001}
+      - NODE_ENV=production
+    volumes:
+      - /home/ubuntu/videos/IST_brand_movie.mp4:/app/public/videos/hero-video.mp4:ro
+    depends_on:
+      - backend
+    networks:
+      - ats-network
+    restart: unless-stopped
+    # Memory limits for Frontend Career
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
   certbot:
     image: certbot/certbot
     container_name: ats-certbot
@@ -149,4 +179,4 @@ volumes:
   postgres_data:
     name: ats-system_postgres_data
   profile_uploads:
-    name: ats-system_ats_uploads 
+    name: ats-system_ats_uploads

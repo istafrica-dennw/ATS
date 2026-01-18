@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import Logo from '../common/Logo';
-import UserProfileDropdown from '../common/UserProfileDropdown';
-import ThemeToggleButton from '../common/ThemeToggleButton';
-import AdminChatNotifications from './AdminChatNotifications';
-import '../../styles/sidebar.css';
+import React, { useState, useEffect } from "react";
+import { Outlet, Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import Logo from "../common/Logo";
+import UserProfileDropdown from "../common/UserProfileDropdown";
+import ThemeToggleButton from "../common/ThemeToggleButton";
+import AdminChatNotifications from "./AdminChatNotifications";
+import "../../styles/sidebar.css";
 import {
   HomeIcon,
   UsersIcon,
@@ -19,18 +19,80 @@ import {
   ChatBubbleLeftRightIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
-} from '@heroicons/react/24/outline';
+  TagIcon,
+} from "@heroicons/react/24/outline";
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: HomeIcon, color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-500' },
-  { name: 'User Management', href: '/admin/users', icon: UsersIcon, color: 'from-green-500 to-green-600', bgColor: 'bg-green-500' },
-  { name: 'Email Notifications', href: '/admin/emails', icon: EnvelopeIcon, color: 'from-purple-500 to-purple-600', bgColor: 'bg-purple-500' },
-  { name: 'Bulk Email', href: '/admin/bulk-email', icon: SparklesIcon, color: 'from-rose-500 to-rose-600', bgColor: 'bg-rose-500' },
-  { name: 'Jobs', href: '/admin/jobs', icon: BriefcaseIcon, color: 'from-orange-500 to-orange-600', bgColor: 'bg-orange-500' },
-  { name: 'Interview Management', href: '/admin/interview-management', icon: DocumentTextIcon, color: 'from-teal-500 to-teal-600', bgColor: 'bg-teal-500' },
-  { name: 'Chat Support', href: '/admin/chat', icon: ChatBubbleLeftRightIcon, color: 'from-indigo-500 to-indigo-600', bgColor: 'bg-indigo-500' },
-  { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon, color: 'from-indigo-500 to-indigo-600', bgColor: 'bg-indigo-500' },
-  { name: 'Settings', href: '/admin/settings', icon: CogIcon, color: 'from-gray-500 to-gray-600', bgColor: 'bg-gray-500' },
+  {
+    name: "Dashboard",
+    href: "/admin",
+    icon: HomeIcon,
+    color: "from-blue-500 to-blue-600",
+    bgColor: "bg-blue-500",
+  },
+  {
+    name: "User Management",
+    href: "/admin/users",
+    icon: UsersIcon,
+    color: "from-green-500 to-green-600",
+    bgColor: "bg-green-500",
+  },
+  {
+    name: "Email Notifications",
+    href: "/admin/emails",
+    icon: EnvelopeIcon,
+    color: "from-purple-500 to-purple-600",
+    bgColor: "bg-purple-500",
+  },
+  {
+    name: "Bulk Email",
+    href: "/admin/bulk-email",
+    icon: SparklesIcon,
+    color: "from-rose-500 to-rose-600",
+    bgColor: "bg-rose-500",
+  },
+  {
+    name: "Jobs",
+    href: "/admin/jobs",
+    icon: BriefcaseIcon,
+    color: "from-orange-500 to-orange-600",
+    bgColor: "bg-orange-500",
+  },
+  {
+    name: "Job Categories",
+    href: "/admin/job-categories",
+    icon: TagIcon,
+    color: "from-amber-500 to-amber-600",
+    bgColor: "bg-amber-500",
+  },
+  {
+    name: "Interview Management",
+    href: "/admin/interview-management",
+    icon: DocumentTextIcon,
+    color: "from-teal-500 to-teal-600",
+    bgColor: "bg-teal-500",
+  },
+  {
+    name: "Chat Support",
+    href: "/admin/chat",
+    icon: ChatBubbleLeftRightIcon,
+    color: "from-indigo-500 to-indigo-600",
+    bgColor: "bg-indigo-500",
+  },
+  {
+    name: "Analytics",
+    href: "/admin/analytics",
+    icon: ChartBarIcon,
+    color: "from-indigo-500 to-indigo-600",
+    bgColor: "bg-indigo-500",
+  },
+  {
+    name: "Settings",
+    href: "/admin/settings",
+    icon: CogIcon,
+    color: "from-gray-500 to-gray-600",
+    bgColor: "bg-gray-500",
+  },
 ];
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -41,14 +103,17 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem('adminSidebarCollapsed');
+    const saved = localStorage.getItem("adminSidebarCollapsed");
     if (saved !== null) {
       setDesktopSidebarCollapsed(JSON.parse(saved));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('adminSidebarCollapsed', JSON.stringify(desktopSidebarCollapsed));
+    localStorage.setItem(
+      "adminSidebarCollapsed",
+      JSON.stringify(desktopSidebarCollapsed)
+    );
   }, [desktopSidebarCollapsed]);
 
   useEffect(() => {
@@ -67,22 +132,28 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setDesktopSidebarCollapsed(!desktopSidebarCollapsed);
   };
 
-  const SidebarContent = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
+  const SidebarContent = ({
+    isCollapsed = false,
+  }: {
+    isCollapsed?: boolean;
+  }) => {
     const currentNavigation = navigation;
-    
+
     return (
       <div className="flex flex-col h-full">
         <div className="flex-shrink-0 flex items-center h-16 px-3 bg-blue-600 dark:bg-gray-800 border-b border-blue-700 dark:border-gray-700">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className={`flex items-center cursor-pointer ${
-              isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-2.5'
+              isCollapsed ? "px-2 py-3 justify-center" : "px-3 py-2.5"
             } rounded-lg transition-all duration-200`}
             title={isCollapsed ? "ATS System - Go to Home" : "Go to Home"}
           >
-            <div className={`flex-shrink-0 flex items-center justify-center ${
-              isCollapsed ? 'w-12 h-12' : 'w-12 h-12 mr-3'
-            }`}>
+            <div
+              className={`flex-shrink-0 flex items-center justify-center ${
+                isCollapsed ? "w-12 h-12" : "w-12 h-12 mr-3"
+              }`}
+            >
               <Logo height="h-10" alt="IST Logo" />
             </div>
             {!isCollapsed && (
@@ -97,7 +168,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             )}
           </Link>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
           <nav className="px-3 py-4 space-y-1">
             {currentNavigation.map((item, index) => {
@@ -108,20 +179,33 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   key={item.name}
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`${isInitialLoad ? 'nav-item-animation' : ''} nav-item-hover group relative flex items-center ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-2.5'} text-sm font-medium rounded-lg transition-all duration-200 ${
+                  className={`${
+                    isInitialLoad ? "nav-item-animation" : ""
+                  } nav-item-hover group relative flex items-center ${
+                    isCollapsed ? "px-2 py-3 justify-center" : "px-3 py-2.5"
+                  } text-sm font-medium rounded-lg transition-all duration-200 ${
                     isCurrent
-                      ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  style={isInitialLoad ? {
-                    animationDelay: `${index * 100}ms`,
-                  } : undefined}
+                      ? "bg-blue-600 dark:bg-blue-700 text-white"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
+                  style={
+                    isInitialLoad
+                      ? {
+                          animationDelay: `${index * 100}ms`,
+                        }
+                      : undefined
+                  }
                   title={isCollapsed ? item.name : undefined}
                 >
-                  <div className={`flex-shrink-0 ${isCollapsed ? 'mr-0' : 'mr-3'} p-2 rounded-lg transition-colors duration-200 ${isCurrent
-                      ? 'bg-white/20 dark:bg-gray-600/40'
-                      : `${item.bgColor || 'bg-blue-500'} text-white`
-                    }`}>
+                  <div
+                    className={`flex-shrink-0 ${
+                      isCollapsed ? "mr-0" : "mr-3"
+                    } p-2 rounded-lg transition-colors duration-200 ${
+                      isCurrent
+                        ? "bg-white/20 dark:bg-gray-600/40"
+                        : `${item.bgColor || "bg-blue-500"} text-white`
+                    }`}
+                  >
                     <item.icon
                       className="h-5 w-5 text-white"
                       aria-hidden="true"
@@ -130,21 +214,21 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
                   {!isCollapsed && (
                     <>
-                      <span className="flex-1 font-medium text-sm">{item.name}</span>
+                      <span className="flex-1 font-medium text-sm">
+                        {item.name}
+                      </span>
                       {isCurrent && (
                         <div className="absolute right-3 w-2 h-2 bg-white dark:bg-gray-300 rounded-full animate-pulse"></div>
                       )}
                     </>
                   )}
-                  
+
                   {isCollapsed && (
                     <>
                       {isCurrent && (
                         <div className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white dark:bg-gray-300 rounded-full"></div>
                       )}
-                      <div className="sidebar-tooltip">
-                        {item.name}
-                      </div>
+                      <div className="sidebar-tooltip">{item.name}</div>
                     </>
                   )}
                 </Link>
@@ -155,17 +239,28 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         {/* Fixed Footer */}
         <div className="flex-shrink-0 px-4 py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-          <div className={`flex items-center ${isCollapsed ? 'justify-center p-2' : 'space-x-3 p-3'} rounded-lg bg-gray-50 dark:bg-gray-800`}>
+          <div
+            className={`flex items-center ${
+              isCollapsed ? "justify-center p-2" : "space-x-3 p-3"
+            } rounded-lg bg-gray-50 dark:bg-gray-800`}
+          >
             <div className="flex-shrink-0">
               {user?.profilePictureUrl ? (
                 <img
-                  className={`${isCollapsed ? 'h-8 w-8' : 'h-10 w-10'} rounded-full`}
+                  className={`${
+                    isCollapsed ? "h-8 w-8" : "h-10 w-10"
+                  } rounded-full`}
                   src={user.profilePictureUrl}
                   alt={`${user?.firstName} ${user?.lastName}`}
                 />
               ) : (
-                <div className={`${isCollapsed ? 'h-8 w-8' : 'h-10 w-10'} rounded-full bg-blue-500 dark:bg-blue-600 flex items-center justify-center text-white font-semibold`}>
-                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                <div
+                  className={`${
+                    isCollapsed ? "h-8 w-8" : "h-10 w-10"
+                  } rounded-full bg-blue-500 dark:bg-blue-600 flex items-center justify-center text-white font-semibold`}
+                >
+                  {user?.firstName?.[0]}
+                  {user?.lastName?.[0]}
                 </div>
               )}
             </div>
@@ -177,7 +272,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate flex items-center">
                     <span>{user?.role}</span>
-                    <span className="text-green-600 dark:text-green-400 font-medium ml-2">Online</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium ml-2">
+                      Online
+                    </span>
                   </p>
                 </div>
                 <div className="h-3 w-3 bg-green-400 dark:bg-green-500 rounded-full"></div>
@@ -198,15 +295,21 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         />
       )}
 
-      <div className={`hidden md:flex md:flex-col md:flex-shrink-0 transition-all duration-300 ${
-        desktopSidebarCollapsed ? 'md:w-20' : 'md:w-72'
-      } ${isInitialLoad ? 'sidebar-animation' : ''}`}>
+      <div
+        className={`hidden md:flex md:flex-col md:flex-shrink-0 transition-all duration-300 ${
+          desktopSidebarCollapsed ? "md:w-20" : "md:w-72"
+        } ${isInitialLoad ? "sidebar-animation" : ""}`}
+      >
         <div className="h-full shadow-2xl bg-white dark:bg-gray-900">
           <SidebarContent isCollapsed={desktopSidebarCollapsed} />
         </div>
       </div>
 
-      <div className={`fixed inset-y-0 left-0 z-[60] w-72 transform transition-transform duration-300 ease-in-out md:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div
+        className={`fixed inset-y-0 left-0 z-[60] w-72 transform transition-transform duration-300 ease-in-out md:hidden ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="h-full shadow-2xl bg-white dark:bg-gray-900">
           <SidebarContent />
         </div>
@@ -223,11 +326,15 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 >
                   <Bars3Icon className="h-6 w-6" />
                 </button>
-                
+
                 <button
                   onClick={toggleDesktopSidebar}
                   className="hidden md:flex items-center justify-center p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-200 transform hover:scale-105 sidebar-toggle"
-                  title={desktopSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  title={
+                    desktopSidebarCollapsed
+                      ? "Expand sidebar"
+                      : "Collapse sidebar"
+                  }
                 >
                   {desktopSidebarCollapsed ? (
                     <ChevronDoubleRightIcon className="h-5 w-5" />
@@ -236,8 +343,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   )}
                 </button>
 
-                <div className="flex-shrink-0 flex items-center ml-2 md:ml-0">
-                </div>
+                <div className="flex-shrink-0 flex items-center ml-2 md:ml-0"></div>
               </div>
               <div className="flex items-center space-x-2">
                 <ThemeToggleButton />

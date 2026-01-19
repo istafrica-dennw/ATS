@@ -12,6 +12,7 @@ import {
 import JobCard from "../components/jobs/JobCard";
 import jobService from "../services/jobService";
 import { Job } from "../types/job";
+import { ReactComponent as ISTLogo } from "../assets/logo/IST logo black.svg";
 
 const values = [
   {
@@ -162,8 +163,8 @@ const HomePage: React.FC = () => {
             >
               <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary-100 to-secondary-100 dark:from-gray-800 dark:to-gray-700 p-8 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-xl">
-                    <span className="text-5xl font-bold text-white">IST</span>
+                  <div className="w-48 h-32 mx-auto mb-6 flex items-center justify-center">
+                    <ISTLogo className="w-full h-full dark:invert dark:brightness-200" />
                   </div>
                   <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
                     TwISTers

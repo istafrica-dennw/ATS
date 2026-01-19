@@ -405,15 +405,16 @@ const ConnectPage: React.FC = () => {
                         rel="noopener noreferrer"
                         className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
                       >
-                        Privacy Policy
+                        privacy policy
                       </a>{" "}
-                      and confirm that IST may store my personal details to
-                      contact me for future job opportunities.
+                      and confirm that IST store my personal details to be able
+                      to contact me for future job opportunities.
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                       IST will hold your data for future employment
                       opportunities for a maximum period of 2 years, or until
-                      you decide to withdraw your consent.
+                      you decide to withdraw your consent, which you can do at
+                      any given time by contacting us.
                     </p>
                   </div>
                 </label>

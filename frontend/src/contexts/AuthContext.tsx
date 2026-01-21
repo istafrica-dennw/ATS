@@ -186,10 +186,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Utility function to manually set a token (can be called from anywhere in the app)
   const manuallySetToken = async (tokenValue: string) => {
-    
-    // Set in localStorage only
     try {
       localStorage.setItem('token', tokenValue);
+      // AMAZE: Mark this as an IAA login
+      localStorage.setItem('login_type', 'iaa');
+      localStorage.setItem('iaa_authenticated', 'true');
     } catch (e) {
       console.error('AuthContext - Failed to store token in localStorage:', e);
     }
@@ -197,7 +198,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(tokenValue);
     setIsAuthenticated(true);
     
-    // Validate and get user data
     return validateTokenAndGetUser(tokenValue);
   };
 
@@ -274,7 +274,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Store user data and token only in localStorage
         localStorage.setItem('user', JSON.stringify(authResponse.user));
         localStorage.setItem('token', authResponse.accessToken);
-        
+
+        // Also set IAA-compatible format so the IAA widget shows logged-in state
+        localStorage.setItem('auth_tokens', JSON.stringify({
+          accessToken: authResponse.accessToken,
+        }));
+        localStorage.setItem('login_type', 'ats');
+        localStorage.setItem('iaa_authenticated', 'true');
+
+        localStorage.removeItem('iaa_authenticated'); 
+           localStorage.removeItem('auth_tokens');
+
         // If user has MFA enabled, we should NOT set mfaVerified to true here
         // because they haven't gone through MFA verification yet
         if (authResponse.user.mfaEnabled) {
@@ -317,6 +327,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('user', JSON.stringify(response.user));
       localStorage.setItem('token', response.accessToken);
       localStorage.setItem('mfaVerified', 'true');
+
+      // Also set IAA-compatible format so the IAA widget shows logged-in state
+      localStorage.setItem('auth_tokens', JSON.stringify({
+        accessToken: response.accessToken,
+      }));
+      localStorage.setItem('iaa_authenticated', 'true');
       
 
       // Convert string role to Role enum
@@ -427,12 +443,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('mfaVerified');
-      
+
+      // Clear IAA-related items so the IAA widget shows logged-out state
+      localStorage.removeItem('auth_tokens');
+      localStorage.removeItem('iaa_authenticated');
+      localStorage.removeItem('ats_token');
+      localStorage.removeItem('login_type'); 
+
       // Clear any other potentially auth-related items
       localStorage.removeItem('refreshToken'); // In case refresh tokens are stored
       localStorage.removeItem('authExpires');  // In case expiration is stored
       localStorage.removeItem('loginTime');    // In case login time is stored
-      
+
       // ALSO clear everything from sessionStorage to be thorough
       sessionStorage.removeItem('user');
       sessionStorage.removeItem('token');
@@ -440,7 +462,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionStorage.removeItem('refreshToken');
       sessionStorage.removeItem('authExpires');
       sessionStorage.removeItem('loginTime');
-      
+      sessionStorage.removeItem('oauth_state_iaa'); // Clear IAA OAuth state
+
       } catch (e) {
       console.error('AuthContext - Error clearing storage:', e);
     }
@@ -468,6 +491,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (localStorage.getItem('token')) {
           localStorage.removeItem('token');
         }
+
         
         if (sessionStorage.getItem('token')) {
           console.warn('AuthContext - Token still exists in sessionStorage after logout, forcing removal');

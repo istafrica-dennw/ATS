@@ -45,6 +45,7 @@ const CallbackPage: React.FC = () => {
             refreshToken: data.refresh_token
           }));
           localStorage.setItem('iaa_authenticated', 'true');
+          localStorage.setItem('login_type', 'iaa');
 
           // 2. Sync with ATS Auth Provider (This triggers the JIT logic in Java)
           await manuallySetToken(data.access_token);

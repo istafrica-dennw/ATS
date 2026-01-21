@@ -60,6 +60,7 @@ const URLTokenHandler = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+    
     const token = params.get('token');
     
     if (token) {

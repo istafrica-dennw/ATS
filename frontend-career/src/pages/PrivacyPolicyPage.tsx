@@ -1,12 +1,7 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import {
-  ShieldCheckIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  ArrowLeftIcon,
-} from "@heroicons/react/24/outline";
-import { ReactComponent as ISTLogo } from "../assets/logo/IST logo black.svg";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ShieldCheckIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import ScrollToTopButton from '../components/common/ScrollToTopButton';
 
 const PrivacyPolicyPage: React.FC = () => {
   return (
@@ -16,21 +11,10 @@ const PrivacyPolicyPage: React.FC = () => {
         <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center mb-4 md:mb-0">
-              <Link to="/" className="mr-4">
-                <ISTLogo className="h-10 w-auto dark:invert dark:brightness-200" />
-              </Link>
-              <div className="flex items-center">
-                <ShieldCheckIcon className="h-8 w-8 text-primary-600 dark:text-primary-400 mr-3" />
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-                  Privacy Policy
-                </h1>
-              </div>
+              <ShieldCheckIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400 mr-3" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Privacy Policy</h1>
             </div>
-            <Link
-              to="/"
-              className="inline-flex items-center text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 font-medium"
-            >
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            <Link to="/" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-medium">
               Back to Home
             </Link>
           </div>
@@ -41,376 +25,180 @@ const PrivacyPolicyPage: React.FC = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl py-8">
         {/* Header Info */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg mb-8 p-8">
-          <div className="bg-primary-50 dark:bg-gray-700/50 border-l-4 border-primary-600 dark:border-primary-400 p-4 rounded">
+          <div className="bg-indigo-50 dark:bg-gray-700/50 border-l-4 border-indigo-600 dark:border-indigo-400 p-4 rounded">
             <div className="flex items-center">
-              <DocumentTextIcon className="h-5 w-5 text-primary-600 dark:text-primary-400 mr-2" />
-              <p className="text-sm text-primary-700 dark:text-primary-200">
-                <strong>Effective Date:</strong> January 1, 2025
+              <DocumentTextIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2" />
+              <p className="text-sm text-indigo-700 dark:text-indigo-200">
+                <strong>Template privacy policy</strong>
               </p>
             </div>
-            <p className="text-sm text-primary-700 dark:text-primary-200 mt-2">
-              <strong>IST Africa Ltd - Applicant Tracking System (ATS)</strong>
+            <p className="text-sm text-indigo-700 dark:text-indigo-200 mt-2">
+              This is a template privacy policy, based on the GDPR's information requirements. Please review, amend and add to it, to reflect the processing you will be doing in the service.
             </p>
           </div>
           <p className="text-gray-600 dark:text-gray-300 mt-4 leading-relaxed">
-            At IST Africa Ltd, we are committed to protecting the privacy and
-            personal data of all users who interact with our Applicant Tracking
-            System (ATS), in line with the Rwanda Data Protection and Privacy
-            Law (Law No. 058/2021 of 13/10/2021). This Privacy Policy outlines
-            how we collect, use, share, and protect your data.
+            The service for handling recruitments and simplifying the hiring process (the "Service") is powered by Teamtailor on behalf of IST ("Controller" "we" "us" etc.). It is important that the persons using the Service ("Users") feel safe with, and are informed about, how we handle User's personal data in the recruitment process. We strive to maintain the highest possible standard regarding the protection of personal data. We process, manage, use, and protect User's Personal Data in accordance with this Privacy Policy ("Privacy Policy").
           </p>
         </div>
 
         {/* Content Sections */}
         <div className="space-y-8">
-          {/* Section 1: Scope */}
+          {/* Section 1: General */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              1. Scope
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">1. General</h2>
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-              This Privacy Policy applies to all users of our ATS platform,
-              including job applicants, recruiters, HR professionals, and
-              employers operating or residing in Rwanda.
+              We are the controller in accordance with current privacy legislations. The Users' personal data is processed with the purpose of managing and facilitating recruitment of employees to our business.
             </p>
           </div>
 
-          {/* Section 2: Data We Collect */}
+          {/* Section 2: Collection of personal data */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              2. Data We Collect
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">2. Collection of personal data</h2>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-3 mt-6">We are responsible for the processing of the personal data</h3>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              We collect the following categories of personal data:
+              We are responsible for the processing of the personal data that the Users contributes to the Service, or for the personal data that we in other ways collects with regards to the Service.
             </p>
-            <ul className="space-y-3 text-gray-600 dark:text-gray-300">
-              <li className="flex items-start">
-                <span className="bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300 text-xs font-medium px-2.5 py-0.5 rounded mr-3 mt-1">
-                  Identity
-                </span>
-                Name, date of birth, gender.
-              </li>
-              <li className="flex items-start">
-                <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-medium px-2.5 py-0.5 rounded mr-3 mt-1">
-                  Contact
-                </span>
-                Email address, telephone number, physical address.
-              </li>
-              <li className="flex items-start">
-                <span className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-xs font-medium px-2.5 py-0.5 rounded mr-3 mt-1">
-                  Employment
-                </span>
-                CV/resume details, education history, employment history,
-                references, certifications.
-              </li>
-              <li className="flex items-start">
-                <span className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-xs font-medium px-2.5 py-0.5 rounded mr-3 mt-1">
-                  System
-                </span>
-                IP address, browser information, usage logs, and device
-                information.
-              </li>
-              <li className="flex items-start">
-                <span className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 text-xs font-medium px-2.5 py-0.5 rounded mr-3 mt-1">
-                  Optional
-                </span>
-                Profile photo, social media links, preferences, portfolio links.
-              </li>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-3 mt-6">When and how we collect personal data</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">We collect personal data about Users from Users when Users:</p>
+            <ul className="list-disc pl-6 space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+              <li>make an application through the Service or otherwise, adding personal data about themselves either personally or by using a third-party source such as Facebook or LinkedIn; and</li>
+              <li>use the Service to connect with our staff, adding personal data about themselves either personally or by using a third-party source such as Facebook or LinkedIn.</li>
+              <li>provides identifiable data in the chat (provided through the website that uses the Service) and such data is of relevance to the application procedure;</li>
             </ul>
-          </div>
-
-          {/* Section 3: Purpose of Data Collection */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              3. Purpose of Data Collection
-            </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              We collect and process your personal data for the following
-              purposes:
+              We collect data from third parties, such as Facebook, LinkedIn and through other public sources. This is referred to as "Sourcing" and be manually performed by our employees or automatically in the Service.
             </p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-600 dark:text-gray-300">
-              <li>
-                To facilitate the recruitment process between applicants and
-                employers.
-              </li>
-              <li>
-                To assess candidate suitability and match skills to job
-                vacancies.
-              </li>
-              <li>
-                To improve our services through analytics and user feedback.
-              </li>
-              <li>
-                To comply with legal and regulatory obligations under Rwandan
-                law.
-              </li>
-              <li>
-                To communicate with you regarding your applications, interviews,
-                or account.
-              </li>
-              <li>
-                To power AI features that analyze CV content for skill-matching
-                and recruitment insights.
-              </li>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              In some cases, existing employees can make recommendations about potential applicants. Such employees will add personal data about such potential applicants. In the cases where this is made, the potential applicant is considered a User in the context of this Privacy Policy and will be informed about the processing.
+            </p>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-3 mt-6">The types of personal data collected and processed</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              The categories of personal data that can be collected through the Service can be used to identify natural persons from names, e-mails, pictures and videos, information from Facebook and LinkedIn accounts, answers to questions asked through the recruiting, titles, education and other information that the User or others have provided through the Service. Only data that is relevant for the recruitment process is collected and processed.
+            </p>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-3 mt-6">Purpose and lawfulness of processing</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              The purpose of the collecting and processing of personal data is to manage recruiting. The lawfulness of the processing of personal data is our legitimate interest to simplify and facilitate recruitment. Personal data that is processed with the purpose of aggregated analysis or market research is always made unidentifiable. Such personal data cannot be used to identify a certain User. Thus, such data is not considered personal data.
+            </p>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-3 mt-6">The consent of the data subject</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">The User consents to the processing of its personal data with the purpose of Controller's handling recruiting. The User consents that personal data is collected through the Service, when Users</p>
+            <ul className="list-disc pl-6 space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+              <li>make an application through the Service, adding personal data about themselves either personally or by using a third-party source as Facebook or LinkedIn, and that Controller may use external sourcing-tools to add additional information; and</li>
+              <li>when they use the Service to connect to Controller's recruitment department, adding personal data about themselves either personally or by using a third-party source such as Facebook or LinkedIn.</li>
             </ul>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              The User also consents to the Controller collecting publically available information about the User and compiles them for use in recruitment purposes. The User consents to the personal data being collected in accordance with the above a) and b) will be processed according to the below sections Storage and transfer and How long the personal data will be processed.
+            </p>
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+              <p className="text-blue-800 dark:text-blue-300">
+                The User has the right to withdraw his or her consent at any time, by contacting Controller using the contact details listed under 9. Using this right may however, mean that the User can not apply for a specific job or otherwise use the Service.
+              </p>
+            </div>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-3 mt-6">Storage and transfers</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              The personal data collected through the Service is stored and processed inside the EU/EEA, such third country that is considered by the European Commission to have an adequate level of protection, or processed by such suppliers that have entered into such binding agreements that fully complies with the lawfulness of third country transfers (as Privacy Shield) or to other supplies where the adequate safeguards are in order to protect the rights of the data subjects whose data is transferred. To obtain documentation regarding such adequate safeguards, contact us using the Contact details listed in 9.
+            </p>
+
+            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-3 mt-6">How long the personal data will be processed</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              If a User does not object, in writing, to the processing of their personal data, the personal data will be stored and processed by us in accordance with relevant local legislation, with regards to the purposes stated above. Note that an applicant (User) may be interesting for future recruitment and for this purpose we may store Users' Personal Data until they are no longer of value as potential recruitments. If you as a User wish not to have your Personal Data processed for this purpose (future recruitment) please contact us using the contact details in paragraph 9.
+            </p>
           </div>
 
-          {/* Section 4: Lawful Basis */}
+          {/* Section 3: Users' rights */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              4. Lawful Basis for Processing
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">3. Users' rights</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              We process personal data based on:
+              Users have the right to request information about the personal data that is processed by us, by notifying in writing, us using the contact details below under paragraph 9 below. Users have the right to one (1) copy of the processed personal data which belongs to them without any charge. For further demanded copies, Controller has a right to charge a reasonable fee on the basis of the administrative costs for such demand.
             </p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  Consent
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  When creating an account or submitting a job application.
-                </p>
-              </div>
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  Contractual Necessity
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Managing your recruitment process.
-                </p>
-              </div>
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  Legitimate Interest
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Improving platform performance or analytics.
-                </p>
-              </div>
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  Legal Obligation
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Retention of records under labor laws.
-                </p>
-              </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Users have the right to, if necessary, rectification of inaccurate personal data concerning that User, via a written request, using the contact details in paragraph 9 below.
+            </p>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              The User has the right to demand deletion or restriction of processing, and the right to object to processing based on legitimate interest under certain circumstances.
+            </p>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              The User has the right to revoke any consent to processing that has been given by the User to Controller. Using this right may however, mean that the User can not apply for a specific job or otherwise use the Service.
+            </p>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              User has under certain circumstances a right to data portability, which means a right to get the personal data and transfer these to another controller as long as this does not negatively affect the rights and freedoms of others.
+            </p>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              User has the right to lodge a complaint to the supervisory authority regarding the processing of personal data relating to him or her, if the User considers that the processing of personal data infringes the legal framework of privacy law.
+            </p>
+          </div>
+
+          {/* Section 4: Security */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">4. Security</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              We prioritize the personal integrity and therefore works actively so that the personal data of the Users are processed with utmost care. We take the measures that can be reasonably expected to the make sure that the personal data of Users and others are processed safely and in accordance to this Privacy Policy and the GDPR-regulation.
+            </p>
+            <div className="bg-amber-50 dark:bg-yellow-900/30 border-l-4 border-amber-400 dark:border-amber-500 p-4">
+              <p className="text-amber-800 dark:text-amber-200">
+                However, transfers of information over the internet and mobile networks can never occur without any risk, so all transfers are made on the own risk of the person transferring the data. Hence, we encourage our Users to safeguard their login details. It is important that Users also take responsibility to ensure that their data is protected.
+              </p>
             </div>
           </div>
 
-          {/* Section 5: AI Usage and Disclaimer */}
+          {/* Section 5: Transfer of personal data to third party */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              5. AI Usage and Disclaimer
-            </h2>
-            <div className="bg-amber-50 dark:bg-yellow-900/30 border-l-4 border-amber-400 dark:border-amber-500 p-4 mb-4">
-              <div className="flex">
-                <ExclamationTriangleIcon className="h-5 w-5 text-amber-400 dark:text-amber-500 mr-2 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                    Important Notice
-                  </h4>
-                  <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                    Our ATS may integrate third-party AI services that process
-                    and analyze CV and profile data to assist with job matching,
-                    skill extraction, and performance prediction.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300">
-              While we take care to partner with reputable AI providers and
-              enforce strict confidentiality measures, IST Africa Ltd is not
-              responsible for any data breach, misuse, or exposure caused by
-              these AI service providers. By using our platform, you acknowledge
-              and accept this limitation.
-            </p>
-          </div>
-
-          {/* Section 6: Data Sharing */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              6. Data Sharing and Disclosure
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">5. Transfer of personal data to third party</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              We may share your personal data with:
+              We will not sell or otherwise transfer Users' personal data to third parties. We may transfer Users' Personal Data to:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-gray-600 dark:text-gray-300 mb-4">
-              <li>Employers or recruiters using the ATS for hiring purposes.</li>
-              <li>
-                Our third-party service providers (e.g., cloud storage,
-                analytics, or AI tools), under strict confidentiality
-                agreements.
-              </li>
-              <li>Regulatory or government authorities when required by law.</li>
+              <li>Our contractors and sub-contractors, acting as our Processors and Sub-Processors in accordance with our instructions, for the provision of the Service;</li>
+              <li>authorities or legal advisors in case criminal or improper behaviour is suspected; and</li>
+              <li>authorities, legal advisors or other actors, if required by us according to law or authority's injunction.</li>
             </ul>
-            <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4">
-              <p className="text-green-800 dark:text-green-300 font-medium">
-                We do not sell personal data to third parties.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 7: International Transfers */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              7. International Data Transfers
-            </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Where data is transferred outside Rwanda (e.g., for cloud or AI
-              processing), we ensure appropriate safeguards are in place, such
-              as:
+              We will only transfer Users' personal data to third parties that we have a contract with. We carefully choose partners to ensure that the User's personal data is processed in accordance to current privacy legislations. We cooperate with the following categories of processors of personal data: Teamtailor, who supplies the Service, server and hosting companies, e-mail reference companies, video processing companies, information-sourcing companies, analytical service companies and other companies with regards to suppling the Service.
             </p>
-            <ul className="list-disc pl-6 space-y-2 text-gray-600 dark:text-gray-300">
-              <li>Standard contractual clauses,</li>
-              <li>Hosting in countries with adequate data protection laws,</li>
-              <li>Explicit user consent where required.</li>
-            </ul>
           </div>
 
-          {/* Section 8: Data Retention */}
+          {/* Section 6: Aggregated data */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              8. Data Retention
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">6. Aggregated data (non-identifiable personal data)</h2>
             <p className="text-gray-600 dark:text-gray-300">
-              We retain personal data only as long as necessary for the
-              recruitment purpose or to comply with applicable laws. Afterward,
-              data is securely deleted or anonymized.
+              We may share aggregated data to third parties. The aggregated data has in such instances been compiled from information that has been collected through the Service and can, for example, consist of statistics of internet traffic or the geological location for the use of the Service. The aggregated data does not contain any information that can be used to identify individual persons and is thus not personal data.
             </p>
           </div>
 
-          {/* Section 9: Your Rights */}
+          {/* Section 7: Cookies */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              9. Your Rights
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">7. Cookies</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              Under Rwanda's data protection law, you have the right to:
+              When Users use the Service, information about the usage may be stored as cookies. Cookies are passive text files that are stored in the internet browser on the User's device, such as computer, mobile phone or tablet, when using the Service. We use cookies to improve the User's usage of the Service and to gather information about, for example, statistics about the usage of the Service. This is done to secure, maintain and improve the Service.
             </p>
-            <div className="grid md:grid-cols-2 gap-3">
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <ShieldCheckIcon className="h-4 w-4 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" />
-                Access your personal data
-              </div>
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <ShieldCheckIcon className="h-4 w-4 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" />
-                Request correction or deletion
-              </div>
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <ShieldCheckIcon className="h-4 w-4 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" />
-                Object to or restrict processing
-              </div>
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <ShieldCheckIcon className="h-4 w-4 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" />
-                Withdraw consent at any time
-              </div>
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <ShieldCheckIcon className="h-4 w-4 text-green-500 dark:text-green-400 mr-2 flex-shrink-0" />
-                Lodge a complaint with the NCSA
-              </div>
-            </div>
-            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mt-4">
-              <p className="text-blue-800 dark:text-blue-300">
-                <strong>To exercise your rights, contact us at:</strong>{" "}
-                <a
-                  href="mailto:privacy@istafrica.rw"
-                  className="underline hover:text-blue-600 dark:hover:text-blue-200"
-                >
-                  privacy@istafrica.rw
-                </a>
-              </p>
-            </div>
-          </div>
-
-          {/* Section 10: Data Security */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              10. Data Security
-            </h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              We implement robust technical and organizational security measures
-              including:
+              The information that is collected through the cookies can in some instances be personal data and is, in such instances, regulated by our "Cookie Policy" link. Users can at any time disable the use of cookies by changing the local settings in their devices. Disabling of cookies can affect the experience of the Service, for example disabling some functions in the Service.
             </p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <div className="w-2 h-2 bg-primary-500 dark:bg-primary-400 rounded-full mr-3"></div>
-                Secure encryption
-              </div>
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <div className="w-2 h-2 bg-primary-500 dark:bg-primary-400 rounded-full mr-3"></div>
-                Access controls
-              </div>
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <div className="w-2 h-2 bg-primary-500 dark:bg-primary-400 rounded-full mr-3"></div>
-                Regular system audits
-              </div>
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <div className="w-2 h-2 bg-primary-500 dark:bg-primary-400 rounded-full mr-3"></div>
-                Staff training on data protection
-              </div>
-            </div>
           </div>
 
-          {/* Section 11: Children's Data */}
+          {/* Section 8: Changes */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              11. Children's Data
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">8. Changes</h2>
             <p className="text-gray-600 dark:text-gray-300">
-              Our ATS is not intended for individuals under 18. We do not
-              knowingly collect personal data from children.
+              We have the right to, at any time, make changes or additions to the Privacy Policy. The latest version of the Privacy Policy will always be available through the Service. A new version is considered communicated to the Users when the User has either received an email informing the User of the new version (using the e-mail stated by the User in connection to the use of the Service) or when the User is otherwise informed of the new Privacy Policy.
             </p>
           </div>
 
-          {/* Section 12: Changes */}
+          {/* Section 9: Contact */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              12. Changes to this Privacy Policy
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              We may update this Privacy Policy periodically. All changes will
-              be posted on this page with an updated effective date. Continued
-              use of the ATS implies your acceptance of these changes.
-            </p>
-          </div>
-
-          {/* Section 13: Contact Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              13. Contact Information
-            </h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">9. Contact</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              If you have questions about this Privacy Policy or how your data
-              is processed, please contact:
+              For questions, further information about our handling of personal data or for contact with us in other matters, please use the below stated contact details:
             </p>
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
-                IST Africa Ltd
-              </h4>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">IST</h4>
               <div className="space-y-2 text-gray-600 dark:text-gray-300">
-                <p>
-                  <strong>Email:</strong>{" "}
-                  <a
-                    href="mailto:privacy@istlegal.rw"
-                    className="text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 underline"
-                  >
-                    privacy@istlegal.rw
-                  </a>
-                </p>
-                <p>
-                  <strong>Phone:</strong>{" "}
-                  <a
-                    href="tel:0782371420"
-                    className="text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300"
-                  >
-                    0782371420
-                  </a>
-                </p>
-                <p>
-                  <strong>Address:</strong> KG 28 Ave, 57
-                </p>
+                <p><strong>Email:</strong> <a href="mailto:privacy@ist.com" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 underline">privacy@ist.com</a></p>
               </div>
             </div>
           </div>
@@ -424,23 +212,18 @@ const PrivacyPolicyPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Page Footer */}
+      {/* Footer */}
       <footer className="bg-white dark:bg-gray-800 mt-8 border-t border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="text-center">
             <p className="text-base text-gray-400 dark:text-gray-500">
-              &copy; {new Date().getFullYear()} IST Africa Ltd. All rights
-              reserved.
+              &copy; {new Date().getFullYear()} ATS System. All rights reserved.
             </p>
-            <Link
-              to="/"
-              className="mt-4 md:mt-0 text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300 font-medium"
-            >
-              Back to Careers
-            </Link>
           </div>
         </div>
       </footer>
+
+      <ScrollToTopButton />
     </div>
   );
 };

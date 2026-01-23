@@ -7,7 +7,6 @@ const navigation = [
   { name: "Start", href: "/" },
   { name: "Jobs", href: "/jobs" },
   { name: "Locations", href: "/locations" },
-  { name: "People", href: "/people" },
 ];
 
 const Header: React.FC = () => {

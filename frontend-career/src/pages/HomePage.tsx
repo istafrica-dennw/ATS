@@ -3,36 +3,12 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   BriefcaseIcon,
-  MapPinIcon,
-  UserGroupIcon,
-  HeartIcon,
-  SparklesIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import JobCard from "../components/jobs/JobCard";
 import jobService from "../services/jobService";
 import { Job } from "../types/job";
-
-const values = [
-  {
-    icon: HeartIcon,
-    title: "Passion",
-    description:
-      "We are driven by our passion to make a difference in education.",
-  },
-  {
-    icon: UserGroupIcon,
-    title: "Collaboration",
-    description:
-      "We believe in the power of working together to achieve great things.",
-  },
-  {
-    icon: SparklesIcon,
-    title: "Innovation",
-    description:
-      "We constantly push boundaries to create cutting-edge solutions.",
-  },
-];
+import { ReactComponent as ISTLogo } from "../assets/logo/IST logo black.svg";
 
 const locations = [
   { name: "Växjö (HQ)", country: "Sweden", image: "🇸🇪" },
@@ -97,12 +73,7 @@ const HomePage: React.FC = () => {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
               A career that makes a difference
             </h1>
-            <p className="text-xl sm:text-2xl text-primary-100 dark:text-gray-300 max-w-3xl mx-auto mb-10">
-              Join us in shaping the future of education technology. We're
-              looking for passionate people who want to make learning better for
-              everyone.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
               <Link
                 to="/jobs"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-primary-700 bg-white rounded-lg hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl"
@@ -160,18 +131,14 @@ const HomePage: React.FC = () => {
               transition={{ duration: 0.6 }}
               className="relative"
             >
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary-100 to-secondary-100 dark:from-gray-800 dark:to-gray-700 p-8 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-xl">
-                    <span className="text-5xl font-bold text-white">IST</span>
-                  </div>
-                  <p className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
-                    TwISTers
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    That's what we call ourselves
-                  </p>
-                </div>
+              <div className="aspect-video rounded-2xl overflow-hidden shadow-lg">
+                <iframe
+                  className="w-full h-full"
+                  src="https://www.youtube.com/embed/huTH9Vua7LE"
+                  title="IST Video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
               </div>
             </motion.div>
           </div>
@@ -210,7 +177,7 @@ const HomePage: React.FC = () => {
               ))}
             </div>
           ) : featuredJobs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex flex-wrap justify-center gap-6">
               {featuredJobs.map((job, index) => (
                 <motion.div
                   key={job.id}
@@ -218,6 +185,7 @@ const HomePage: React.FC = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="w-full md:w-[calc(33.333%-1rem)] min-w-[300px] max-w-[400px]"
                 >
                   <JobCard job={job} variant="featured" />
                 </motion.div>
@@ -265,28 +233,6 @@ const HomePage: React.FC = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {values.map((value, index) => (
-              <motion.div
-                key={value.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl p-8 border border-gray-100 dark:border-gray-700 text-center"
-              >
-                <div className="w-16 h-16 mx-auto mb-6 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
-                  <value.icon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                  {value.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {value.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 

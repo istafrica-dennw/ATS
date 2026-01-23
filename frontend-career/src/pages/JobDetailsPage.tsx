@@ -250,7 +250,14 @@ const JobDetailsPage: React.FC = () => {
                 Apply Now
               </a>
               <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                By applying, you agree to our terms and privacy policy.
+                By applying, you agree to our{" "}
+                <Link
+                  to="/privacy-policy"
+                  className="text-primary-600 dark:text-primary-400 hover:underline"
+                >
+                  privacy policy
+                </Link>
+                .
               </p>
             </div>
 

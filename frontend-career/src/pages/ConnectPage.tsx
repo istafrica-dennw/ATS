@@ -399,14 +399,14 @@ const ConnectPage: React.FC = () => {
                   <div className="flex-1">
                     <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                       I have read the{" "}
-                      <a
-                        href="/privacy-policy"
+                      <Link
+                        to="/privacy-policy"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
                       >
                         privacy policy
-                      </a>{" "}
+                      </Link>{" "}
                       and confirm that IST store my personal details to be able
                       to contact me for future job opportunities.
                     </p>
